@@ -1,0 +1,4 @@
+[bandit]
+target = .
+assert_used:
+  skips: ["*/test_*.py"]
