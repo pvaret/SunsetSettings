@@ -7,15 +7,15 @@ SerializableT = TypeVar("SerializableT", int, str, bool, Serializable[Any])
 
 def serialize(value: SerializableT) -> str:
 
-    match value:
-        case bool():
-            return "true" if value else "false"
-        case int():
-            return str(value)
-        case str():
-            return value
-        case Serializable():
-            return value.toStr()
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    elif isinstance(value, int):
+        return str(value)
+    elif isinstance(value, str):
+        return value
+    else:
+        assert isinstance(value, Serializable)
+        return value.toStr()
 
 
 def deserialize(
