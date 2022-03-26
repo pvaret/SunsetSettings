@@ -1,4 +1,2 @@
 # Reminder: keep in sync with the pyproject.toml file.
-pytest
-pytest-cov
-pytest-mock
+typing_extensions
