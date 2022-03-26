@@ -32,7 +32,7 @@ Each setting can be given callbacks to be called when its value changes.
 
 ## Requirements
 
-- Python 3.7 or later.
+- Python 3.9 or later.
 - The `typing_extensions` module.
 - `flit` for installation from sources.
 
