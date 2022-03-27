@@ -1,6 +1,5 @@
 # SunsetSettings
 
-
 [![SunsetSettings](https://circleci.com/gh/pvaret/SunsetSettings.svg?style=shield)](https://circleci.com/gh/pvaret/SunsetSettings)
 
 SunsetSettings is a Python library that lets you define, load and save settings
@@ -17,6 +16,16 @@ preserved between sessions.
 SunsetSettings is type-safe; that is to say, if you are holding it wrong, type
 checkers will tell you.
 
+    >>> import sunset
+
+    # Types can be inferred from the provided default value:
+    >>> number_of_ponies = sunset.Setting(default=0)
+
+    >>> number_of_ponies.set(6)  # Works!
+    >>> number_of_ponies.set("six")  # Type error!
+
+    >>> ponies = number_of_ponies.get()  # 'ponies' correctly typechecks as int
+
 ### Extensibility
 
 You can store arbitrary types in your SunsetSettings provided they implement a
@@ -29,9 +38,32 @@ partially overriden for specific cases (much like your VSCode settings can be
 overriden by workspace, for instance). The hierarchy of inheritance can be
 arbitrarily deep.
 
+    >>> import sunset
+    >>> class Animals(sunset.Settings):
+    ...     paws: sunset.Setting[int] = sunset.NewSetting(default=4)
+    ... 
+    >>> animals = Animals()
+    >>> octopuses = animals.deriveAs("octopuses")
+    >>> octopuses.paws.get()
+    4
+    >>> octopuses.paws.set(8)
+    >>> octopuses.paws.get()
+    8
+    >>> animals.paws.get()
+    4
+
 ### Callbacks
 
 Each setting can be given callbacks to be called when its value changes.
+
+    >>> import sunset
+    >>> number_of_ponies = sunset.Setting(default=0)
+    >>> def callback(value):
+    ...     print("Pony count updated:", value)
+    ...     
+    >>> number_of_ponies.onChangeCall(callback)
+    >>> number_of_ponies.set(6)
+    Pony count updated: 6
 
 ## Requirements
 
