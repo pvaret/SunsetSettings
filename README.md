@@ -81,11 +81,11 @@ This is not yet available.
 
 1. Download the code:
 
-    git clone https://github.com/pvaret/SunsetSettings
+    `git clone https://github.com/pvaret/SunsetSettings`
 
 2. Install the library:
 
-    flit install
+    `flit install`
 
 That's it.
 
