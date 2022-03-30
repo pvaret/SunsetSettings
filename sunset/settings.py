@@ -26,6 +26,10 @@ class Settings(Section):
 
     def deriveAs(self: Self, name: str) -> Self:
 
+        for child in self.children():
+            if idify(name) == child.id():
+                return child
+
         new = self.derive()
         new.setId(name)
         return new

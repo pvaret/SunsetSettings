@@ -46,6 +46,20 @@ class TestSettings:
         )
         assert anonymous2.hierarchy() == []
 
+    def test_deriveas(self):
+
+        s = ExampleSettings()
+
+        assert len(list(s.children())) == 0
+
+        child = s.deriveAs("same name")
+        assert len(list(s.children())) == 1
+
+        otherchild = s.deriveAs("same name")
+        assert len(list(s.children())) == 1
+
+        assert otherchild is child
+
     def test_dumpall(self):
 
         settings = ExampleSettings()
