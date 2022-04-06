@@ -3,21 +3,22 @@ from typing import (
     Optional,
     Protocol,
     Sequence,
+    Type,
     TypeVar,
     runtime_checkable,
 )
+from typing_extensions import Self
 
 _T = TypeVar("_T")
-_T_co = TypeVar("_T_co", covariant=True)
 
 
 @runtime_checkable
-class Serializable(Protocol[_T_co]):
+class Serializable(Protocol):
     def toStr(self) -> str:
         ...
 
-    @staticmethod
-    def fromStr(value: str) -> tuple[bool, _T_co]:
+    @classmethod
+    def fromStr(cls: Type[Self], value: str) -> tuple[bool, Self]:
         ...
 
 

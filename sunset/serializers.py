@@ -1,11 +1,14 @@
-from typing import Any, Type, TypeVar
+from typing import Type, TypeVar, Union
 
 from .protocols import Serializable
 
-SerializableT = TypeVar("SerializableT", int, str, bool, Serializable[Any])
+
+SerializableT = TypeVar(
+    "SerializableT", bound=Union[int, str, bool, Serializable]
+)
 
 
-def serialize(value: SerializableT) -> str:
+def serialize(value: Union[int, str, bool, Serializable]) -> str:
 
     if isinstance(value, bool):
         return "true" if value else "false"
