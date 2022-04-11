@@ -3,23 +3,29 @@ import weakref
 from types import MethodType
 from typing import Callable, Iterator, MutableSet, TypeVar
 
+from .idset import IdSet
+
 _T = TypeVar("_T")
 
 
 class CallbackRegistry(MutableSet[Callable[[_T], None]]):
     def __init__(self) -> None:
 
-        self._content: set[weakref.ref[Callable[[_T], None]]] = set()
+        # We can just use a WeakIdSet because it does not know how to take
+        # references to methods. Instead we do that ourselves, using a proper
+        # IdSet.
 
-    def add(
-        self,
-        value: Callable[[_T], None],
-    ) -> None:
+        self._content: IdSet[weakref.ref[Callable[[_T], None]]] = IdSet()
+
+    def add(self, value: Callable[[_T], None]) -> None:
 
         if isinstance(value, MethodType):
+
             # Note: WeakMethod has incorrect type annotations, so we have to
             # ignore types here.
+
             r = weakref.WeakMethod(value, self._onExpire)  # type: ignore
+
         else:
             r = weakref.ref(value, self._onExpire)
         self._content.add(r)
@@ -43,7 +49,8 @@ class CallbackRegistry(MutableSet[Callable[[_T], None]]):
 
     def discard(self, value: Callable[[_T], None]) -> None:
 
-        for ref in self._content.copy():
+        refs = list(self._content)
+        for ref in refs:
             callable = ref()
             if callable is not None and self._isSameCallable(callable, value):
                 self._content.discard(ref)

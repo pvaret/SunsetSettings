@@ -10,20 +10,35 @@ class IdSet(MutableSet[_T]):
 
         self._contents: MutableMapping[int, _T] = {}
 
+    def _computeHash(self, value: _T) -> int:
+
+        # Try to return the normal hash for the value if possible. This is
+        # because hash is more selective than id. For instance! If value is a
+        # weakref, then hash properly identifies two distinct weakrefs to the
+        # same object as equivalent, whereas id does not.
+        # Sadly testing whether the value implements the Hashable proto does not
+        # suffice. Dataclasses, for instance, implement the Hashable proto but
+        # are not necessarily hashable.
+
+        try:
+            return hash(value)
+        except TypeError:
+            return id(value)
+
     def add(self, value: _T) -> None:
 
-        self._contents[id(value)] = value
+        self._contents[self._computeHash(value)] = value
 
     def discard(self, value: _T) -> None:
 
         try:
-            del self._contents[id(value)]
+            del self._contents[self._computeHash(value)]
         except KeyError:
             pass
 
     def __contains__(self, value: _T) -> bool:
 
-        return id(value) in self._contents
+        return self._computeHash(value) in self._contents
 
     def __iter__(self) -> Iterator[_T]:
 
