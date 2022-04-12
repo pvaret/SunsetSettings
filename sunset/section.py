@@ -1,11 +1,21 @@
 import weakref
 
 from dataclasses import dataclass, field
-from typing import Iterator, MutableSet, Optional, Sequence, Type, TypeVar
+from typing import (
+    Callable,
+    Iterator,
+    MutableSet,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+)
+
 from typing_extensions import Self
 
 from .idset import WeakIdSet
-from .protocols import Dumpable, Inheriter, Restorable
+from .protocols import Dumpable, Inheriter, Restorable, ModificationNotifier
+from .registry import CallbackRegistry
 
 SectionT = TypeVar("SectionT", bound="Section")
 
@@ -20,6 +30,14 @@ class Section:
 
         self._parent: Optional[weakref.ref[Self]] = None
         self._children: MutableSet[Self] = WeakIdSet[Self]()
+        self._modification_notification_callbacks: CallbackRegistry[
+            Self
+        ] = CallbackRegistry()
+
+        for attr in vars(self).values():
+
+            if isinstance(attr, ModificationNotifier):
+                attr.onSettingModifiedCall(self._notifyModification)
 
     def derive(self: Self) -> Self:
 
@@ -66,6 +84,10 @@ class Section:
 
         yield from self._children
 
+    def onSettingModifiedCall(self, callback: Callable[[Self], None]) -> None:
+
+        self._modification_notification_callbacks.add(callback)
+
     def dump(self) -> Sequence[tuple[str, str]]:
 
         ret: list[tuple[str, str]] = []
@@ -100,6 +122,10 @@ class Section:
                 continue
 
             item.restore([(subname, dump)])
+
+    def _notifyModification(self, value: ModificationNotifier) -> None:
+
+        self._modification_notification_callbacks.callAll(self)
 
 
 def NewSection(section: Type[SectionT]) -> SectionT:

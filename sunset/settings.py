@@ -3,6 +3,7 @@ from typing_extensions import Self
 
 from .exporter import idify, loadFromFile, saveToFile
 from .idset import IdSet
+from .protocols import ModificationNotifier
 from .section import Section
 
 _MAIN = "main"
@@ -22,6 +23,8 @@ class Settings(Section):
 
         new = super().derive()
         new._id = ""
+        new.onSettingModifiedCall(self._notifyModification)
+
         return new
 
     def deriveAs(self: Self, name: str) -> Self:
@@ -32,11 +35,14 @@ class Settings(Section):
 
         new = self.derive()
         new.setId(name)
+
         return new
 
     def setId(self, id: str) -> None:
 
         self._id = idify(id)
+
+        self._notifyModification(self)
 
     def id(self) -> str:
 
@@ -52,6 +58,13 @@ class Settings(Section):
             return []
 
         return (parent.hierarchy() if parent is not None else []) + [self.id()]
+
+    def _notifyModification(self, value: ModificationNotifier) -> None:
+
+        if isinstance(value, Settings) and value.id() == "":
+            return
+
+        super()._notifyModification(value)
 
     def dumpAll(
         self,

@@ -1,4 +1,7 @@
 import io
+
+from pytest_mock import MockerFixture
+
 import sunset
 
 
@@ -466,7 +469,7 @@ a = merged
         assert len(children) == 0
         assert settings.a.get() == "merged"
 
-    def test_load_invalid_empty_section_is_skipper(self):
+    def test_load_invalid_empty_section_is_skipped(self):
 
         settings = ExampleSettings()
         settings.load(
@@ -476,7 +479,7 @@ a = merged
 a = main
 
 []
-a = not skipped
+a = skipped
 """
             )
         )
@@ -534,3 +537,46 @@ doesnotexist = should be skipped
         )
 
         assert settings.a.get() == ""
+
+    def test_setting_modified_notification(self, mocker: MockerFixture):
+
+        callback = mocker.stub()
+
+        settings = ExampleSettings()
+        settings.onSettingModifiedCall(callback)
+
+        settings.a.set("test 1")
+        callback.assert_called_once_with(settings)
+        callback.reset_mock()
+
+        child = settings.deriveAs("child")
+        callback.assert_called_once_with(settings)
+        callback.reset_mock()
+
+        child.a.set("test 2")
+        callback.assert_called_once_with(settings)
+        callback.reset_mock()
+
+        anonymous = settings.derive()
+        callback.assert_not_called()
+        callback.reset_mock()
+
+        anonymous.a.set("test 3")
+        callback.assert_not_called()
+        callback.reset_mock()
+
+        anonymousChild = anonymous.deriveAs("other child")
+        callback.assert_not_called()
+        callback.reset_mock()
+
+        anonymousChild.a.set("test 4")
+        callback.assert_not_called()
+        callback.reset_mock()
+
+        anonymous.setId("no longer anonymous")
+        callback.assert_called_once_with(settings)
+        callback.reset_mock()
+
+        anonymousChild.a.set("test 5")
+        callback.assert_called_once_with(settings)
+        callback.reset_mock()

@@ -1,3 +1,5 @@
+import pytest
+
 import sunset
 
 
@@ -125,6 +127,32 @@ class TestCallbackRegistry:
 
         reg.callAll("once")
         assert call_args == ["once"]
+
+    def test_non_hashable_element(self):
+        class Test(list[int]):
+            def __init__(self) -> None:
+
+                super().__init__()
+
+                self.value = 0
+
+            def test(self, value: int) -> None:
+                self.value = value
+
+        t = Test()
+
+        with pytest.raises(TypeError):
+
+            # Prove that type Test is not hashable.
+
+            hash(t)
+
+        reg: sunset.CallbackRegistry[int] = sunset.CallbackRegistry()
+
+        reg.add(t.test)
+        reg.callAll(42)
+
+        assert t.value == 42
 
     def test_different_method_added_twice(self):
 

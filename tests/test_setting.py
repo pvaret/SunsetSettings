@@ -53,13 +53,13 @@ class TestSetting:
 
         assert s.get().toStr() == "dummy"
 
-    def test_callback(self, mocker: MockerFixture):
+    def test_value_change_callback(self, mocker: MockerFixture):
 
         callback = mocker.stub()
 
         s = sunset.Setting(default="default")
 
-        s.onChangeCall(callback)
+        s.onValueChangeCall(callback)
 
         s.set("default")
         callback.assert_not_called()
@@ -75,6 +75,61 @@ class TestSetting:
 
         s.clear()
         callback.assert_not_called()
+
+    def test_value_change_callback_inheritance(self, mocker: MockerFixture):
+
+        callback = mocker.stub()
+
+        s = sunset.Setting(default="default")
+        s2 = sunset.Setting(default="default")
+        s2.inheritFrom(s)
+
+        s2.onValueChangeCall(callback)
+
+        s.set("inheritance")
+        callback.assert_called_once_with("inheritance")
+        callback.reset_mock()
+
+        s2.set("inheritance")
+        callback.assert_not_called()
+        callback.reset_mock()
+
+        s2.clear()
+        callback.assert_not_called()
+        callback.reset_mock()
+
+        s.clear()
+        callback.assert_called_once_with("default")
+        callback.reset_mock()
+
+    def test_setting_modified_callback(self, mocker: MockerFixture):
+
+        callback = mocker.stub()
+
+        s = sunset.Setting(default="default")
+        assert isinstance(s, sunset.protocols.ModificationNotifier)
+
+        s.onSettingModifiedCall(callback)
+
+        s.set("default")
+        callback.assert_called_once_with(s)
+        callback.reset_mock()
+
+        s.set("not default")
+        callback.assert_called_once_with(s)
+        callback.reset_mock()
+
+        s.set("not default")
+        callback.assert_not_called()
+        callback.reset_mock()
+
+        s.clear()
+        callback.assert_called_once_with(s)
+        callback.reset_mock()
+
+        s.clear()
+        callback.assert_not_called()
+        callback.reset_mock()
 
     def test_inheritance(self):
 
@@ -165,7 +220,7 @@ class TestSetting:
         b = sunset.Setting(default="default b")
         b.inheritFrom(a)
 
-        b.onChangeCall(stub)
+        b.onValueChangeCall(stub)
 
         b.set("test 1")
         stub.assert_called_once_with("test 1")

@@ -1,9 +1,12 @@
 from typing import Iterator
 
+from pytest_mock import MockerFixture
+
 import sunset
 
 
 class ExampleSection(sunset.Section):
+
     test: sunset.Setting[str] = sunset.NewSetting("")
 
 
@@ -138,3 +141,43 @@ class TestList:
         del level2
         assert level1.parent() is None
         assert len(list(level1.children())) == 0
+
+    def test_setting_modification_callback(self, mocker: MockerFixture):
+
+        callback = mocker.stub()
+
+        setting: sunset.List[ExampleSection] = sunset.List(ExampleSection)
+
+        s1 = ExampleSection()
+        s2 = ExampleSection()
+        s3 = ExampleSection()
+
+        setting.onSettingModifiedCall(callback)
+
+        setting.append(s1)
+        callback.assert_called_once_with(setting)
+        callback.reset_mock()
+
+        setting.insert(0, s2)
+        callback.assert_called_once_with(setting)
+        callback.reset_mock()
+
+        setting[0] = s3
+        callback.assert_called_once_with(setting)
+        callback.reset_mock()
+
+        s1.test.set("test 1")
+        callback.assert_called_once_with(setting)
+        callback.reset_mock()
+
+        s2.test.set("test 2")
+        callback.assert_not_called()
+        callback.reset_mock()
+
+        s3.test.set("test 3")
+        callback.assert_called_once_with(setting)
+        callback.reset_mock()
+
+        del setting[1]
+        callback.assert_called_once_with(setting)
+        callback.reset_mock()

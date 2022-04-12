@@ -1,4 +1,5 @@
 from typing import (
+    Callable,
     Iterator,
     Optional,
     Protocol,
@@ -43,4 +44,10 @@ class Dumpable(Protocol):
 @runtime_checkable
 class Restorable(Protocol):
     def restore(self, data: Sequence[tuple[str, str]]) -> None:
+        ...
+
+
+@runtime_checkable
+class ModificationNotifier(Protocol):
+    def onSettingModifiedCall(self, callback: Callable[[Self], None]) -> None:
         ...

@@ -1,3 +1,5 @@
+from pytest_mock import MockerFixture
+
 import sunset
 
 
@@ -185,3 +187,32 @@ class TestSection:
         del level2
         assert level1.parent() is None
         assert len(list(level1.children())) == 0
+
+    def test_setting_modified_notification(self, mocker: MockerFixture):
+
+        callback = mocker.stub()
+
+        section = ExampleSection()
+        section.onSettingModifiedCall(callback)
+
+        child = section.derive()
+
+        section.a.set("test 1")
+        callback.assert_called_once_with(section)
+        callback.reset_mock()
+
+        section.subsection.b.set(123)
+        callback.assert_called_once_with(section)
+        callback.reset_mock()
+
+        section.list.append(ExampleSection.Item())
+        callback.assert_called_once_with(section)
+        callback.reset_mock()
+
+        section.list[0].c.set("test 2")
+        callback.assert_called_once_with(section)
+        callback.reset_mock()
+
+        child.a.set("test 3")
+        callback.assert_not_called()
+        callback.reset_mock()
