@@ -1,14 +1,13 @@
-from typing import Type, TypeVar, Union
+from typing import Optional, Type, TypeVar, Union
 
 from .protocols import Serializable
 
+AnySerializableType = Union[int, str, bool, Serializable]
 
-SerializableT = TypeVar(
-    "SerializableT", bound=Union[int, str, bool, Serializable]
-)
+SerializableT = TypeVar("SerializableT", bound=AnySerializableType)
 
 
-def serialize(value: Union[int, str, bool, Serializable]) -> str:
+def serialize(value: AnySerializableType) -> str:
 
     if isinstance(value, bool):
         return "true" if value else "false"
@@ -23,23 +22,23 @@ def serialize(value: Union[int, str, bool, Serializable]) -> str:
 
 def deserialize(
     _type: Type[SerializableT], string: str
-) -> tuple[bool, SerializableT]:
+) -> Optional[SerializableT]:
 
     if issubclass(_type, bool):
         if string.strip().lower() in ("true", "yes", "y", "1"):
-            return True, _type(True)
+            return _type(True)
         if string.strip().lower() in ("false", "no", "n", "0"):
-            return True, _type(False)
-        return False, _type(False)
+            return _type(False)
+        return None
 
     if issubclass(_type, int):
         try:
-            return True, _type(int(string))
+            return _type(int(string))
         except ValueError:
-            return False, _type(0)
+            return None
 
     if issubclass(_type, str):
-        return True, _type(string)
+        return _type(string)
 
     assert issubclass(_type, Serializable)
     return _type.fromStr(string)

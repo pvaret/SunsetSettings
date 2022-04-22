@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pytest_mock import MockerFixture
 
 import sunset
@@ -13,9 +15,9 @@ class ExampleSerializable:
         return self._value
 
     @staticmethod
-    def fromStr(value: str) -> "tuple[bool, ExampleSerializable]":
+    def fromStr(value: str) -> Optional["ExampleSerializable"]:
 
-        return True, ExampleSerializable(value)
+        return ExampleSerializable(value)
 
 
 class TestSetting:
@@ -48,7 +50,8 @@ class TestSetting:
 
     def test_serializable_type(self):
 
-        _, t = ExampleSerializable.fromStr("dummy")
+        t = ExampleSerializable.fromStr("dummy")
+        assert t is not None
         s: sunset.Setting[ExampleSerializable] = sunset.Setting(default=t)
 
         assert s.get().toStr() == "dummy"
@@ -249,7 +252,8 @@ class TestSetting:
 
     def test_dump_serialization(self):
 
-        _, t = ExampleSerializable.fromStr("test")
+        t = ExampleSerializable.fromStr("test")
+        assert t is not None
 
         s = sunset.Setting(default=t)
         assert s.dump() == []

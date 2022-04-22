@@ -1,3 +1,5 @@
+from typing import Optional
+
 import sunset
 
 
@@ -11,9 +13,9 @@ class ExampleSerializable:
         return self._value
 
     @staticmethod
-    def fromStr(value: str) -> "tuple[bool, ExampleSerializable]":
+    def fromStr(value: str) -> Optional["ExampleSerializable"]:
 
-        return True, ExampleSerializable(value)
+        return ExampleSerializable(value)
 
 
 def test_serialize_int():
@@ -40,34 +42,32 @@ def test_serialize_serializable():
 
 def test_deserialize_str():
 
-    assert sunset.serializers.deserialize(str, "test") == (True, "test")
+    assert sunset.serializers.deserialize(str, "test") == "test"
 
 
 def test_deserialize_int():
 
-    assert sunset.serializers.deserialize(int, "test") == (False, 0)
-    assert sunset.serializers.deserialize(int, "   -32 ") == (True, -32)
-    assert sunset.serializers.deserialize(int, "00017") == (True, 17)
+    assert sunset.serializers.deserialize(int, "test") is None
+    assert sunset.serializers.deserialize(int, "   -32 ") == -32
+    assert sunset.serializers.deserialize(int, "00017") == 17
 
 
 def test_deserialize_bool():
 
-    assert sunset.serializers.deserialize(bool, "YES") == (True, True)
-    assert sunset.serializers.deserialize(bool, "  1 ") == (True, True)
-    assert sunset.serializers.deserialize(bool, "true") == (True, True)
+    assert sunset.serializers.deserialize(bool, "YES")
+    assert sunset.serializers.deserialize(bool, "  1 ")
+    assert sunset.serializers.deserialize(bool, "true")
 
-    assert sunset.serializers.deserialize(bool, "NO") == (True, False)
-    assert sunset.serializers.deserialize(bool, "  0 ") == (True, False)
-    assert sunset.serializers.deserialize(bool, "false") == (True, False)
+    assert not sunset.serializers.deserialize(bool, "NO")
+    assert not sunset.serializers.deserialize(bool, "  0 ")
+    assert not sunset.serializers.deserialize(bool, "false")
 
-    assert sunset.serializers.deserialize(bool, "garbage") == (False, False)
+    assert sunset.serializers.deserialize(bool, "garbage") is None
 
 
 def test_deserialize_serializable():
 
-    success, t = sunset.serializers.deserialize(
-        ExampleSerializable, "this is a test"
-    )
-    assert success
+    t = sunset.serializers.deserialize(ExampleSerializable, "this is a test")
+    assert t is not None
     assert isinstance(t, ExampleSerializable)
     assert t.toStr() == "this is a test"

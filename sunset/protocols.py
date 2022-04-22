@@ -8,6 +8,7 @@ from typing import (
     TypeVar,
     runtime_checkable,
 )
+
 from typing_extensions import Self
 
 _T = TypeVar("_T")
@@ -19,7 +20,7 @@ class Serializable(Protocol):
         ...
 
     @classmethod
-    def fromStr(cls: Type[Self], value: str) -> tuple[bool, Self]:
+    def fromStr(cls: Type[Self], value: str) -> Optional[Self]:
         ...
 
 

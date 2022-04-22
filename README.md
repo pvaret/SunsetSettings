@@ -35,6 +35,7 @@ simple serialization protocol. (See `sunset/protocols.py`.)
 
 ```python
 >>> import re
+>>> from typing import Optional
 >>> class Coordinates:
 ...     def __init__(self, x: int = 0, y: int = 0) -> None:
 ...         self._x = x
@@ -44,14 +45,13 @@ simple serialization protocol. (See `sunset/protocols.py`.)
 ...         return f"{self._x},{self._y}"
 ...
 ...     @classmethod
-...     def fromStr(cls, value: str) -> tuple[bool, "Coordinates"]:
-...         dummy = Coordinates()
+...     def fromStr(cls, value: str) -> Optional["Coordinates"]:
 ...         m = re.match(r"(\d+),(\d+)", value)
 ...         if m is None:
-...             return False, dummy
+...             return None
 ...         x = int(m.group(1))
 ...         y = int(m.group(2))
-...         return True, Coordinates(x, y)
+...         return cls(x, y)
 
 >>> import sunset
 >>> coordinates = sunset.Setting(default=Coordinates())

@@ -151,8 +151,8 @@ class Setting(Generic[SerializableT]):
 
             return
 
-        success, value = deserialize(self._type, value)
-        if not success:
+        value = deserialize(self._type, value)
+        if value is None:
 
             # The given value is not a valid serialized value for this
             # setting. Abort here.
