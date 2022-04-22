@@ -16,20 +16,47 @@ preserved between sessions.
 SunsetSettings is type-safe; that is to say, if you are holding it wrong, type
 checkers will tell you.
 
-    >>> import sunset
+```python
+>>> import sunset
 
-    # Types can be inferred from the provided default value:
-    >>> number_of_ponies = sunset.Setting(default=0)
+>>> # Types can be inferred from the provided default value:
+>>> number_of_ponies = sunset.Setting(default=0)
 
-    >>> number_of_ponies.set(6)  # Works!
-    >>> number_of_ponies.set("six")  # Type error!
+>>> number_of_ponies.set(6)  # Works!
+>>> number_of_ponies.set("six")  # Type error!
 
-    >>> ponies = number_of_ponies.get()  # 'ponies' correctly typechecks as int
+>>> ponies = number_of_ponies.get()  # 'ponies' correctly typechecks as int
+```
 
 ### Extensibility
 
 You can store arbitrary types in your SunsetSettings provided they implement a
-simple serialization protocol.
+simple serialization protocol. (See `sunset/protocols.py`.)
+
+```python
+>>> import re
+>>> class Coordinates:
+...     def __init__(self, x: int = 0, y: int = 0) -> None:
+...         self._x = x
+...         self._y = y
+...
+...     def toStr(self) -> str:
+...         return f"{self._x},{self._y}"
+...
+...     @classmethod
+...     def fromStr(cls, value: str) -> tuple[bool, "Coordinates"]:
+...         dummy = Coordinates()
+...         m = re.match(r"(\d+),(\d+)", value)
+...         if m is None:
+...             return False, dummy
+...         x = int(m.group(1))
+...         y = int(m.group(2))
+...         return True, Coordinates(x, y)
+
+>>> import sunset
+>>> coordinates = sunset.Setting(default=Coordinates())
+>>> coordinates.get()  # Correctly typechecks to 'Coordinates'.
+```
 
 ### Inheritance
 
@@ -38,32 +65,36 @@ partially overriden for specific cases (much like your VSCode settings can be
 overriden by workspace, for instance). The hierarchy of inheritance can be
 arbitrarily deep.
 
-    >>> import sunset
-    >>> class Animals(sunset.Settings):
-    ...     paws: sunset.Setting[int] = sunset.NewSetting(default=4)
-    ... 
-    >>> animals = Animals()
-    >>> octopuses = animals.deriveAs("octopuses")
-    >>> octopuses.paws.get()
-    4
-    >>> octopuses.paws.set(8)
-    >>> octopuses.paws.get()
-    8
-    >>> animals.paws.get()
-    4
+````python
+>>> import sunset
+>>> class Animals(sunset.Settings):
+...     paws: sunset.Setting[int] = sunset.NewSetting(default=4)
+... 
+>>> animals = Animals()
+>>> octopuses = animals.deriveAs("octopuses")
+>>> octopuses.paws.get()
+4
+>>> octopuses.paws.set(8)
+>>> octopuses.paws.get()
+8
+>>> animals.paws.get()
+4
+````
 
 ### Callbacks
 
 Each setting can be given callbacks to be called when its value changes.
 
-    >>> import sunset
-    >>> number_of_ponies = sunset.Setting(default=0)
-    >>> def callback(value):
-    ...     print("Pony count updated:", value)
-    ...     
-    >>> number_of_ponies.onChangeCall(callback)
-    >>> number_of_ponies.set(6)
-    Pony count updated: 6
+```python
+>>> import sunset
+>>> number_of_ponies = sunset.Setting(default=0)
+>>> def callback(value):
+...     print("Pony count updated:", value)
+...     
+>>> number_of_ponies.onChangeCall(callback)
+>>> number_of_ponies.set(6)
+Pony count updated: 6
+```
 
 ## Requirements
 
