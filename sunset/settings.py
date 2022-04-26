@@ -1,8 +1,9 @@
 from typing import MutableSet, Sequence, TextIO
+
 from typing_extensions import Self
 
 from .exporter import idify, loadFromFile, saveToFile
-from .idset import IdSet
+from .non_hashable_set import NonHashableSet
 from .protocols import ModificationNotifier
 from .section import Section
 
@@ -17,7 +18,7 @@ class Settings(Section):
 
         super().__post_init__()
         self._id: str = self.MAIN
-        self._children: MutableSet[Self] = IdSet()
+        self._children: MutableSet[Self] = NonHashableSet()
 
     def derive(self: Self) -> Self:
 

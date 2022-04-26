@@ -2,7 +2,7 @@
 
 __version__ = "0.1"
 
-from . import exporter, idset, protocols, serializers
+from . import exporter, non_hashable_set, protocols, serializers
 
 from .list import NewList, List
 from .registry import CallbackRegistry
@@ -21,7 +21,7 @@ __all__ = [
     "Settings",
     "exporter",
     "idify",
-    "idset",
+    "non_hashable_set",
     "protocols",
     "serializers",
 ]

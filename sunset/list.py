@@ -15,7 +15,7 @@ from typing import (
 
 from typing_extensions import Self
 
-from .idset import WeakIdSet
+from .non_hashable_set import WeakNonHashableSet
 from .registry import CallbackRegistry
 from .section import SectionT
 
@@ -26,7 +26,7 @@ class List(MutableSequence[SectionT]):
         self._contents: list[SectionT] = []
 
         self._parent: Optional[weakref.ref[Self]] = None
-        self._children: WeakIdSet[Self] = WeakIdSet()
+        self._children: WeakNonHashableSet[Self] = WeakNonHashableSet()
         self._modification_notification_callbacks: CallbackRegistry[
             Self
         ] = CallbackRegistry()

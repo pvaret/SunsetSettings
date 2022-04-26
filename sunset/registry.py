@@ -3,7 +3,7 @@ import weakref
 from types import MethodType
 from typing import Callable, Iterator, MutableSet, TypeVar
 
-from .idset import IdSet
+from .non_hashable_set import NonHashableSet
 
 _T = TypeVar("_T")
 
@@ -15,7 +15,7 @@ class CallbackRegistry(MutableSet[Callable[[_T], None]]):
         # references to methods. Instead we do that ourselves, using a proper
         # IdSet.
 
-        self._content: IdSet[weakref.ref[Callable[[_T], None]]] = IdSet()
+        self._content: NonHashableSet[weakref.ref[Callable[[_T], None]]] = NonHashableSet()
 
     def add(self, value: Callable[[_T], None]) -> None:
 

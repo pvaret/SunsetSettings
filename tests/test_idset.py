@@ -10,7 +10,7 @@ class Dummy:
 class TestIdSet:
     def test_mutableset(self):
 
-        s: MutableSet[Any] = sunset.idset.IdSet()
+        s: MutableSet[Any] = sunset.non_hashable_set.NonHashableSet()
         item = Dummy()
 
         assert item not in s
@@ -30,7 +30,7 @@ class TestIdSet:
 
     def test_persistence(self):
 
-        s: MutableSet[Any] = sunset.idset.IdSet()
+        s: MutableSet[Any] = sunset.non_hashable_set.NonHashableSet()
         item = Dummy()
 
         s.add(item)
@@ -42,7 +42,7 @@ class TestIdSet:
 
 class TestWeakIdSet:
     def test_mutableset(self):
-        s: MutableSet[Any] = sunset.idset.WeakIdSet()
+        s: MutableSet[Any] = sunset.non_hashable_set.WeakNonHashableSet()
         item = Dummy()
 
         assert item not in s
@@ -62,7 +62,7 @@ class TestWeakIdSet:
 
     def test_persistence(self):
 
-        s: MutableSet[Any] = sunset.idset.WeakIdSet()
+        s: MutableSet[Any] = sunset.non_hashable_set.WeakNonHashableSet()
         item = Dummy()
 
         s.add(item)

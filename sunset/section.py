@@ -13,7 +13,7 @@ from typing import (
 
 from typing_extensions import Self
 
-from .idset import WeakIdSet
+from .non_hashable_set import WeakNonHashableSet
 from .protocols import Dumpable, Inheriter, Restorable, ModificationNotifier
 from .registry import CallbackRegistry
 
@@ -29,7 +29,7 @@ class Section:
     def __post_init__(self: Self) -> None:
 
         self._parent: Optional[weakref.ref[Self]] = None
-        self._children: MutableSet[Self] = WeakIdSet[Self]()
+        self._children: MutableSet[Self] = WeakNonHashableSet[Self]()
         self._modification_notification_callbacks: CallbackRegistry[
             Self
         ] = CallbackRegistry()

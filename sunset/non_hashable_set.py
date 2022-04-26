@@ -1,16 +1,22 @@
-from typing import Iterator, MutableMapping, MutableSet, TypeVar
 import weakref
 
+from typing import Any, Iterator, MutableMapping, MutableSet, TypeVar
 
 _T = TypeVar("_T")
 
 
-class IdSet(MutableSet[_T]):
+class NonHashableSet(MutableSet[_T]):
+    """
+    An implementation of a set that can contain non-hashable elements.
+
+    Elements that are not hashable are distinguished by their id.
+    """
+
     def __init__(self) -> None:
 
         self._contents: MutableMapping[int, _T] = {}
 
-    def _computeHash(self, value: _T) -> int:
+    def _computeHash(self, value: Any) -> int:
 
         # Try to return the normal hash for the value if possible. This is
         # because hash is more selective than id. For instance! If value is a
@@ -36,7 +42,7 @@ class IdSet(MutableSet[_T]):
         except KeyError:
             pass
 
-    def __contains__(self, value: _T) -> bool:
+    def __contains__(self, value: Any) -> bool:
 
         return self._computeHash(value) in self._contents
 
@@ -49,7 +55,13 @@ class IdSet(MutableSet[_T]):
         return len(self._contents)
 
 
-class WeakIdSet(IdSet[_T]):
+class WeakNonHashableSet(NonHashableSet[_T]):
+    """
+    An implementation of a weak set that can contain non-hashable elements.
+
+    Elements that are not hashable are distinguished by their id.
+    """
+
     def __init__(self) -> None:
 
         super().__init__()
