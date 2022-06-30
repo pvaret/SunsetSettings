@@ -23,6 +23,15 @@ SectionT = TypeVar("SectionT", bound="Section")
 class Section:
     def __new__(cls: Type[Self]) -> Self:
 
+        # This is a non-top-level import in order to avoid a circular
+        # dependency.
+
+        from .section_validation import validateElementsAreFields
+
+        # Potentially raises ValueError if the user is holding it wrong.
+
+        validateElementsAreFields(cls)
+
         wrapped = dataclass()(cls)
         return super().__new__(wrapped)
 
