@@ -1,6 +1,6 @@
 import weakref
 
-from typing import Any, Iterator, MutableMapping, MutableSet, TypeVar
+from typing import Any, Iterator, MutableMapping, MutableSet, Type, TypeVar
 
 _T = TypeVar("_T")
 
@@ -12,9 +12,13 @@ class NonHashableSet(MutableSet[_T]):
     Elements that are not hashable are distinguished by their id.
     """
 
-    def __init__(self) -> None:
+    _contents: MutableMapping[int, _T]
 
-        self._contents: MutableMapping[int, _T] = {}
+    def __init__(
+        self, mapping_type: Type[MutableMapping[int, _T]] = dict
+    ) -> None:
+
+        self._contents = mapping_type()
 
     def _computeHash(self, value: Any) -> int:
 
@@ -42,9 +46,9 @@ class NonHashableSet(MutableSet[_T]):
         except KeyError:
             pass
 
-    def __contains__(self, value: Any) -> bool:
+    def __contains__(self, object: Any) -> bool:
 
-        return self._computeHash(value) in self._contents
+        return self._computeHash(object) in self._contents
 
     def __iter__(self) -> Iterator[_T]:
 
@@ -64,6 +68,4 @@ class WeakNonHashableSet(NonHashableSet[_T]):
 
     def __init__(self) -> None:
 
-        super().__init__()
-
-        self._contents: MutableMapping[int, _T] = weakref.WeakValueDictionary()
+        super().__init__(mapping_type=weakref.WeakValueDictionary)
