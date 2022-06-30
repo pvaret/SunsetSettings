@@ -1,3 +1,5 @@
+import pytest
+
 from pytest_mock import MockerFixture
 
 import sunset
@@ -216,3 +218,28 @@ class TestSection:
         child.a.set("test 3")
         callback.assert_not_called()
         callback.reset_mock()
+
+    def test_incorrect_usage_raises_exception(self):
+        class TestSection1(sunset.Section):
+            s: sunset.Setting[int] = sunset.Setting(default=0)
+
+        with pytest.raises(ValueError):
+            TestSection1()
+
+        class TestSection2(sunset.Section):
+            class Subsection(sunset.Section):
+                pass
+
+            subsection: Subsection = Subsection()
+
+        with pytest.raises(ValueError):
+            TestSection2()
+
+        class TestSection3(sunset.Section):
+            class Subsection(sunset.Section):
+                pass
+
+            subsections: sunset.List[Subsection] = sunset.List(Subsection)
+
+        with pytest.raises(ValueError):
+            TestSection3()
