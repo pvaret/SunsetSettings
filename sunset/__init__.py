@@ -1,13 +1,13 @@
 "SunsetSettings: a type-safe, extensible settings system with inheritance."
 
-__version__ = "0.1"
+__version__ = "0.2.0"
 
 from . import exporter, non_hashable_set, protocols, serializers
 
 from .list import NewList, List
 from .registry import CallbackRegistry
 from .setting import NewSetting, Setting
-from .settings import Settings, idify
+from .settings import Settings, normalize
 from .section import NewSection, Section
 
 __all__ = [
@@ -20,8 +20,8 @@ __all__ = [
     "Setting",
     "Settings",
     "exporter",
-    "idify",
     "non_hashable_set",
+    "normalize",
     "protocols",
     "serializers",
 ]

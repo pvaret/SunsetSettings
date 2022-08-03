@@ -26,7 +26,7 @@ class Serializable(Protocol):
 
 @runtime_checkable
 class Inheriter(Protocol[_T]):
-    def inheritFrom(self: _T, parent: Optional[_T]) -> None:
+    def setParent(self: _T, parent: Optional[_T]) -> None:
         ...
 
     def parent(self: _T) -> Optional[_T]:

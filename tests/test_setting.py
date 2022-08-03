@@ -85,7 +85,7 @@ class TestSetting:
 
         s = sunset.Setting(default="default")
         s2 = sunset.Setting(default="default")
-        s2.inheritFrom(s)
+        s2.setParent(s)
 
         s2.onValueChangeCall(callback)
 
@@ -140,7 +140,7 @@ class TestSetting:
         b = sunset.Setting(default="")
 
         assert b not in a.children()
-        b.inheritFrom(a)
+        b.setParent(a)
         assert b in a.children()
 
         assert b.get() == "default a"
@@ -163,7 +163,7 @@ class TestSetting:
         b = sunset.Setting(default=0)
 
         # Ignore the type error, as it's the whole point of the test.
-        b.inheritFrom(a)  # type: ignore
+        b.setParent(a)  # type: ignore
 
         assert b.parent() is None
 
@@ -175,12 +175,12 @@ class TestSetting:
         assert b not in a.children()
         assert b.parent() is None
 
-        b.inheritFrom(a)
+        b.setParent(a)
 
         assert b in a.children()
         assert b.parent() is a
 
-        b.inheritFrom(None)
+        b.setParent(None)
 
         assert b not in a.children()
         assert b.parent() is None
@@ -202,15 +202,15 @@ class TestSetting:
         assert c not in a.children()
         assert c not in b.children()
 
-        c.inheritFrom(a)
+        c.setParent(a)
         assert c in a.children()
         assert c not in b.children()
 
-        c.inheritFrom(b)
+        c.setParent(b)
         assert c not in a.children()
         assert c in b.children()
 
-        c.inheritFrom(None)
+        c.setParent(None)
         assert c not in a.children()
         assert c not in b.children()
 
@@ -221,7 +221,7 @@ class TestSetting:
 
         a = sunset.Setting(default="default a")
         b = sunset.Setting(default="default b")
-        b.inheritFrom(a)
+        b.setParent(a)
 
         b.onValueChangeCall(stub)
 
@@ -338,9 +338,9 @@ class TestSetting:
 
         setting: sunset.Setting[str] = sunset.Setting(default="")
         level1: sunset.Setting[str] = sunset.Setting(default="")
-        level1.inheritFrom(setting)
+        level1.setParent(setting)
         level2: sunset.Setting[str] = sunset.Setting(default="")
-        level2.inheritFrom(level1)
+        level2.setParent(level1)
 
         assert level1.parent() is not None
         assert len(list(level1.children())) == 1

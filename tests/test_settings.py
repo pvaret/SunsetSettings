@@ -5,13 +5,13 @@ from pytest_mock import MockerFixture
 import sunset
 
 
-def test_idify():
+def test_normalize():
 
-    assert sunset.idify("") == ""
-    assert sunset.idify("     ") == ""
-    assert sunset.idify("  A  B  ") == "ab"
-    assert sunset.idify("(a):?/b") == "ab"
-    assert sunset.idify("a-b_c") == "a-b_c"
+    assert sunset.normalize("") == ""
+    assert sunset.normalize("     ") == ""
+    assert sunset.normalize("  A  B  ") == "ab"
+    assert sunset.normalize("(a):?/b") == "ab"
+    assert sunset.normalize("a-b_c") == "a-b_c"
 
 
 class ExampleSettings(sunset.Settings):
@@ -182,7 +182,7 @@ class TestSettings:
         assert len(settings.list) == 1
         assert settings.list[0].c.get() == 100
 
-        settings_children = {c.id(): c for c in settings.children()}
+        settings_children = {c.name(): c for c in settings.children()}
         assert len(settings_children) == 2
         assert "level1" in settings_children
         level1 = settings_children["level1"]
@@ -196,7 +196,7 @@ class TestSettings:
 
         assert not otherlevel1.subsection.d.get()
 
-        level1_children = {c.id(): c for c in level1.children()}
+        level1_children = {c.name(): c for c in level1.children()}
         assert len(level1_children) == 1
         assert "level2" in level1_children
         level2 = level1_children["level2"]
@@ -245,7 +245,7 @@ class TestSettings:
         ss1.subsection.c.set(200)
 
         file = io.StringIO()
-        settings.save(file)
+        settings.save(file, blanklines=True)
 
         assert (
             file.getvalue()
@@ -294,7 +294,7 @@ subsection.d = false
         assert len(settings.list) == 1
         assert settings.list[0].c.get() == 100
 
-        settings_children = {c.id(): c for c in settings.children()}
+        settings_children = {c.name(): c for c in settings.children()}
         assert len(settings_children) == 2
         assert "level1" in settings_children
         level1 = settings_children["level1"]
@@ -308,7 +308,7 @@ subsection.d = false
 
         assert not otherlevel1.subsection.d.get()
 
-        level1_children = {c.id(): c for c in level1.children()}
+        level1_children = {c.name(): c for c in level1.children()}
         assert len(level1_children) == 1
         assert "level2" in level1_children
         level2 = level1_children["level2"]
@@ -573,7 +573,7 @@ doesnotexist = should be skipped
         callback.assert_not_called()
         callback.reset_mock()
 
-        anonymous.setId("no longer anonymous")
+        anonymous.setName("no longer anonymous")
         callback.assert_called_once_with(settings)
         callback.reset_mock()
 

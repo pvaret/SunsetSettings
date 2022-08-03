@@ -9,13 +9,16 @@ _T = TypeVar("_T")
 
 
 class CallbackRegistry(MutableSet[Callable[[_T], None]]):
+
+    _content: NonHashableSet[weakref.ref[Callable[[_T], None]]]
+
     def __init__(self) -> None:
 
         # We can just use a WeakIdSet because it does not know how to take
         # references to methods. Instead we do that ourselves, using a proper
         # IdSet.
 
-        self._content: NonHashableSet[weakref.ref[Callable[[_T], None]]] = NonHashableSet()
+        self._content = NonHashableSet()
 
     def add(self, value: Callable[[_T], None]) -> None:
 

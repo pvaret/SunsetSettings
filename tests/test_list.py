@@ -39,11 +39,11 @@ class TestList:
         assert r2 not in r1.children()
         assert r2.parent() is None
 
-        r2.inheritFrom(r1)
+        r2.setParent(r1)
         assert r2 in r1.children()
         assert r2.parent() is r1
 
-        r2.inheritFrom(None)
+        r2.setParent(None)
         assert r2 not in r1.children()
         assert r2.parent() is None
 
@@ -57,17 +57,17 @@ class TestList:
         assert r3 not in r2.children()
         assert r3.parent() is None
 
-        r3.inheritFrom(r1)
+        r3.setParent(r1)
         assert r3 in r1.children()
         assert r3 not in r2.children()
         assert r3.parent() is r1
 
-        r3.inheritFrom(r2)
+        r3.setParent(r2)
         assert r3 not in r1.children()
         assert r3 in r2.children()
         assert r3.parent() is r2
 
-        r3.inheritFrom(None)
+        r3.setParent(None)
         assert r3 not in r1.children()
         assert r3 not in r2.children()
         assert r3.parent() is None
@@ -86,7 +86,7 @@ class TestList:
 
         assert flatten(r2.iterAll()) == ["test r2"]
 
-        r2.inheritFrom(r1)
+        r2.setParent(r1)
 
         assert flatten(r2.iterAll()) == ["test r2", "test r1"]
 
@@ -130,9 +130,9 @@ class TestList:
 
         setting: sunset.List[ExampleSection] = sunset.List(ExampleSection)
         level1: sunset.List[ExampleSection] = sunset.List(ExampleSection)
-        level1.inheritFrom(setting)
+        level1.setParent(setting)
         level2: sunset.List[ExampleSection] = sunset.List(ExampleSection)
-        level2.inheritFrom(level1)
+        level2.setParent(level1)
 
         assert level1.parent() is not None
         assert len(list(level1.children())) == 1
@@ -166,14 +166,17 @@ class TestList:
         callback.assert_called_once_with(setting)
         callback.reset_mock()
 
+        assert s1 in setting
         s1.test.set("test 1")
         callback.assert_called_once_with(setting)
         callback.reset_mock()
 
+        assert s2 not in setting
         s2.test.set("test 2")
         callback.assert_not_called()
         callback.reset_mock()
 
+        assert s3 in setting
         s3.test.set("test 3")
         callback.assert_called_once_with(setting)
         callback.reset_mock()

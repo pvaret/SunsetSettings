@@ -82,7 +82,7 @@ def test_save():
 
     file = io.StringIO()
 
-    sunset.exporter.saveToFile(file, input, MAIN)
+    sunset.exporter.saveToFile(file, input, MAIN, blanklines=True)
     assert (
         file.getvalue()
         == """\

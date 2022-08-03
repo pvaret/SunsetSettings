@@ -40,11 +40,11 @@ class TestSection:
         assert t2 not in t1.children()
         assert t2.parent() is None
 
-        t2.inheritFrom(t1)
+        t2.setParent(t1)
         assert t2 in t1.children()
         assert t2.parent() is t1
 
-        t2.inheritFrom(None)
+        t2.setParent(None)
         assert t2 not in t1.children()
         assert t2.parent() is None
 
@@ -58,17 +58,17 @@ class TestSection:
         assert t3 not in t2.children()
         assert t3.parent() is None
 
-        t3.inheritFrom(t1)
+        t3.setParent(t1)
         assert t3 in t1.children()
         assert t3 not in t2.children()
         assert t3.parent() is t1
 
-        t3.inheritFrom(t2)
+        t3.setParent(t2)
         assert t3 not in t1.children()
         assert t3 in t2.children()
         assert t3.parent() is t2
 
-        t3.inheritFrom(None)
+        t3.setParent(None)
         assert t3 not in t1.children()
         assert t3 not in t2.children()
         assert t3.parent() is None

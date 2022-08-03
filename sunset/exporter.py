@@ -1,7 +1,7 @@
 from typing import Sequence, TextIO
 
 
-def idify(input: str) -> str:
+def normalize(input: str) -> str:
 
     ret = ""
     for c in input:
@@ -77,29 +77,34 @@ def saveToFile(
     file: TextIO,
     data: Sequence[tuple[Sequence[str], Sequence[tuple[str, str]]]],
     main: str,
+    *,
+    blanklines: bool,
 ):
 
-    main = idify(main)
+    need_space = False
+    main = normalize(main)
 
-    for i, (hierarchy, dump) in enumerate(data):
+    for hierarchy, dump in data:
 
-        hierarchy = list(map(idify, hierarchy))
+        hierarchy = list(map(normalize, hierarchy))
         if len(hierarchy) > 1 and hierarchy[0] == main:
             hierarchy = hierarchy[1:]
 
-        if i > 0:
+        if need_space and blanklines:
             file.write("\n")
 
         assert all("/" not in elt for elt in hierarchy)
 
-        section = "/".join(hierarchy)
-        file.write(f"[{section}]\n")
+        if dump:
+            need_space = True
+            section = "/".join(hierarchy)
+            file.write(f"[{section}]\n")
 
-        for key, value in dump:
-            key = key.strip()
-            value = maybeEscape(value)
-            if key:
-                file.write(f"{key} = {value}\n")
+            for key, value in dump:
+                key = key.strip()
+                value = maybeEscape(value)
+                if key:
+                    file.write(f"{key} = {value}\n")
 
 
 def loadFromFile(
@@ -110,7 +115,7 @@ def loadFromFile(
 
     hierarchy: list[str] = []
     keyvalues: list[tuple[str, str]] = []
-    main = idify(main)
+    main = normalize(main)
 
     for line in file:
         line = line.strip()
@@ -128,7 +133,7 @@ def loadFromFile(
             hierarchy = [
                 name
                 for item in line.split("/")
-                if (name := idify(item.strip()))
+                if (name := normalize(item.strip()))
             ]
 
             if not hierarchy:
