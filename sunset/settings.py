@@ -1,4 +1,4 @@
-from typing import MutableSet, Sequence, TextIO, cast
+from typing import Iterator, MutableSet, Sequence, TextIO, cast
 
 from typing_extensions import Self
 
@@ -180,9 +180,13 @@ class Settings(Section):
 
     def setName(self, name: str) -> str:
         """
-        Sets the name under which this Settings instance will be persisted by
-        the `save()` method. The given name will be normalized to lowercase,
-        without space or punctuation.
+        Sets the unique name under which this Settings instance will be
+        persisted by the `save()` method. The given name will be normalized to
+        lowercase, without space or punctuation.
+
+        This name is guaranteed to be unique. If the given name is already used
+        by a Settings instance with the same parent as this one, then a numbered
+        suffix is generated to make this one's name unique.
 
         If the given name is empty, these settings will be skipped when saving.
 
@@ -194,11 +198,37 @@ class Settings(Section):
                 settings when saving them to text.
 
         Returns:
-            The given name, normalized.
+            The given name, normalized, and made unique if needed.
+
+        Example:
+
+        >>> import sunset
+        >>> class TestSettings(sunset.Settings):
+        ...     pass
+        >>> parent = TestSettings()
+
+        >>> child1 = parent.derive()
+        >>> child2 = parent.derive()
+        >>> child3 = parent.derive()
+
+        >>> child1.setName("  T ' e ? S / t")
+        'test'
+        >>> child2.setName("test")
+        'test_1'
+        >>> child3.setName("TEST")
+        'test_2'
         """
 
-        name = normalize(name)
+        name = name_base = normalize(name)
         previous_name = self.name()
+
+        # Loop until we find an unused name.
+
+        if name:
+            i = 0
+            while name in (child.name() for child in self.siblings()):
+                i += 1
+                name = f"{name_base}_{i}"
 
         self._name = name
 
@@ -220,6 +250,22 @@ class Settings(Section):
             return self._name
 
         return self._name if self.parent() is not None else self.MAIN
+
+    def siblings(self: Self) -> Iterator[Self]:
+        """
+        Returns an iterator on the siblings of this Settings instance, that is
+        to say, the children of its parent, if any, that aren't this instance
+        itself.
+
+        Returns:
+            An iterator over Settings instances of the same type as this one.
+        """
+
+        parent = self.parent()
+        if parent is not None:
+            yield from (
+                child for child in parent.children() if child is not self
+            )
 
     def hierarchy(self) -> list[str]:
         """
@@ -324,6 +370,13 @@ class Settings(Section):
         Returns:
             None.
         """
+
+        if not self.name():
+
+            # This is an anonymous instance, actually. There is therefore
+            # nothing to save.
+
+            return
 
         saveToFile(file, self.dumpAll(), self.name(), blanklines=blanklines)
 

@@ -580,3 +580,28 @@ doesnotexist = should be skipped
         anonymousChild.a.set("test 5")
         callback.assert_called_once_with(settings)
         callback.reset_mock()
+
+    def test_name_unicity(self):
+        class TestSettings(sunset.Settings):
+            pass
+
+        parent = TestSettings()
+        children = [parent.derive() for _ in range(10)]
+        for child in children:
+            child.setName("test")
+
+        assert all(
+            child.name() not in {sibling.name() for sibling in child.siblings()}
+            for child in children
+        )
+
+    def test_anonymous_name_not_unique(self):
+        class TestSettings(sunset.Settings):
+            pass
+
+        parent = TestSettings()
+        children = [parent.derive() for _ in range(10)]
+        for child in children:
+            child.setName("")
+
+        assert all(child.name() == "" for child in children)
