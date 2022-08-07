@@ -1,9 +1,11 @@
 import weakref
 
+from itertools import tee
 from dataclasses import field
 from typing import (
     Any,
     Callable,
+    Iterable,
     Iterator,
     MutableSequence,
     Optional,
@@ -11,6 +13,7 @@ from typing import (
     SupportsIndex,
     Type,
     Union,
+    overload,
 )
 
 from typing_extensions import Self
@@ -70,20 +73,75 @@ class List(MutableSequence[SectionT]):
 
         value.onSettingModifiedCall(self._notifyModification)
 
+    @overload
     def __getitem__(self, index: SupportsIndex) -> SectionT:
+        ...
+
+    @overload
+    def __getitem__(self, index: slice) -> list[SectionT]:
+        ...
+
+    def __getitem__(
+        self, index: Union[SupportsIndex, slice]
+    ) -> Union[SectionT, list[SectionT]]:
 
         return self._contents[index]
 
+    @overload
     def __setitem__(self, index: SupportsIndex, value: SectionT) -> None:
+        ...
 
-        self._contents[index] = value
+    @overload
+    def __setitem__(self, index: slice, value: Iterable[SectionT]) -> None:
+        ...
+
+    def __setitem__(
+        self,
+        index: Union[SupportsIndex, slice],
+        value: Union[SectionT, Iterable[SectionT]],
+    ) -> None:
+
+        if isinstance(value, Iterable):
+            assert isinstance(index, slice)
+
+            # Take a copy of the iterable, because it's not a given that it will
+            # be iterable twice.
+
+            value, value_copy = tee(value)
+
+            self._contents[index] = value
+
+            for item in value_copy:
+                item.onSettingModifiedCall(self._notifyModification)
+
+        else:
+            assert isinstance(index, SupportsIndex)
+
+            self._contents[index] = value
+            value.onSettingModifiedCall(self._notifyModification)
+
         self._notifyModification(self)
 
-        value.onSettingModifiedCall(self._notifyModification)
-
-    def __delitem__(self, index: SupportsIndex) -> None:
+    def __delitem__(self, index: Union[SupportsIndex, slice]) -> None:
 
         del self._contents[index]
+        self._notifyModification(self)
+
+    def extend(self, values: Iterable[SectionT]) -> None:
+
+        self._contents.extend(values)
+        for value in values:
+            value.onSettingModifiedCall(self._notifyModification)
+        self._notifyModification(self)
+
+    def __iadd__(self, values: Iterable[SectionT]) -> Self:
+
+        self.extend(values)
+        return self
+
+    def clear(self) -> None:
+
+        self._contents.clear()
         self._notifyModification(self)
 
     def __len__(self) -> int:
@@ -244,6 +302,9 @@ class List(MutableSequence[SectionT]):
             subitems[item_name].restore([(subname, dump)])
 
     def _notifyModification(self, value: Union[SectionT, Self]) -> None:
+
+        # Note that if the sender is a Section, we only propagate the
+        # notification if that Section is still in this List.
 
         if isinstance(value, List) or value in self:
             self._modification_notification_callbacks.callAll(self)

@@ -142,45 +142,174 @@ class TestList:
         assert level1.parent() is None
         assert len(list(level1.children())) == 0
 
-    def test_setting_modification_callback(self, mocker: MockerFixture):
+    def test_modification_callback_called_on_list_contents_changed(
+        self, mocker: MockerFixture
+    ):
 
         callback = mocker.stub()
 
         setting: sunset.List[ExampleSection] = sunset.List(ExampleSection)
 
-        s1 = ExampleSection()
-        s2 = ExampleSection()
-        s3 = ExampleSection()
-
         setting.onSettingModifiedCall(callback)
 
+        setting.append(ExampleSection())
+        callback.assert_called_once_with(setting)
+        callback.reset_mock()
+
+        setting.insert(0, ExampleSection())
+        callback.assert_called_once_with(setting)
+        callback.reset_mock()
+
+        setting[0] = ExampleSection()
+        callback.assert_called_once_with(setting)
+        callback.reset_mock()
+
+        setting += [ExampleSection(), ExampleSection(), ExampleSection()]
+        callback.assert_called_once_with(setting)
+        callback.reset_mock()
+
+        setting.extend([ExampleSection(), ExampleSection(), ExampleSection()])
+        callback.assert_called_once_with(setting)
+        callback.reset_mock()
+
+        setting[2:4] = [ExampleSection(), ExampleSection(), ExampleSection()]
+        callback.assert_called_once_with(setting)
+        callback.reset_mock()
+
+        setting.pop()
+        callback.assert_called_once_with(setting)
+        callback.reset_mock()
+
+        s1 = setting[0]
+        setting.remove(s1)
+        assert s1 not in setting
+        callback.assert_called_once_with(setting)
+        callback.reset_mock()
+
+        del setting[0]
+        callback.assert_called_once_with(setting)
+        callback.reset_mock()
+
+        assert len(setting[1:3]) == 2
+        del setting[1:3]
+        callback.assert_called_once_with(setting)
+        callback.reset_mock()
+
+        assert len(setting) > 1
+        setting.clear()
+        callback.assert_called_once_with(setting)
+        callback.reset_mock()
+
+    def test_modification_callback_called_on_contained_item_modification(
+        self, mocker: MockerFixture
+    ):
+
+        callback = mocker.stub()
+
+        setting: sunset.List[ExampleSection] = sunset.List(ExampleSection)
+        setting.onSettingModifiedCall(callback)
+
+        s1 = ExampleSection()
         setting.append(s1)
-        callback.assert_called_once_with(setting)
         callback.reset_mock()
+        s1.test.set("test")
+        callback.assert_called_once_with(setting)
 
+        s2 = ExampleSection()
         setting.insert(0, s2)
-        callback.assert_called_once_with(setting)
         callback.reset_mock()
+        s2.test.set("test")
+        callback.assert_called_once_with(setting)
 
+        s3 = ExampleSection()
         setting[0] = s3
+        callback.reset_mock()
+        s3.test.set("test")
+        callback.assert_called_once_with(setting)
+
+        s4 = ExampleSection()
+        s5 = ExampleSection()
+        setting[1:2] = [s4, s5]
+        callback.reset_mock()
+        s4.test.set("test")
         callback.assert_called_once_with(setting)
         callback.reset_mock()
+        s5.test.set("test")
+        callback.assert_called_once_with(setting)
 
-        assert s1 in setting
-        s1.test.set("test 1")
+        s6 = ExampleSection()
+        s7 = ExampleSection()
+        setting += [s6, s7]
+        callback.reset_mock()
+        s6.test.set("test")
         callback.assert_called_once_with(setting)
         callback.reset_mock()
+        s7.test.set("test")
+        callback.assert_called_once_with(setting)
 
-        assert s2 not in setting
-        s2.test.set("test 2")
+        s8 = ExampleSection()
+        s9 = ExampleSection()
+        setting.extend([s8, s9])
+        callback.reset_mock()
+        s8.test.set("test")
+        callback.assert_called_once_with(setting)
+        callback.reset_mock()
+        s9.test.set("test")
+        callback.assert_called_once_with(setting)
+
+    def test_modification_callback_not_called_for_removed_items(
+        self, mocker: MockerFixture
+    ):
+
+        setting: sunset.List[ExampleSection] = sunset.List(ExampleSection)
+
+        s1 = ExampleSection()
+        s2 = ExampleSection()
+
+        callback = mocker.stub()
+        setting.onSettingModifiedCall(callback)
+
+        s1.test.clear()
+        setting[:] = [s1]
+        del setting[0]
+
+        callback.reset_mock()
+        s1.test.set("test")
         callback.assert_not_called()
-        callback.reset_mock()
 
-        assert s3 in setting
-        s3.test.set("test 3")
-        callback.assert_called_once_with(setting)
-        callback.reset_mock()
+        s1.test.clear()
+        s2.test.clear()
+        setting[:] = [s1, s2]
+        del setting[0:2]
 
-        del setting[1]
-        callback.assert_called_once_with(setting)
         callback.reset_mock()
+        s1.test.set("test")
+        s2.test.set("test")
+        callback.assert_not_called()
+
+        s1.test.clear()
+        s2.test.clear()
+        setting[:] = [s1, s2]
+        setting.clear()
+
+        callback.reset_mock()
+        s1.test.set("test")
+        s2.test.set("test")
+        callback.assert_not_called()
+
+        s1.test.clear()
+        setting[:] = [s1]
+        setting.pop()
+
+        callback.reset_mock()
+        s1.test.set("test")
+        callback.assert_not_called()
+
+        s1.test.clear()
+        setting[:] = [s1]
+        setting.remove(s1)
+        assert s1 not in setting
+
+        callback.reset_mock()
+        s1.test.set("test")
+        callback.assert_not_called()
