@@ -99,24 +99,36 @@ Pony count updated: 6
 ## Requirements
 
 - Python 3.9 or later.
-- The `typing_extensions` module.
-- `flit` for installation from sources.
+- If installing from sources:
+    - The `typing_extensions` module.
+    - The `flit` build tool.
 
 ## Installation
 
-### Installing from PyPI
+### Installing from PyPI (recommended)
 
-This is not yet available.
+Run:
+
+```
+pip install SunsetSettings
+```
+
+This will install the latest version of SunsetSettings, with its required
+dependencies.
 
 ### Installing from sources
 
 1. Download the code:
 
-    `git clone https://github.com/pvaret/SunsetSettings`
+    ```
+    git clone https://github.com/pvaret/SunsetSettings
+    ```
 
 2. Install the library:
 
-    `flit install`
+    ```
+    cd SunsetSettings ; flit install
+    ```
 
 That's it.
 

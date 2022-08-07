@@ -20,11 +20,12 @@ import sunset  # noqa -- module import not at top of file.
 
 # -- Project information -----------------------------------------------------
 
-project = "SunsetSettings"
-copyright = "2022, P. Varet"
-author = "P. Varet"
+project = sunset.__project__
+copyright = sunset.__copyright__
+author = sunset.__author__
 
 # The full version, including alpha/beta/rc tags
+
 release = sunset.__version__
 
 
