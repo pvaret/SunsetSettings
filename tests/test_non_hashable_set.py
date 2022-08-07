@@ -7,7 +7,7 @@ class Dummy:
     pass
 
 
-class TestIdSet:
+class TestNonHashableSet:
     def test_mutableset(self):
 
         s: MutableSet[Any] = sunset.non_hashable_set.NonHashableSet()
@@ -40,7 +40,7 @@ class TestIdSet:
         assert len(s) == 1
 
 
-class TestWeakIdSet:
+class TestWeakNonHashableSet:
     def test_mutableset(self):
         s: MutableSet[Any] = sunset.non_hashable_set.WeakNonHashableSet()
         item = Dummy()
