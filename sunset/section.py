@@ -58,6 +58,7 @@ class Section:
     _parent: Optional[weakref.ref[Self]]
     _children: MutableSet[Self]
     _modification_notification_callbacks: CallbackRegistry[Self]
+    _modification_notification_enabled: bool
 
     def __new__(cls: Type[Self]) -> Self:
 
@@ -78,6 +79,7 @@ class Section:
         self._parent = None
         self._children = WeakNonHashableSet[Self]()
         self._modification_notification_callbacks = CallbackRegistry()
+        self._modification_notification_enabled = True
 
         for attr in vars(self).values():
 
@@ -227,6 +229,9 @@ class Section:
         Internal.
         """
 
+        notification_enabled = self._modification_notification_enabled
+        self._modification_notification_enabled = False
+
         for name, dump in data:
             if "." in name:
                 item_name, subname = name.split(".", 1)
@@ -243,9 +248,13 @@ class Section:
 
             item.restore([(subname, dump)])
 
+        self._modification_notification_enabled = notification_enabled
+        self._notifyModification(self)
+
     def _notifyModification(self, value: ModificationNotifier) -> None:
 
-        self._modification_notification_callbacks.callAll(self)
+        if self._modification_notification_enabled:
+            self._modification_notification_callbacks.callAll(self)
 
 
 def NewSection(section: Type[SectionT]) -> SectionT:

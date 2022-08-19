@@ -261,76 +261,107 @@ class TestSetting:
         s.set(ExampleSerializable("value"))
         assert s.dump() == [("", "value")]
 
-    def test_restore_invalid(self):
+    def test_restore_invalid(self, mocker: MockerFixture):
 
         si: sunset.Setting[int] = sunset.Setting(default=0)
+        callback = mocker.stub()
+        si.onSettingModifiedCall(callback)
+
         si.restore([])
         assert si.get() == 0
+        callback.assert_not_called()
 
         si = sunset.Setting(default=0)
+        si.onSettingModifiedCall(callback)
         si.restore(
             [
                 ("invalid", "12"),
             ]
         )
+
         # Restoring a setting with an attribute name is invalid, so the value
         # should not be updated.
+
         assert si.get() == 0
+        callback.assert_not_called()
 
         si = sunset.Setting(default=0)
+        si.onSettingModifiedCall(callback)
         si.restore(
             [
                 ("", "56"),
                 ("", "78"),
             ]
         )
+
         # Restoring a setting with multiple values is invalid.
+
         assert si.get() == 0
+        callback.assert_not_called()
 
         si = sunset.Setting(default=0)
+        si.onSettingModifiedCall(callback)
         si.restore(
             [
                 ("", " invalid  "),
             ]
         )
+
         # Restoring a value that does not deserialize to the target type is
         # invalid and fails silently.
-        assert si.get() == 0
 
-    def test_restore_valid(self):
+        assert si.get() == 0
+        callback.assert_not_called()
+
+    def test_restore_valid(self, mocker: MockerFixture):
+
+        callback = mocker.stub()
 
         sstr: sunset.Setting[str] = sunset.Setting(default="")
+        sstr.onSettingModifiedCall(callback)
         sstr.restore(
             [
                 ("", "test"),
             ]
         )
+        assert sstr.get() == "test"
+        callback.assert_called_once_with(sstr)
+        callback.reset_mock()
 
         si: sunset.Setting[int] = sunset.Setting(default=0)
+        si.onSettingModifiedCall(callback)
         si.restore(
             [
                 ("", "12"),
             ]
         )
         assert si.get() == 12
+        callback.assert_called_once_with(si)
+        callback.reset_mock()
 
         sb: sunset.Setting[bool] = sunset.Setting(default=False)
+        sb.onSettingModifiedCall(callback)
         sb.restore(
             [
                 ("", "true"),
             ]
         )
         assert sb.get()
+        callback.assert_called_once_with(sb)
+        callback.reset_mock()
 
         sser: sunset.Setting[ExampleSerializable] = sunset.Setting(
             default=ExampleSerializable("")
         )
+        sser.onSettingModifiedCall(callback)
         sser.restore(
             [
                 ("", "test"),
             ]
         )
         assert sser.get().toStr() == "test"
+        callback.assert_called_once_with(sser)
+        callback.reset_mock()
 
     def test_persistence(self):
 

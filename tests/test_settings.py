@@ -267,9 +267,11 @@ subsection.d = false
 """
         )
 
-    def test_load(self):
+    def test_load(self, mocker: MockerFixture):
 
         settings = ExampleSettings()
+        callback = mocker.stub()
+        settings.onSettingModifiedCall(callback)
         settings.load(
             io.StringIO(
                 """\
@@ -290,6 +292,9 @@ subsection.d = false
 """
             )
         )
+
+        callback.assert_called_once_with(settings)
+
         assert settings.a.get() == "a"
         assert len(settings.list) == 1
         assert settings.list[0].c.get() == 100

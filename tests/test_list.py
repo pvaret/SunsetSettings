@@ -109,9 +109,11 @@ class TestList:
             ("2.test", "test 2"),
         ]
 
-    def test_restore(self):
+    def test_restore(self, mocker: MockerFixture):
 
         r: sunset.List[ExampleSection] = sunset.List(ExampleSection)
+        callback = mocker.stub()
+        r.onSettingModifiedCall(callback)
 
         r.restore(
             [
@@ -123,6 +125,10 @@ class TestList:
         assert len(r) == 2
         assert r[0].test.get() == "test 1"
         assert r[1].test.get() == "test 2"
+
+        # Ensure that a restore only triggers one modification notification.
+
+        callback.assert_called_once_with(r)
 
     def test_persistence(self):
 

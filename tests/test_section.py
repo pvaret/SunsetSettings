@@ -149,16 +149,21 @@ class TestSection:
 
         s = ExampleSectionWithPrivateAttr()
         s.public.set(56)
+
         # Ignore the private attribute access warning, it's the whole point.
+
         s._private.set(42)  # type:ignore
 
         assert s.dump() == [
             ("public", "56"),
         ]
 
-    def test_restore(self):
+    def test_restore(self, mocker: MockerFixture):
 
         s = ExampleSection()
+        callback = mocker.stub()
+        s.onSettingModifiedCall(callback)
+
         s.restore(
             [
                 ("a", "test a"),
@@ -173,6 +178,10 @@ class TestSection:
         assert len(s.list) == 2
         assert s.list[0].c.get() == "test c 1"
         assert s.list[1].c.get() == "test c 2"
+
+        # Ensure that a restore only triggers one modification notification.
+
+        callback.assert_called_once_with(s)
 
     def test_persistence(self):
 

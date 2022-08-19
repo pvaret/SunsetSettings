@@ -285,6 +285,8 @@ class Settings(Section):
 
     def _notifyModification(self, value: ModificationNotifier) -> None:
 
+        # Do not notify for modifications on anonymous Settings instances.
+
         if isinstance(value, Settings) and value.name() == "":
             return
 
@@ -323,6 +325,9 @@ class Settings(Section):
         Internal.
         """
 
+        notification_enabled = self._modification_notification_enabled
+        self._modification_notification_enabled = False
+
         own_children: dict[str, Settings] = {}
         own_children_data: list[
             tuple[Sequence[str], Sequence[tuple[str, str]]]
@@ -357,6 +362,9 @@ class Settings(Section):
 
         for child in own_children.values():
             child.restoreAll(own_children_data)
+
+        self._modification_notification_enabled = notification_enabled
+        self._notifyModification(self)
 
     def save(self, file: TextIO, blanklines: bool = False) -> None:
         """

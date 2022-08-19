@@ -54,6 +54,7 @@ class List(MutableSequence[SectionT]):
     _parent: Optional[weakref.ref[Self]]
     _children: WeakNonHashableSet[Self]
     _modification_notification_callbacks: CallbackRegistry[Self]
+    _modification_notification_enabled: bool
     _type: Type[SectionT]
 
     def __init__(self, _type: Type[SectionT]) -> None:
@@ -63,6 +64,7 @@ class List(MutableSequence[SectionT]):
         self._parent = None
         self._children = WeakNonHashableSet()
         self._modification_notification_callbacks = CallbackRegistry()
+        self._modification_notification_enabled = True
 
         self._type = _type
 
@@ -290,6 +292,9 @@ class List(MutableSequence[SectionT]):
 
         subitems: dict[str, SectionT] = {}
 
+        notification_enabled = self._modification_notification_enabled
+        self._modification_notification_enabled = False
+
         for name, dump in data:
             if "." in name:
                 item_name, subname = name.split(".", 1)
@@ -301,13 +306,18 @@ class List(MutableSequence[SectionT]):
 
             subitems[item_name].restore([(subname, dump)])
 
+        self._modification_notification_enabled = notification_enabled
+        self._notifyModification(self)
+
     def _notifyModification(self, value: Union[SectionT, Self]) -> None:
 
-        # Note that if the sender is a Section, we only propagate the
-        # notification if that Section is still in this List.
+        if self._modification_notification_enabled:
 
-        if isinstance(value, List) or value in self:
-            self._modification_notification_callbacks.callAll(self)
+            # Note that if the sender is a Section, we only propagate the
+            # notification if that Section is still in this List.
+
+            if isinstance(value, List) or value in self:
+                self._modification_notification_callbacks.callAll(self)
 
 
 def NewList(section: Type[SectionT]) -> List[SectionT]:
