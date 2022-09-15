@@ -18,16 +18,16 @@ class Settings(Section):
     Under the hood, a Settings class is a dataclass, and can be used in the same
     manner, i.e. by defining attributes directly on the class itself.
 
-    Settings instances support inheritance: calling the `derive()` or
-    `deriveAs()` method on an instance creates a child of that instance; when a
-    setting has not been set on the child, the value of that setting is looked
-    up on its parent instead. The hierarchy of children can be arbitrarily
-    deep.
+    Settings instances support inheritance: calling the :meth:`derive()` or
+    :meth:`deriveAs()` method on an instance creates a child of that instance;
+    when a setting has not been set on the child, the value of that setting is
+    looked up on its parent instead. The hierarchy of children can be
+    arbitrarily deep.
 
     When saving a Settings instance, its children are saved with it under a
     distinct heading for each, provided they have a name. Children are given a
-    name by using the `deriveAs()` method instead of `derive()` to create them,
-    or by using the `setName()` method after creation.
+    name by using the :meth:`deriveAs()` method instead of :meth:`derive()` to
+    create them, or by using the :meth:`setName()` method after creation.
 
     Anonymous (unnamed) children do not get saved. The name of each child is
     used to construct the heading it is saved under. The top-level Settings
@@ -134,8 +134,8 @@ class Settings(Section):
         instance.
 
         The new instance is created without a name, and will be skipped by the
-        `save()` method. A name can be given to it after the fact with the
-        `setName()` method.
+        :meth:`save()` method. A name can be given to it after the fact with
+        the :meth:`setName()` method.
 
         Returns:
             An instance of the same type as self.
@@ -153,8 +153,8 @@ class Settings(Section):
         the same name on this instance.
 
         The new instance is created with, or looked up using, the given name.
-        If the given name is empty, this is equivalent to calling `derive()`
-        instead.
+        If the given name is empty, this is equivalent to calling
+        :meth:`derive()` instead.
 
         Args:
             name: The name that will be used to generate a heading for these
@@ -181,8 +181,8 @@ class Settings(Section):
     def setName(self, name: str) -> str:
         """
         Sets the unique name under which this Settings instance will be
-        persisted by the `save()` method. The given name will be normalized to
-        lowercase, without space or punctuation.
+        persisted by the :meth:`save()` method. The given name will be
+        normalized to lowercase, without space or punctuation.
 
         This name is guaranteed to be unique. If the given name is already used
         by a Settings instance with the same parent as this one, then a numbered
@@ -241,7 +241,7 @@ class Settings(Section):
         """
         Returns the current name of this Settings instance. This name will be
         used to generate the heading under which this Settings instance will be
-        persisted by the `save()` method.
+        persisted by the :meth:`save()` method.
 
         Returns:
             The name of this Settings instance.

@@ -1,1 +1,35 @@
-TODO
+Installation
+============
+
+From PyPI (recommended)
+-----------------------
+
+From a command line prompt, type:
+
+.. code:: shell
+
+  pip install SunsetSettings
+
+
+From GitHub
+-----------
+
+- Dependencies: install `flit <https://pypi.org/project/flit/>`_:
+
+  .. code:: shell
+
+    pip install flit
+
+- Checkout the code:
+
+  .. code:: shell
+
+    git clone https://github.com/pvaret/SunsetSettings
+
+- Build and install the library:
+
+  .. code:: shell
+
+    cd SunsetSettings ; flit install
+
+That's it!

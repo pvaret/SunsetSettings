@@ -16,11 +16,29 @@ _T = TypeVar("_T")
 
 @runtime_checkable
 class Serializable(Protocol):
+    """
+    A protocol to be implemented by a class in order to enable storing instances
+    of that class in a Setting.
+
+    The two methods to be implemented are :meth:`toStr()` and (classmethod)
+    :meth:`fromStr()`.
+    """
+
     def toStr(self) -> str:
+        """
+        Returns a string representation of this instance that can be used by
+        :meth:`fromStr()` to reconstruct a copy of this instance.
+        """
         ...
 
     @classmethod
     def fromStr(cls: Type[Self], value: str) -> Optional[Self]:
+        """
+        Takes a string that represents a serialized instance of this class, and
+        returns a newly created instance that corresponds to that
+        representation, or None is the string is not a valid serialized
+        representation of an instance.
+        """
         ...
 
 

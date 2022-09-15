@@ -31,11 +31,11 @@ class List(MutableSequence[SectionT]):
     insertion, appending, etc.
 
     In addition, it offers support for change notification callbacks, and
-    inheritance. The inheritance is used in the `iterAll()` method, which
+    inheritance. The inheritance is used in the :meth:`iterAll()` method, which
     iterates on a List and its parent.
 
     When adding a List to a Settings or a Section definition, do not instantiate
-    the List class directly; use the `sunset.NewList()` function instead.
+    the List class directly; use the :func:`sunset.NewList()` function instead.
 
     Example:
 
@@ -156,7 +156,7 @@ class List(MutableSequence[SectionT]):
         parent, if any.
 
         Having a parent does not affect a List's behavior outside of the
-        `iterAll()` method.
+        :meth:`iterAll()` method.
 
         This method is for internal purposes and you will typically not need to
         call it directly.

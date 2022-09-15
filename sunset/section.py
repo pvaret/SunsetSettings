@@ -29,7 +29,7 @@ class Section:
     manner, i.e. by defining attributes directly on the class itself.
 
     When adding a Section to a Settings or another Section definition, do not
-    instantiate the Section class directly; use the `sunset.NewSection()`
+    instantiate the Section class directly; use the :func:`sunset.NewSection()`
     function instead.
 
     Example:

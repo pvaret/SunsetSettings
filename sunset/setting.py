@@ -14,7 +14,7 @@ class Setting(Generic[SerializableT]):
     A single setting containing a typed value.
 
     When adding a Setting to a Section or a Settings definition, do not
-    instantiate the Setting class directly; use the `sunset.NewSetting()`
+    instantiate the Setting class directly; use the :func:`sunset.NewSetting()`
     function instead.
 
     Setting instances support inheritance. If a Setting does not have a value
@@ -23,12 +23,12 @@ class Setting(Generic[SerializableT]):
 
     Setting instances can call a callback when their value changes, regardless
     of if its their own value that changed, or that inherited from a parent.
-    Set this callback with the `onValueChangeCall()` method.
+    Set this callback with the :meth:`onValueChangeCall()` method.
 
     Args:
         default: (str, int, bool, or anything that implements the
-            `sunset.protocols.Serializable` protocol) The value that this
-            Setting will return when not otherwise set; the type of this
+            :class:`sunset.protocols.Serializable` protocol) The value that
+            this Setting will return when not otherwise set; the type of this
             default determines the type of the Setting.
 
     Example:
