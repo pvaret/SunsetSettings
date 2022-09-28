@@ -329,7 +329,7 @@ class Setting(Generic[SerializableT]):
 
     def __repr__(self) -> str:
 
-        return f"<Setting[{self._type.__name__}]: '{self.get()}'>"
+        return f"<Setting[{self._type.__name__}]:{serialize(self.get())}>"
 
 
 def NewSetting(default: SerializableT) -> Setting[SerializableT]:

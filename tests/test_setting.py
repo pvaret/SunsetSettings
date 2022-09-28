@@ -190,8 +190,8 @@ class TestSetting:
         a = sunset.Setting(default="test")
         b = sunset.Setting(default=12)
 
-        assert repr(a) == "<Setting[str]: 'test'>"
-        assert repr(b) == "<Setting[int]: '12'>"
+        assert repr(a) == "<Setting[str]:test>"
+        assert repr(b) == "<Setting[int]:12>"
 
     def test_reparenting(self):
 

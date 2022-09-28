@@ -27,20 +27,35 @@ def validateElementsAreFields(cls: Type[Section]) -> None:
 
     err_msg = (
         "In the definition of '{clsname}', '{name}' is a {type} that was"
-        " instantiated directly, which is invalid; use sunset.New{type}"
+        " instantiated directly, which is invalid; use {function}"
         " instead!"
     )
 
     for name, attr in vars(cls).items():
         if isinstance(attr, Section):
             raise ValueError(
-                err_msg.format(name=name, type="Section", clsname=cls.__name__)
+                err_msg.format(
+                    clsname=cls.__name__,
+                    name=name,
+                    type="Section",
+                    function="sunset.NewSection",
+                )
             )
         if isinstance(attr, List):
             raise ValueError(
-                err_msg.format(name=name, type="List", clsname=cls.__name__)
+                err_msg.format(
+                    clsname=cls.__name__,
+                    name=name,
+                    type="List",
+                    function="sunset.NewSectionList or sunset.NewSettingList",
+                )
             )
         if isinstance(attr, Setting):
             raise ValueError(
-                err_msg.format(name=name, type="Setting", clsname=cls.__name__)
+                err_msg.format(
+                    clsname=cls.__name__,
+                    name=name,
+                    type="Setting",
+                    function="sunset.NewSetting",
+                )
             )

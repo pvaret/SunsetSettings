@@ -29,3 +29,6 @@ test = [
 
 [tool.flit.module]
 name = "sunset"
+
+[tool.mypy]
+show_error_codes = true

@@ -73,7 +73,9 @@ sunset.Setting
 sunset.List
 -----------
 
-.. autofunction:: sunset.NewList
+.. autofunction:: sunset.NewSettingList
+
+.. autofunction:: sunset.NewSectionList
 
 .. autoclass:: sunset.List
 

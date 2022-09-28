@@ -14,7 +14,7 @@ class ExampleSection(sunset.Section):
 
     a: sunset.Setting[str] = sunset.NewSetting("default a")
     subsection: Subsection = sunset.NewSection(Subsection)
-    list: sunset.List[Item] = sunset.NewList(Item)
+    list: sunset.List[Item] = sunset.NewSectionList(Item)
 
 
 class TestSection:
@@ -27,7 +27,7 @@ class TestSection:
     def test_creation(self):
 
         t = ExampleSection()
-        t.list.append(ExampleSection.Item())
+        t.list.appendOne()
         assert t.a.get() == "default a"
         assert t.subsection.b.get() == 42
         assert t.list[0].c.get() == "default c"
@@ -108,11 +108,11 @@ class TestSection:
         assert t2.subsection.b.get() == 37
         assert t1.subsection.b.get() == 101
 
-        t1.list.append(ExampleSection.Item())
+        t1.list.appendOne()
         t1.list[0].c.set("test t1")
         assert [s.c.get() for s in t1.list.iterAll()] == ["test t1"]
         assert [s.c.get() for s in t2.list.iterAll()] == ["test t1"]
-        t2.list.append(ExampleSection.Item())
+        t2.list.appendOne()
         t2.list[0].c.set("test t2")
         assert [s.c.get() for s in t1.list.iterAll()] == ["test t1"]
         assert [s.c.get() for s in t2.list.iterAll()] == [
@@ -130,9 +130,9 @@ class TestSection:
 
         s.a.set("test dump a")
         s.subsection.b.set(101)
-        s.list.append(ExampleSection.Item())
+        s.list.appendOne()
         s.list[-1].c.set("test dump c 1")
-        s.list.append(ExampleSection.Item())
+        s.list.appendOne()
         s.list[-1].c.set("test dump c 2")
 
         assert s.dump() == [
@@ -216,7 +216,7 @@ class TestSection:
         callback.assert_called_once_with(section)
         callback.reset_mock()
 
-        section.list.append(ExampleSection.Item())
+        section.list.appendOne()
         callback.assert_called_once_with(section)
         callback.reset_mock()
 
@@ -245,10 +245,10 @@ class TestSection:
             TestSection2()
 
         class TestSection3(sunset.Section):
-            class Subsection(sunset.Section):
-                pass
 
-            subsections: sunset.List[Subsection] = sunset.List(Subsection)
+            list: sunset.List[sunset.Setting[int]] = sunset.List(
+                lambda: sunset.Setting(default=0)
+            )
 
         with pytest.raises(ValueError):
             TestSection3()
