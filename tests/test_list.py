@@ -130,6 +130,28 @@ class TestList:
 
         callback.assert_called_once_with(r)
 
+    def test_restore_order(self):
+
+        r: sunset.List[sunset.Key[str]] = sunset.List(
+            lambda: sunset.Key(default="")
+        )
+        r.restore(
+            [
+                ("5", "five"),
+                ("3", "three"),
+                ("1", "one 1"),  # will be overridden
+                ("1", "one 2"),  # will be overridden
+                ("2", "two"),
+                ("1", "one 3"),
+            ]
+        )
+
+        assert len(r) == 4
+        assert r[0].get() == "one 3"
+        assert r[1].get() == "two"
+        assert r[2].get() == "three"
+        assert r[3].get() == "five"
+
     def test_persistence(self):
 
         # A List does not keep a reference to its parent or children.

@@ -232,11 +232,17 @@ class Section:
         notification_enabled = self._modification_notification_enabled
         self._modification_notification_enabled = False
 
+        subitems: dict[str, list[tuple[str, str]]] = {}
+
         for name, dump in data:
             if "." in name:
                 item_name, subname = name.split(".", 1)
             else:
                 item_name, subname = name, ""
+
+            subitems.setdefault(item_name, []).append((subname, dump))
+
+        for item_name in subitems:
 
             try:
                 item = getattr(self, item_name)
@@ -246,7 +252,7 @@ class Section:
             if not isinstance(item, Restorable):
                 continue
 
-            item.restore([(subname, dump)])
+            item.restore(subitems[item_name])
 
         self._modification_notification_enabled = notification_enabled
         self._notifyModification(self)

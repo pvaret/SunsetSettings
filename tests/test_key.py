@@ -284,20 +284,7 @@ class TestKey:
 
         assert si.get() == 0
         callback.assert_not_called()
-
-        si = sunset.Key(default=0)
-        si.onKeyModifiedCall(callback)
-        si.restore(
-            [
-                ("", "56"),
-                ("", "78"),
-            ]
-        )
-
-        # Restoring a key with multiple values is invalid.
-
-        assert si.get() == 0
-        callback.assert_not_called()
+        callback.reset_mock()
 
         si = sunset.Key(default=0)
         si.onKeyModifiedCall(callback)
@@ -312,6 +299,25 @@ class TestKey:
 
         assert si.get() == 0
         callback.assert_not_called()
+
+        si = sunset.Key(default=0)
+        si.onKeyModifiedCall(callback)
+        si.restore(
+            [
+                ("", "56"),
+                ("", "78"),
+                ("", "invalid"),
+                ("invalid", "96"),
+            ]
+        )
+
+        # Restoring a key with multiple values is invalid. However, restoring
+        # something is better than dropping everything. Arbitrarily, we restore
+        # the last valid value.
+
+        assert si.get() == 78
+        callback.assert_called_once_with(si)
+        callback.reset_mock()
 
     def test_restore_valid(self, mocker: MockerFixture):
 

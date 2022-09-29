@@ -345,22 +345,26 @@ class List(MutableSequence[ListItemT]):
         Internal.
         """
 
-        subitems: dict[str, ListItemT] = {}
-
         notification_enabled = self._modification_notification_enabled
         self._modification_notification_enabled = False
+
+        subitems: dict[str, list[tuple[str, str]]] = {}
 
         for name, dump in data:
             if "." in name:
                 item_name, subname = name.split(".", 1)
             else:
                 item_name, subname = name, ""
-            if item_name not in subitems:
-                factory = self._item_factory
-                subitems[item_name] = factory()
-                self.append(subitems[item_name])
 
-            subitems[item_name].restore([(subname, dump)])
+            if not item_name.isdigit():
+                continue
+
+            subitems.setdefault(item_name, []).append((subname, dump))
+
+        for k in sorted(subitems.keys(), key=int):
+            item = self._item_factory()
+            item.restore(subitems[k])
+            self.append(item)
 
         self._modification_notification_enabled = notification_enabled
         self._notifyModification(self)

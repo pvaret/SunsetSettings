@@ -561,6 +561,39 @@ doesnotexist = should be skipped
 
         assert settings.a.get() == ""
 
+    def test_load_list_order(self):
+
+        settings = ExampleSettings()
+        settings.load(
+            io.StringIO(
+                """\
+[main]
+key_list.5 = five
+key_list.3 = three
+key_list.1 = dropped
+key_list.1 = one
+key_list.2 = two
+section_list.5.c = 5
+section_list.1.c = 0
+section_list.2.c = 2
+section_list.1.c = 1
+section_list.4.c = 4
+"""
+            )
+        )
+
+        assert len(settings.key_list) == 4
+        assert settings.key_list[0].get() == "one"
+        assert settings.key_list[1].get() == "two"
+        assert settings.key_list[2].get() == "three"
+        assert settings.key_list[3].get() == "five"
+
+        assert len(settings.section_list) == 4
+        assert settings.section_list[0].c.get() == 1
+        assert settings.section_list[1].c.get() == 2
+        assert settings.section_list[2].c.get() == 4
+        assert settings.section_list[3].c.get() == 5
+
     def test_key_modified_notification(self, mocker: MockerFixture):
 
         callback = mocker.stub()

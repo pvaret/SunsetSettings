@@ -1,7 +1,7 @@
 import weakref
 
 from dataclasses import field
-from typing import Callable, Generic, Iterator, Optional, Sequence
+from typing import Callable, Generic, Iterator, Optional, Sequence, Type
 
 from typing_extensions import Self
 
@@ -63,7 +63,7 @@ class Key(Generic[SerializableT]):
     _modification_notification_callbacks: CallbackRegistry[Self]
     _parent: Optional[weakref.ref[Self]]
     _children: weakref.WeakSet[Self]
-    _type: type
+    _type: Type[SerializableT]
 
     def __init__(self, default: SerializableT):
 
@@ -288,31 +288,32 @@ class Key(Generic[SerializableT]):
         Internal.
         """
 
-        if len(data) != 1:
+        # Normally, a Key should be restored from one single item of data, with
+        # an empty name. However, if we are loading a partially corrupted dump
+        # where an entry is duplicated, it's better to restore one of the
+        # duplicates than drop them all. Arbitrarily, we restore the last valid
+        # one.
 
-            # For a Key there should only be one piece of data. If there is
-            # more, this part of the dump is invalid. Abort here.
+        for name, dump in reversed(data):
 
-            return
+            if name:
 
-        name, value = data[0]
+                # For a Key there should be no name. This entry is not valid.
 
-        if name:
+                continue
 
-            # For a Key, there should be no name. If there is one, it
-            # means the dump is invalid. Abort here.
+            value = deserialize(self._type, dump)
+            if value is None:
 
-            return
+                # The given string is not a valid serialized value for this
+                # key. This entry is not valid.
 
-        value = deserialize(self._type, value)
-        if value is None:
+                continue
 
-            # The given value is not a valid serialized value for this
-            # key. Abort here.
+            # Found a valid entry. Set it and finish.
 
-            return
-
-        self.set(value)
+            self.set(value)
+            break
 
     def _notifyParentValueChanged(self):
 
