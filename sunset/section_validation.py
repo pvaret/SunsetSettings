@@ -2,17 +2,17 @@ from typing import Type
 
 from .list import List
 from .section import Section
-from .setting import Setting
+from .key import Key
 
 
 def validateElementsAreFields(cls: Type[Section]) -> None:
     """
     Validate that the user is holding SunsetSettings right.
 
-    It is an error to add a Setting instance, a Section instance or a List
-    instance directly to a Section or a Settings definition. If the users does
-    so, then the instance will be shared across *all* instances of that Section
-    or Settings class.
+    It is an error to add a Key, a Section or a List directly to a Section or a
+    Settings definition. If the user did so, then this Key or Section or List
+    instance would be shared across *all* instances of that Section or Settings
+    class.
 
     Args:
         cls: a Section class.
@@ -21,7 +21,7 @@ def validateElementsAreFields(cls: Type[Section]) -> None:
         None.
 
     Raises:
-        ValueError if the user unwittingly added a Setting, List or Section
+        ValueError if the user unwittingly added a Key, List or Section
             instance to their Section/Settings definition.
     """
 
@@ -47,15 +47,15 @@ def validateElementsAreFields(cls: Type[Section]) -> None:
                     clsname=cls.__name__,
                     name=name,
                     type="List",
-                    function="sunset.NewSectionList or sunset.NewSettingList",
+                    function="sunset.NewSectionList or sunset.NewKeyList",
                 )
             )
-        if isinstance(attr, Setting):
+        if isinstance(attr, Key):
             raise ValueError(
                 err_msg.format(
                     clsname=cls.__name__,
                     name=name,
-                    type="Setting",
-                    function="sunset.NewSetting",
+                    type="Key",
+                    function="sunset.NewKey",
                 )
             )

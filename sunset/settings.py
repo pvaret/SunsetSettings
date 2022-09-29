@@ -12,17 +12,16 @@ _MAIN = "main"
 
 class Settings(Section):
     """
-    A collection of settings that can be saved to and loaded from text, and
-    supports inheritance.
+    A collection of keys that can be saved to and loaded from text, and supports
+    inheritance.
 
     Under the hood, a Settings class is a dataclass, and can be used in the same
     manner, i.e. by defining attributes directly on the class itself.
 
     Settings instances support inheritance: calling the :meth:`derive()` or
     :meth:`deriveAs()` method on an instance creates a child of that instance;
-    when a setting has not been set on the child, the value of that setting is
-    looked up on its parent instead. The hierarchy of children can be
-    arbitrarily deep.
+    when a key has not been set on the child, the value of that key is looked up
+    on its parent instead. The hierarchy of children can be arbitrarily deep.
 
     When saving a Settings instance, its children are saved with it under a
     distinct heading for each, provided they have a name. Children are given a
@@ -38,10 +37,10 @@ class Settings(Section):
     >>> import sunset
 
     >>> class AnimalSettings(sunset.Settings):
-    ...     hearts: sunset.Setting[int] = sunset.NewSetting(default=0)
-    ...     legs: sunset.Setting[int] = sunset.NewSetting(default=0)
-    ...     wings: sunset.Setting[int] = sunset.NewSetting(default=0)
-    ...     fur: sunset.Setting[bool] = sunset.NewSetting(default=False)
+    ...     hearts: sunset.Key[int] = sunset.NewKey(default=0)
+    ...     legs: sunset.Key[int] = sunset.NewKey(default=0)
+    ...     wings: sunset.Key[int] = sunset.NewKey(default=0)
+    ...     fur: sunset.Key[bool] = sunset.NewKey(default=False)
 
     >>> animals = AnimalSettings()
     >>> animals.hearts.set(1)
@@ -129,9 +128,8 @@ class Settings(Section):
 
     def derive(self: Self) -> Self:
         """
-        Creates and returns a new instance of this class. Each setting of the
-        new instance will inherit from the setting of the same name on this
-        instance.
+        Creates and returns a new instance of this class. Each key of the new
+        instance will inherit from the key of the same name on this instance.
 
         The new instance is created without a name, and will be skipped by the
         :meth:`save()` method. A name can be given to it after the fact with
@@ -142,15 +140,15 @@ class Settings(Section):
         """
 
         new = cast(Self, super().derive())
-        new.onSettingModifiedCall(self._notifyModification)
+        new.onKeyModifiedCall(self._notifyModification)
 
         return new
 
     def deriveAs(self: Self, name: str) -> Self:
         """
         Creates or finds and returns a new instance of this class with the given
-        name. Each setting of the new instance will inherit from the setting of
-        the same name on this instance.
+        name. Each key of the new instance will inherit from the key of the same
+        name on this instance.
 
         The new instance is created with, or looked up using, the given name.
         If the given name is empty, this is equivalent to calling
@@ -393,9 +391,9 @@ class Settings(Section):
         Loads settings from the given text file object.
 
         If the given file contains lines that don't make sense -- for instance,
-        if the line is garbage, or refers to a setting that does not exist in
-        this Settings class, or it exists but with an incompatible type -- then
-        the faulty line is skipped silently.
+        if the line is garbage, or refers to a key that does not exist in this
+        Settings class, or it exists but with an incompatible type -- then the
+        faulty line is skipped silently.
 
         If the text file object contains multiple headings, those headings will
         be used to create children with the corresponding names.

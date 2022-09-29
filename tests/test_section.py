@@ -7,12 +7,12 @@ import sunset
 
 class ExampleSection(sunset.Section):
     class Subsection(sunset.Section):
-        b: sunset.Setting[int] = sunset.NewSetting(42)
+        b: sunset.Key[int] = sunset.NewKey(42)
 
     class Item(sunset.Section):
-        c: sunset.Setting[str] = sunset.NewSetting("default c")
+        c: sunset.Key[str] = sunset.NewKey("default c")
 
-    a: sunset.Setting[str] = sunset.NewSetting("default a")
+    a: sunset.Key[str] = sunset.NewKey("default a")
     subsection: Subsection = sunset.NewSection(Subsection)
     list: sunset.List[Item] = sunset.NewSectionList(Item)
 
@@ -144,8 +144,8 @@ class TestSection:
 
     def test_dump_ignores_private_attributes(self):
         class ExampleSectionWithPrivateAttr(sunset.Section):
-            _private: sunset.Setting[int] = sunset.NewSetting(default=0)
-            public: sunset.Setting[int] = sunset.NewSetting(default=0)
+            _private: sunset.Key[int] = sunset.NewKey(default=0)
+            public: sunset.Key[int] = sunset.NewKey(default=0)
 
         s = ExampleSectionWithPrivateAttr()
         s.public.set(56)
@@ -162,7 +162,7 @@ class TestSection:
 
         s = ExampleSection()
         callback = mocker.stub()
-        s.onSettingModifiedCall(callback)
+        s.onKeyModifiedCall(callback)
 
         s.restore(
             [
@@ -199,12 +199,12 @@ class TestSection:
         assert level1.parent() is None
         assert len(list(level1.children())) == 0
 
-    def test_setting_modified_notification(self, mocker: MockerFixture):
+    def test_key_modified_notification(self, mocker: MockerFixture):
 
         callback = mocker.stub()
 
         section = ExampleSection()
-        section.onSettingModifiedCall(callback)
+        section.onKeyModifiedCall(callback)
 
         child = section.derive()
 
@@ -230,7 +230,7 @@ class TestSection:
 
     def test_incorrect_usage_raises_exception(self):
         class TestSection1(sunset.Section):
-            s: sunset.Setting[int] = sunset.Setting(default=0)
+            s: sunset.Key[int] = sunset.Key(default=0)
 
         with pytest.raises(ValueError):
             TestSection1()
@@ -246,8 +246,8 @@ class TestSection:
 
         class TestSection3(sunset.Section):
 
-            list: sunset.List[sunset.Setting[int]] = sunset.List(
-                lambda: sunset.Setting(default=0)
+            list: sunset.List[sunset.Key[int]] = sunset.List(
+                lambda: sunset.Key(default=0)
             )
 
         with pytest.raises(ValueError):

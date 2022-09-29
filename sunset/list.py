@@ -19,26 +19,25 @@ from typing import (
 
 from typing_extensions import Self
 
+from .key import Key
 from .non_hashable_set import WeakNonHashableSet
 from .registry import CallbackRegistry
 from .section import Section, SectionT
 from .serializers import SerializableT
-from .setting import Setting
 
 ListItemT = TypeVar(
     "ListItemT",
-    # Note that we match on Setting[Any] and not Setting[SerializableT],
-    # because a TypeVar cannot be defined in terms of another TypeVar. This is
-    # fine, because Setting instances can only be created bound to a
-    # SerializableT type anyway.
-    bound=Union[Section, Setting[Any]],
+    # Note that we match on Key[Any] and not Key[SerializableT], because a
+    # TypeVar cannot be defined in terms of another TypeVar. This is fine,
+    # because Keys can only be created bound to a SerializableT type anyway.
+    bound=Union[Section, Key[Any]],
 )
 
 
 class List(MutableSequence[ListItemT]):
     """
-    A container for lists of Setting or Section instances of the same type, to
-    be used in a Settings' definition.
+    A list-like container for Keys or Sections of a given type, to be used in a
+    Settings' definition.
 
     It is type-compatible with standard Python lists and supports indexing,
     insertion, appending, etc.
@@ -49,7 +48,7 @@ class List(MutableSequence[ListItemT]):
 
     When adding a List to a Settings or a Section definition, do not
     instantiate the List class directly; use the
-    :func:`sunset.NewSectionList()` and :func:`sunset.NewSettingList()`
+    :func:`sunset.NewSectionList()` and :func:`sunset.NewKeyList()`
     functions instead.
 
     Instead of creating a new instance of the contained type and inserting or
@@ -65,20 +64,20 @@ class List(MutableSequence[ListItemT]):
     >>> import sunset
     >>> class ExampleSettings(sunset.Settings):
     ...     class ExampleSection(sunset.Section):
-    ...         a: sunset.Setting[str] = sunset.NewSetting(default="")
+    ...         a: sunset.Key[str] = sunset.NewKey(default="")
     ...
-    ...     setting_list: sunset.List[sunset.Setting[int]] = (
-    ...         sunset.NewSettingList(default=0))
+    ...     key_list: sunset.List[sunset.Key[int]] = (
+    ...         sunset.NewKeyList(default=0))
     ...     section_list: sunset.List[ExampleSection] = sunset.NewSectionList(
     ...         ExampleSection)
 
     >>> settings = ExampleSettings()
     >>> settings.section_list.appendOne().a.set("demo")
     >>> settings.section_list
-    [ExampleSettings.ExampleSection(a=<Setting[str]:demo>)]
-    >>> settings.setting_list.appendOne().set(12)
-    >>> settings.setting_list
-    [<Setting[int]:12>]
+    [ExampleSettings.ExampleSection(a=<Key[str]:demo>)]
+    >>> settings.key_list.appendOne().set(12)
+    >>> settings.key_list
+    [<Key[int]:12>]
     """
 
     _contents: list[ListItemT]
@@ -104,7 +103,7 @@ class List(MutableSequence[ListItemT]):
         self._contents.insert(index, value)
         self._notifyModification(self)
 
-        value.onSettingModifiedCall(self._notifyModification)
+        value.onKeyModifiedCall(self._notifyModification)
 
     @overload
     def __getitem__(self, index: SupportsIndex) -> ListItemT:
@@ -145,13 +144,13 @@ class List(MutableSequence[ListItemT]):
             self._contents[index] = value
 
             for item in value_copy:
-                item.onSettingModifiedCall(self._notifyModification)
+                item.onKeyModifiedCall(self._notifyModification)
 
         else:
             assert isinstance(index, SupportsIndex)
 
             self._contents[index] = value
-            value.onSettingModifiedCall(self._notifyModification)
+            value.onKeyModifiedCall(self._notifyModification)
 
         self._notifyModification(self)
 
@@ -164,7 +163,7 @@ class List(MutableSequence[ListItemT]):
 
         self._contents.extend(values)
         for value in values:
-            value.onSettingModifiedCall(self._notifyModification)
+            value.onKeyModifiedCall(self._notifyModification)
         self._notifyModification(self)
 
     def __iadd__(self, values: Iterable[ListItemT]) -> Self:
@@ -254,7 +253,7 @@ class List(MutableSequence[ListItemT]):
 
         >>> import sunset
         >>> class ExampleSection(sunset.Section):
-        ...     item: sunset.Setting[int] = sunset.NewSetting(default=0)
+        ...     item: sunset.Key[int] = sunset.NewKey(default=0)
 
         >>> show = lambda l: [elt.item.get() for elt in l]
 
@@ -304,10 +303,10 @@ class List(MutableSequence[ListItemT]):
 
         yield from self._children
 
-    def onSettingModifiedCall(self, callback: Callable[[Self], None]) -> None:
+    def onKeyModifiedCall(self, callback: Callable[[Self], None]) -> None:
         """
-        Adds a callback to be called whenever this List, or any Setting defined
-        on a Section contained in this List, is modified in any way.
+        Adds a callback to be called whenever this List, or any item contained
+        in this List, is modified in any way.
 
         The callback will be called with this List instance as its argument.
 
@@ -425,46 +424,44 @@ def NewSectionList(section: Type[SectionT]) -> List[SectionT]:
     return field(default_factory=factory)
 
 
-def NewSettingList(
+def NewKeyList(
     default: SerializableT,
-) -> List[Setting[SerializableT]]:
+) -> List[Key[SerializableT]]:
     """
-    Creates a new List field for the given Setting type, to be used in the
+    Creates a new List field for the given Key type, to be used in the
     definition of a Section or a Settings.
 
     This function must be used instead of normal instantiation when adding a
-    List of Setting instances to a Settings or a Section definition. (This is
+    List of Key instances to a Settings or a Section definition. (This is
     because, under the hood, both Section and Settings classes are dataclasses,
     and their attributes must be dataclass fields. This function takes care of
     that.)
 
     Args:
-        default: The default value for the Setting instances that will be held
-            in this List.
+        default: The default value for the Keys that will be held in this List.
 
     Returns:
         A dataclass field bound to a List of the requisite type.
 
     Note:
         It typically does not make sense to call this function outside of the
-        definition of a Settings or a Section.
+        definition of a Settings or a Section class.
 
     Example:
 
     >>> import sunset
     >>> class ExampleSettings(sunset.Settings):
-    ...     list: sunset.List[sunset.Setting[int]] = sunset.NewSettingList(
-    ...         default=0)
+    ...     list: sunset.List[sunset.Key[int]] = sunset.NewKeyList(default=0)
 
     >>> settings = ExampleSettings()
     >>> settings.list.appendOne()
-    <Setting[int]:0>
+    <Key[int]:0>
     """
 
-    def setting_factory() -> Setting[SerializableT]:
-        return Setting(default=default)
+    def key_factory() -> Key[SerializableT]:
+        return Key(default=default)
 
-    factory: Callable[[], List[Setting[SerializableT]]] = lambda: List[
-        Setting[SerializableT]
-    ](setting_factory)
+    factory: Callable[[], List[Key[SerializableT]]] = lambda: List[
+        Key[SerializableT]
+    ](key_factory)
     return field(default_factory=factory)

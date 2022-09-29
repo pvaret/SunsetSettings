@@ -20,28 +20,28 @@ class ExampleSerializable:
         return ExampleSerializable(value)
 
 
-class TestSetting:
+class TestKey:
     def test_protocol_implementation(self):
 
-        s = sunset.Setting(default="")
+        s = sunset.Key(default="")
         assert isinstance(s, sunset.protocols.Inheriter)
         assert isinstance(s, sunset.protocols.Dumpable)
         assert isinstance(s, sunset.protocols.Restorable)
 
     def test_default(self):
 
-        s = sunset.Setting(default="default")
+        s = sunset.Key(default="default")
         assert s.get() == "default"
 
     def test_set(self):
 
-        s = sunset.Setting(default="test")
+        s = sunset.Key(default="test")
         s.set("other")
         assert s.get() == "other"
 
     def test_clear(self):
 
-        s = sunset.Setting(default="default")
+        s = sunset.Key(default="default")
         s.set("other")
         assert s.get() != "default"
 
@@ -52,7 +52,7 @@ class TestSetting:
 
         t = ExampleSerializable.fromStr("dummy")
         assert t is not None
-        s: sunset.Setting[ExampleSerializable] = sunset.Setting(default=t)
+        s: sunset.Key[ExampleSerializable] = sunset.Key(default=t)
 
         assert s.get().toStr() == "dummy"
 
@@ -60,7 +60,7 @@ class TestSetting:
 
         callback = mocker.stub()
 
-        s = sunset.Setting(default="default")
+        s = sunset.Key(default="default")
 
         s.onValueChangeCall(callback)
 
@@ -83,8 +83,8 @@ class TestSetting:
 
         callback = mocker.stub()
 
-        s = sunset.Setting(default="default")
-        s2 = sunset.Setting(default="default")
+        s = sunset.Key(default="default")
+        s2 = sunset.Key(default="default")
         s2.setParent(s)
 
         s2.onValueChangeCall(callback)
@@ -105,14 +105,14 @@ class TestSetting:
         callback.assert_called_once_with("default")
         callback.reset_mock()
 
-    def test_setting_modified_callback(self, mocker: MockerFixture):
+    def test_key_modified_callback(self, mocker: MockerFixture):
 
         callback = mocker.stub()
 
-        s = sunset.Setting(default="default")
+        s = sunset.Key(default="default")
         assert isinstance(s, sunset.protocols.ModificationNotifier)
 
-        s.onSettingModifiedCall(callback)
+        s.onKeyModifiedCall(callback)
 
         s.set("default")
         callback.assert_called_once_with(s)
@@ -136,8 +136,8 @@ class TestSetting:
 
     def test_inheritance(self):
 
-        a = sunset.Setting(default="default a")
-        b = sunset.Setting(default="")
+        a = sunset.Key(default="default a")
+        b = sunset.Key(default="")
 
         assert b not in a.children()
         b.setParent(a)
@@ -159,8 +159,8 @@ class TestSetting:
 
     def test_inherit_wrong_type(self):
 
-        a = sunset.Setting(default="str")
-        b = sunset.Setting(default=0)
+        a = sunset.Key(default="str")
+        b = sunset.Key(default=0)
 
         # Ignore the type error, as it's the whole point of the test.
         b.setParent(a)  # type: ignore
@@ -169,8 +169,8 @@ class TestSetting:
 
     def test_inherit_revert(self):
 
-        a = sunset.Setting(default="default a")
-        b = sunset.Setting(default="default b")
+        a = sunset.Key(default="default a")
+        b = sunset.Key(default="default b")
 
         assert b not in a.children()
         assert b.parent() is None
@@ -187,17 +187,17 @@ class TestSetting:
 
     def test_repr(self):
 
-        a = sunset.Setting(default="test")
-        b = sunset.Setting(default=12)
+        a = sunset.Key(default="test")
+        b = sunset.Key(default=12)
 
-        assert repr(a) == "<Setting[str]:test>"
-        assert repr(b) == "<Setting[int]:12>"
+        assert repr(a) == "<Key[str]:test>"
+        assert repr(b) == "<Key[int]:12>"
 
     def test_reparenting(self):
 
-        a = sunset.Setting(default="default a")
-        b = sunset.Setting(default="default b")
-        c = sunset.Setting(default="default c")
+        a = sunset.Key(default="default a")
+        b = sunset.Key(default="default b")
+        c = sunset.Key(default="default c")
 
         assert c not in a.children()
         assert c not in b.children()
@@ -219,8 +219,8 @@ class TestSetting:
     ):
         stub = mocker.stub()
 
-        a = sunset.Setting(default="default a")
-        b = sunset.Setting(default="default b")
+        a = sunset.Key(default="default a")
+        b = sunset.Key(default="default b")
         b.setParent(a)
 
         b.onValueChangeCall(stub)
@@ -242,7 +242,7 @@ class TestSetting:
 
     def test_dump(self):
 
-        s: sunset.Setting[str] = sunset.Setting(default="default")
+        s: sunset.Key[str] = sunset.Key(default="default")
 
         # No value has been set.
         assert list(s.dump()) == []
@@ -255,7 +255,7 @@ class TestSetting:
         t = ExampleSerializable.fromStr("test")
         assert t is not None
 
-        s = sunset.Setting(default=t)
+        s = sunset.Key(default=t)
         assert s.dump() == []
 
         s.set(ExampleSerializable("value"))
@@ -263,30 +263,30 @@ class TestSetting:
 
     def test_restore_invalid(self, mocker: MockerFixture):
 
-        si: sunset.Setting[int] = sunset.Setting(default=0)
+        si: sunset.Key[int] = sunset.Key(default=0)
         callback = mocker.stub()
-        si.onSettingModifiedCall(callback)
+        si.onKeyModifiedCall(callback)
 
         si.restore([])
         assert si.get() == 0
         callback.assert_not_called()
 
-        si = sunset.Setting(default=0)
-        si.onSettingModifiedCall(callback)
+        si = sunset.Key(default=0)
+        si.onKeyModifiedCall(callback)
         si.restore(
             [
                 ("invalid", "12"),
             ]
         )
 
-        # Restoring a setting with an attribute name is invalid, so the value
-        # should not be updated.
+        # Restoring a key with an attribute name is invalid, so the value should
+        # not be updated.
 
         assert si.get() == 0
         callback.assert_not_called()
 
-        si = sunset.Setting(default=0)
-        si.onSettingModifiedCall(callback)
+        si = sunset.Key(default=0)
+        si.onKeyModifiedCall(callback)
         si.restore(
             [
                 ("", "56"),
@@ -294,13 +294,13 @@ class TestSetting:
             ]
         )
 
-        # Restoring a setting with multiple values is invalid.
+        # Restoring a key with multiple values is invalid.
 
         assert si.get() == 0
         callback.assert_not_called()
 
-        si = sunset.Setting(default=0)
-        si.onSettingModifiedCall(callback)
+        si = sunset.Key(default=0)
+        si.onKeyModifiedCall(callback)
         si.restore(
             [
                 ("", " invalid  "),
@@ -317,8 +317,8 @@ class TestSetting:
 
         callback = mocker.stub()
 
-        sstr: sunset.Setting[str] = sunset.Setting(default="")
-        sstr.onSettingModifiedCall(callback)
+        sstr: sunset.Key[str] = sunset.Key(default="")
+        sstr.onKeyModifiedCall(callback)
         sstr.restore(
             [
                 ("", "test"),
@@ -328,8 +328,8 @@ class TestSetting:
         callback.assert_called_once_with(sstr)
         callback.reset_mock()
 
-        si: sunset.Setting[int] = sunset.Setting(default=0)
-        si.onSettingModifiedCall(callback)
+        si: sunset.Key[int] = sunset.Key(default=0)
+        si.onKeyModifiedCall(callback)
         si.restore(
             [
                 ("", "12"),
@@ -339,8 +339,8 @@ class TestSetting:
         callback.assert_called_once_with(si)
         callback.reset_mock()
 
-        sb: sunset.Setting[bool] = sunset.Setting(default=False)
-        sb.onSettingModifiedCall(callback)
+        sb: sunset.Key[bool] = sunset.Key(default=False)
+        sb.onKeyModifiedCall(callback)
         sb.restore(
             [
                 ("", "true"),
@@ -350,10 +350,10 @@ class TestSetting:
         callback.assert_called_once_with(sb)
         callback.reset_mock()
 
-        sser: sunset.Setting[ExampleSerializable] = sunset.Setting(
+        sser: sunset.Key[ExampleSerializable] = sunset.Key(
             default=ExampleSerializable("")
         )
-        sser.onSettingModifiedCall(callback)
+        sser.onKeyModifiedCall(callback)
         sser.restore(
             [
                 ("", "test"),
@@ -365,18 +365,18 @@ class TestSetting:
 
     def test_persistence(self):
 
-        # A Setting does not keep a reference to its parent or children.
+        # A Key does not keep a reference to its parent or children.
 
-        setting: sunset.Setting[str] = sunset.Setting(default="")
-        level1: sunset.Setting[str] = sunset.Setting(default="")
-        level1.setParent(setting)
-        level2: sunset.Setting[str] = sunset.Setting(default="")
+        key: sunset.Key[str] = sunset.Key(default="")
+        level1: sunset.Key[str] = sunset.Key(default="")
+        level1.setParent(key)
+        level2: sunset.Key[str] = sunset.Key(default="")
         level2.setParent(level1)
 
         assert level1.parent() is not None
         assert len(list(level1.children())) == 1
 
-        del setting
+        del key
         del level2
         assert level1.parent() is None
         assert len(list(level1.children())) == 0

@@ -7,21 +7,21 @@ __copyright__ = "2022, P. Varet"
 
 from . import exporter, non_hashable_set, protocols, serializers
 
-from .list import NewSectionList, NewSettingList, List
+from .key import NewKey, Key
+from .list import List, NewKeyList, NewSectionList
 from .registry import CallbackRegistry
-from .setting import NewSetting, Setting
-from .settings import Settings, normalize
 from .section import NewSection, Section
+from .settings import Settings, normalize
 
 __all__ = [
     "CallbackRegistry",
+    "Key",
     "List",
+    "NewKey",
+    "NewKeyList",
     "NewSection",
     "NewSectionList",
-    "NewSetting",
-    "NewSettingList",
     "Section",
-    "Setting",
     "Settings",
     "exporter",
     "non_hashable_set",

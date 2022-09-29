@@ -20,7 +20,7 @@ checkers will tell you.
 >>> import sunset
 
 >>> # Types can be inferred from the provided default value:
->>> number_of_ponies = sunset.Setting(default=0)
+>>> number_of_ponies = sunset.Key(default=0)
 
 >>> number_of_ponies.set(6)  # Works!
 >>> number_of_ponies.set("six")  # Type error!
@@ -54,7 +54,7 @@ simple serialization protocol. (See `sunset/protocols.py`.)
 ...         return cls(x, y)
 
 >>> import sunset
->>> coordinates = sunset.Setting(default=Coordinates())
+>>> coordinates = sunset.Key(default=Coordinates())
 >>> coordinates.get()  # Correctly typechecks to 'Coordinates'.
 ```
 
@@ -68,7 +68,7 @@ arbitrarily deep.
 ````python
 >>> import sunset
 >>> class Animals(sunset.Settings):
-...     paws: sunset.Setting[int] = sunset.NewSetting(default=4)
+...     paws: sunset.Key[int] = sunset.NewKey(default=4)
 ... 
 >>> animals = Animals()
 >>> octopuses = animals.deriveAs("octopuses")
@@ -83,11 +83,11 @@ arbitrarily deep.
 
 ### Callbacks
 
-Each setting can be given callbacks to be called when its value changes.
+Each setting key can be given callbacks to be called when its value changes.
 
 ```python
 >>> import sunset
->>> number_of_ponies = sunset.Setting(default=0)
+>>> number_of_ponies = sunset.Key(default=0)
 >>> def callback(value):
 ...     print("Pony count updated:", value)
 ...     

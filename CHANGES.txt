@@ -1,8 +1,9 @@
 * Unreleased
 
   - Sphinx documentation added.
-  - List overhaul: it now supports both Section and Setting instances.
-    - NewList() was replaced with NewSectionList() and NewSettingList().
+  - List overhaul: it now supports both Section and Key instances.
+    - NewList() was replaced with NewSectionList() and NewKeyList().
+  - Renamed Setting class to Key.
 
 * SunsetSettings 0.2.0 (2022-08-03)
 

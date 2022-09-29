@@ -18,7 +18,7 @@ sunset.Settings
 
     .. automethod:: setName
 
-    .. automethod:: onSettingModifiedCall
+    .. automethod:: onKeyModifiedCall
 
     .. automethod:: parent
 
@@ -28,29 +28,12 @@ sunset.Settings
 
     .. automethod:: siblings
 
-sunset.Section
---------------
+sunset.Key
+----------
 
-.. autofunction:: sunset.NewSection
+.. autofunction:: sunset.NewKey
 
-.. autoclass:: sunset.Section
-
-    .. automethod:: derive
-
-    .. automethod:: onSettingModifiedCall
-
-    .. automethod:: parent
-
-    .. automethod:: children
-
-    .. automethod:: setParent
-
-sunset.Setting
---------------
-
-.. autofunction:: sunset.NewSetting
-
-.. autoclass:: sunset.Setting
+.. autoclass:: sunset.Key
 
     .. automethod:: set
 
@@ -62,7 +45,24 @@ sunset.Setting
 
     .. automethod:: onValueChangeCall
 
-    .. automethod:: onSettingModifiedCall
+    .. automethod:: onKeyModifiedCall
+
+    .. automethod:: parent
+
+    .. automethod:: children
+
+    .. automethod:: setParent
+
+sunset.Section
+--------------
+
+.. autofunction:: sunset.NewSection
+
+.. autoclass:: sunset.Section
+
+    .. automethod:: derive
+
+    .. automethod:: onKeyModifiedCall
 
     .. automethod:: parent
 
@@ -73,7 +73,7 @@ sunset.Setting
 sunset.List
 -----------
 
-.. autofunction:: sunset.NewSettingList
+.. autofunction:: sunset.NewKeyList
 
 .. autofunction:: sunset.NewSectionList
 
@@ -81,7 +81,7 @@ sunset.List
 
     .. automethod:: iterAll
 
-    .. automethod:: onSettingModifiedCall
+    .. automethod:: onKeyModifiedCall
 
     .. automethod:: parent
 

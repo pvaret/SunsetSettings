@@ -18,7 +18,7 @@ _T = TypeVar("_T")
 class Serializable(Protocol):
     """
     A protocol to be implemented by a class in order to enable storing instances
-    of that class in a Setting.
+    of that class in a Key.
 
     The two methods to be implemented are :meth:`toStr()` and (classmethod)
     :meth:`fromStr()`.
@@ -68,5 +68,5 @@ class Restorable(Protocol):
 
 @runtime_checkable
 class ModificationNotifier(Protocol):
-    def onSettingModifiedCall(self, callback: Callable[[Self], None]) -> None:
+    def onKeyModifiedCall(self, callback: Callable[[Self], None]) -> None:
         ...

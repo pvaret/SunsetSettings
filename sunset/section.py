@@ -23,7 +23,7 @@ SectionT = TypeVar("SectionT", bound="Section")
 
 class Section:
     """
-    A collection of related settings.
+    A collection of related keys.
 
     Under the hood, a Section is a dataclass, and can be used in the same
     manner, i.e. by defining attributes directly on the class itself.
@@ -37,21 +37,21 @@ class Section:
     >>> import sunset
     >>> class MySection(sunset.Section):
     ...     class MySubsection(sunset.Section):
-    ...         subsetting: sunset.Setting[int] = sunset.NewSetting(default=0)
+    ...         subkey: sunset.Key[int] = sunset.NewKey(default=0)
     ...
     ...     subsection1: MySubsection = sunset.NewSection(MySubsection)
     ...     subsection2: MySubsection = sunset.NewSection(MySubsection)
 
     >>> section = MySection()
-    >>> section.subsection1.subsetting.get()
+    >>> section.subsection1.subkey.get()
     0
-    >>> section.subsection2.subsetting.get()
+    >>> section.subsection2.subkey.get()
     0
-    >>> section.subsection1.subsetting.set(42)
-    >>> section.subsection2.subsetting.set(101)
-    >>> section.subsection1.subsetting.get()
+    >>> section.subsection1.subkey.set(42)
+    >>> section.subsection2.subkey.set(101)
+    >>> section.subsection1.subkey.get()
     42
-    >>> section.subsection2.subsetting.get()
+    >>> section.subsection2.subkey.get()
     101
     """
 
@@ -84,7 +84,7 @@ class Section:
         for attr in vars(self).values():
 
             if isinstance(attr, ModificationNotifier):
-                attr.onSettingModifiedCall(self._notifyModification)
+                attr.onKeyModifiedCall(self._notifyModification)
 
     def derive(self: Self) -> Self:
         """
@@ -104,9 +104,9 @@ class Section:
         Makes the given Section the parent of this one. If None, remove this
         Section's parent, if any.
 
-        All the Setting, List and Section fields defined on this Section
-        instance will be recursively reparented to the corresponding Setting /
-        List / Section field on the given parent.
+        All the Key, List and Section fields defined on this Section instance
+        will be recursively reparented to the corresponding Key / List / Section
+        field on the given parent.
 
         This method is for internal purposes and you will typically not need to
         call it directly.
@@ -183,12 +183,12 @@ class Section:
 
         yield from self._children
 
-    def onSettingModifiedCall(self, callback: Callable[[Self], None]) -> None:
+    def onKeyModifiedCall(self, callback: Callable[[Self], None]) -> None:
         """
-        Adds a callback to be called whenever any Setting defined on this
-        Section or any of its own Section fields is modified in any way.
+        Adds a callback to be called whenever any Key defined on this Section or
+        any of its own Section fields is modified in any way.
 
-        The callback will be called with this Section instance as its argument.
+        The callback will be called with this Section as its argument.
 
         Args:
             callback: A callable that takes one argument of the same type as
@@ -260,7 +260,7 @@ class Section:
 def NewSection(section: Type[SectionT]) -> SectionT:
     """
     Creates a new Section field of the given type, to be used in the definition
-    of a Section or a Settings.
+    of a Section or a Settings class.
 
     This function must be used instead of normal instantiation when adding a
     Section to a Settings or another Section. (This is because, under the hood,

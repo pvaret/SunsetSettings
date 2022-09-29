@@ -16,19 +16,17 @@ def test_normalize():
 
 class ExampleSettings(sunset.Settings):
     class ExampleSection(sunset.Section):
-        c: sunset.Setting[int] = sunset.NewSetting(default=0)
-        d: sunset.Setting[bool] = sunset.NewSetting(default=False)
+        c: sunset.Key[int] = sunset.NewKey(default=0)
+        d: sunset.Key[bool] = sunset.NewKey(default=False)
 
     subsection: ExampleSection = sunset.NewSection(ExampleSection)
-    sectionlist: sunset.List[ExampleSection] = sunset.NewSectionList(
+    section_list: sunset.List[ExampleSection] = sunset.NewSectionList(
         ExampleSection
     )
-    settinglist: sunset.List[sunset.Setting[str]] = sunset.NewSettingList(
-        default=""
-    )
+    key_list: sunset.List[sunset.Key[str]] = sunset.NewKeyList(default="")
 
-    a: sunset.Setting[str] = sunset.NewSetting(default="")
-    b: sunset.Setting[str] = sunset.NewSetting(default="")
+    a: sunset.Key[str] = sunset.NewKey(default="")
+    b: sunset.Key[str] = sunset.NewKey(default="")
 
 
 class TestSettings:
@@ -77,20 +75,20 @@ class TestSettings:
         settings.b.set("new b")
         settings.subsection.c.set(40)
         settings.subsection.d.set(True)
-        settings.sectionlist.appendOne().c.set(100)
-        settings.sectionlist.appendOne().d.set(True)
-        settings.settinglist.appendOne().set("one")
-        settings.settinglist.appendOne().set("two")
+        settings.section_list.appendOne().c.set(100)
+        settings.section_list.appendOne().d.set(True)
+        settings.key_list.appendOne().set("one")
+        settings.key_list.appendOne().set("two")
         assert settings.dumpAll() == [
             (
                 ["main"],
                 [
                     ("a", "new a"),
                     ("b", "new b"),
-                    ("sectionlist.1.c", "100"),
-                    ("sectionlist.2.d", "true"),
-                    ("settinglist.1", "one"),
-                    ("settinglist.2", "two"),
+                    ("key_list.1", "one"),
+                    ("key_list.2", "two"),
+                    ("section_list.1.c", "100"),
+                    ("section_list.2.d", "true"),
                     ("subsection.c", "40"),
                     ("subsection.d", "true"),
                 ],
@@ -99,12 +97,12 @@ class TestSettings:
 
         settings = ExampleSettings()
         settings.a.set("a")
-        settings.sectionlist.appendOne().c.set(100)
+        settings.section_list.appendOne().c.set(100)
 
         s1 = settings.deriveAs("Level 1")
         s1.a.set("sub a")
         s1.b.set("sub b")
-        s1.sectionlist.appendOne().c.set(1000)
+        s1.section_list.appendOne().c.set(1000)
 
         s2 = settings.deriveAs("Other level 1")
         s2.subsection.d.set(False)
@@ -123,7 +121,7 @@ class TestSettings:
                 ["main"],
                 [
                     ("a", "a"),
-                    ("sectionlist.1.c", "100"),
+                    ("section_list.1.c", "100"),
                 ],
             ),
             (
@@ -131,7 +129,7 @@ class TestSettings:
                 [
                     ("a", "sub a"),
                     ("b", "sub b"),
-                    ("sectionlist.1.c", "1000"),
+                    ("section_list.1.c", "1000"),
                 ],
             ),
             (
@@ -155,9 +153,9 @@ class TestSettings:
                 ["main"],
                 [
                     ("a", "a"),
-                    ("sectionlist.1.c", "100"),
-                    ("settinglist.1", "one"),
-                    ("settinglist.2", "two"),
+                    ("key_list.1", "one"),
+                    ("key_list.2", "two"),
+                    ("section_list.1.c", "100"),
                 ],
             ),
             (
@@ -165,9 +163,9 @@ class TestSettings:
                 [
                     ("a", "sub a"),
                     ("b", "sub b"),
-                    ("sectionlist.1.c", "1000"),
-                    ("settinglist.1", "one"),
-                    ("settinglist.2", "two"),
+                    ("key_list.1", "one"),
+                    ("key_list.2", "two"),
+                    ("section_list.1.c", "1000"),
                 ],
             ),
             (
@@ -188,11 +186,11 @@ class TestSettings:
         settings.restoreAll(data)
 
         assert settings.a.get() == "a"
-        assert len(settings.sectionlist) == 1
-        assert settings.sectionlist[0].c.get() == 100
-        assert len(settings.settinglist) == 2
-        assert settings.settinglist[0].get() == "one"
-        assert settings.settinglist[1].get() == "two"
+        assert len(settings.section_list) == 1
+        assert settings.section_list[0].c.get() == 100
+        assert len(settings.key_list) == 2
+        assert settings.key_list[0].get() == "one"
+        assert settings.key_list[1].get() == "two"
 
         settings_children = {c.name(): c for c in settings.children()}
         assert len(settings_children) == 2
@@ -203,11 +201,11 @@ class TestSettings:
 
         assert level1.a.get() == "sub a"
         assert level1.b.get() == "sub b"
-        assert len(level1.sectionlist) == 1
-        assert level1.sectionlist[0].c.get() == 1000
-        assert len(level1.settinglist) == 2
-        assert level1.settinglist[0].get() == "one"
-        assert level1.settinglist[1].get() == "two"
+        assert len(level1.section_list) == 1
+        assert level1.section_list[0].c.get() == 1000
+        assert len(level1.key_list) == 2
+        assert level1.key_list[0].get() == "one"
+        assert level1.key_list[1].get() == "two"
 
         assert not otherlevel1.subsection.d.get()
 
@@ -238,14 +236,14 @@ class TestSettings:
 
         settings = ExampleSettings()
         settings.a.set("a")
-        settings.sectionlist.appendOne().c.set(100)
+        settings.section_list.appendOne().c.set(100)
 
         s1 = settings.deriveAs("Level 1")
         s1.a.set("sub a")
         s1.b.set("sub b")
-        s1.sectionlist.appendOne().c.set(1000)
-        s1.settinglist.appendOne().set("one")
-        s1.settinglist.appendOne().set("two")
+        s1.section_list.appendOne().c.set(1000)
+        s1.key_list.appendOne().set("one")
+        s1.key_list.appendOne().set("two")
 
         s2 = settings.deriveAs("Other level 1")
         s2.subsection.d.set(False)
@@ -267,14 +265,14 @@ class TestSettings:
             == """\
 [main]
 a = a
-sectionlist.1.c = 100
+section_list.1.c = 100
 
 [level1]
 a = sub a
 b = sub b
-sectionlist.1.c = 1000
-settinglist.1 = one
-settinglist.2 = two
+key_list.1 = one
+key_list.2 = two
+section_list.1.c = 1000
 
 [level1/level2]
 subsection.c = 200
@@ -288,19 +286,19 @@ subsection.d = false
 
         settings = ExampleSettings()
         callback = mocker.stub()
-        settings.onSettingModifiedCall(callback)
+        settings.onKeyModifiedCall(callback)
         settings.load(
             io.StringIO(
                 """\
 [main]
 a = a
-sectionlist.1.c = 100
+section_list.1.c = 100
 
 [level1]
 a = sub a
 b = sub b
-sectionlist.1.c = 1000
-settinglist.1 = one
+key_list.1 = one
+section_list.1.c = 1000
 
 [level1/level2]
 subsection.c = 200
@@ -314,8 +312,8 @@ subsection.d = false
         callback.assert_called_once_with(settings)
 
         assert settings.a.get() == "a"
-        assert len(settings.sectionlist) == 1
-        assert settings.sectionlist[0].c.get() == 100
+        assert len(settings.section_list) == 1
+        assert settings.section_list[0].c.get() == 100
 
         settings_children = {c.name(): c for c in settings.children()}
         assert len(settings_children) == 2
@@ -326,10 +324,10 @@ subsection.d = false
 
         assert level1.a.get() == "sub a"
         assert level1.b.get() == "sub b"
-        assert len(level1.sectionlist) == 1
-        assert level1.sectionlist[0].c.get() == 1000
-        assert len(level1.settinglist) == 1
-        assert level1.settinglist[0].get() == "one"
+        assert len(level1.section_list) == 1
+        assert level1.section_list[0].c.get() == 1000
+        assert len(level1.key_list) == 1
+        assert level1.key_list[0].get() == "one"
 
         assert not otherlevel1.subsection.d.get()
 
@@ -563,12 +561,12 @@ doesnotexist = should be skipped
 
         assert settings.a.get() == ""
 
-    def test_setting_modified_notification(self, mocker: MockerFixture):
+    def test_key_modified_notification(self, mocker: MockerFixture):
 
         callback = mocker.stub()
 
         settings = ExampleSettings()
-        settings.onSettingModifiedCall(callback)
+        settings.onKeyModifiedCall(callback)
 
         settings.a.set("test 1")
         callback.assert_called_once_with(settings)
