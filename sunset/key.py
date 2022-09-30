@@ -1,6 +1,5 @@
 import weakref
 
-from dataclasses import field
 from typing import Callable, Generic, Iterator, Optional, Sequence, Type
 
 from typing_extensions import Self
@@ -12,10 +11,6 @@ from .serializers import SerializableT, deserialize, serialize
 class Key(Generic[SerializableT]):
     """
     A single setting key containing a typed value.
-
-    When adding a Key to a :class:`Section` or a :class:`Settings` definition,
-    do not instantiate the Key class directly; use the :func:`sunset.NewKey()`
-    function instead.
 
     Keys support inheritance. If a Key does not have a value explicitly set, and
     it has a parent, then its value will be that of its parent.
@@ -339,37 +334,3 @@ class Key(Generic[SerializableT]):
     def __repr__(self) -> str:
 
         return f"<Key[{self._type.__name__}]:{serialize(self.get())}>"
-
-
-def NewKey(default: SerializableT) -> Key[SerializableT]:
-    """
-    Creates a new Key field with the given default value, to be used in the
-    definition of a Section or a Settings class. The type of the Key is inferred
-    from the type of the default value.
-
-    This function must be used instead of normal instantiation when adding a
-    Key to a Settings or a Section definition. (This is because, under the
-    hood, both Section and Settings classes are dataclasses, and their
-    attributes must be dataclass fields. This function takes care of that.)
-
-    Args:
-        default: The value that this Key will return when not otherwise set;
-            the type of this default determines the type of the Key.
-
-    Returns:
-        A dataclass field bound to a Key of the requisite type.
-
-    Note:
-        It typically does not make sense to call this function outside of the
-        definition of a Settings or a Section class.
-
-    Example:
-
-    >>> import sunset
-    >>> class ExampleSettings(sunset.Settings):
-    ...     example_key: sunset.Key[int] = sunset.NewKey(default=0)
-
-    >>> settings = ExampleSettings()
-    """
-
-    return field(default_factory=Key(default=default).new)

@@ -31,8 +31,6 @@ sunset.Settings
 sunset.Key
 ----------
 
-.. autofunction:: sunset.NewKey
-
 .. autoclass:: sunset.Key
 
     .. automethod:: set
@@ -56,8 +54,6 @@ sunset.Key
 sunset.Section
 --------------
 
-.. autofunction:: sunset.NewSection
-
 .. autoclass:: sunset.Section
 
     .. automethod:: derive
@@ -72,10 +68,6 @@ sunset.Section
 
 sunset.List
 -----------
-
-.. autofunction:: sunset.NewKeyList
-
-.. autofunction:: sunset.NewSectionList
 
 .. autoclass:: sunset.List
 

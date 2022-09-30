@@ -1,5 +1,3 @@
-import pytest
-
 from pytest_mock import MockerFixture
 
 import sunset
@@ -7,14 +5,14 @@ import sunset
 
 class ExampleSection(sunset.Section):
     class Subsection(sunset.Section):
-        b: sunset.Key[int] = sunset.NewKey(42)
+        b: sunset.Key[int] = sunset.Key(42)
 
     class Item(sunset.Section):
-        c: sunset.Key[str] = sunset.NewKey("default c")
+        c: sunset.Key[str] = sunset.Key("default c")
 
-    a: sunset.Key[str] = sunset.NewKey("default a")
-    subsection: Subsection = sunset.NewSection(Subsection)
-    list: sunset.List[Item] = sunset.NewSectionList(Item)
+    a: sunset.Key[str] = sunset.Key("default a")
+    subsection: Subsection = Subsection()
+    list: sunset.List[Item] = sunset.List(Item())
 
 
 class TestSection:
@@ -146,8 +144,8 @@ class TestSection:
 
     def test_dump_ignores_private_attributes(self):
         class ExampleSectionWithPrivateAttr(sunset.Section):
-            _private: sunset.Key[int] = sunset.NewKey(default=0)
-            public: sunset.Key[int] = sunset.NewKey(default=0)
+            _private: sunset.Key[int] = sunset.Key(default=0)
+            public: sunset.Key[int] = sunset.Key(default=0)
 
         s = ExampleSectionWithPrivateAttr()
         s.public.set(56)
@@ -229,28 +227,3 @@ class TestSection:
         child.a.set("test 3")
         callback.assert_not_called()
         callback.reset_mock()
-
-    def test_incorrect_usage_raises_exception(self):
-        class TestSection1(sunset.Section):
-            s: sunset.Key[int] = sunset.Key(default=0)
-
-        with pytest.raises(ValueError):
-            TestSection1()
-
-        class TestSection2(sunset.Section):
-            class Subsection(sunset.Section):
-                pass
-
-            subsection: Subsection = Subsection()
-
-        with pytest.raises(ValueError):
-            TestSection2()
-
-        class TestSection3(sunset.Section):
-
-            list: sunset.List[sunset.Key[int]] = sunset.List(
-                sunset.Key(default=0)
-            )
-
-        with pytest.raises(ValueError):
-            TestSection3()

@@ -1,3 +1,4 @@
+import inspect
 import weakref
 
 from dataclasses import dataclass, field
@@ -14,7 +15,13 @@ from typing import (
 from typing_extensions import Self
 
 from .non_hashable_set import WeakNonHashableSet
-from .protocols import Dumpable, Inheriter, Restorable, ModificationNotifier
+from .protocols import (
+    Dumpable,
+    Inheriter,
+    ItemTemplate,
+    ModificationNotifier,
+    Restorable,
+)
 from .registry import CallbackRegistry
 
 
@@ -28,19 +35,15 @@ class Section:
     Under the hood, a Section is a dataclass, and can be used in the same
     manner, i.e. by defining attributes directly on the class itself.
 
-    When adding a Section to a Settings or another Section definition, do not
-    instantiate the Section class directly; use the :func:`sunset.NewSection()`
-    function instead.
-
     Example:
 
     >>> import sunset
     >>> class MySection(sunset.Section):
     ...     class MySubsection(sunset.Section):
-    ...         subkey: sunset.Key[int] = sunset.NewKey(default=0)
+    ...         subkey: sunset.Key[int] = sunset.Key(default=0)
     ...
-    ...     subsection1: MySubsection = sunset.NewSection(MySubsection)
-    ...     subsection2: MySubsection = sunset.NewSection(MySubsection)
+    ...     subsection1: MySubsection = MySubsection()
+    ...     subsection2: MySubsection = MySubsection()
 
     >>> section = MySection()
     >>> section.subsection1.subkey.get()
@@ -62,14 +65,13 @@ class Section:
 
     def __new__(cls: Type[Self]) -> Self:
 
-        # This is a non-top-level import in order to avoid a circular
-        # dependency.
+        # Automatically promote relevant attributes to dataclass fields.
 
-        from . import section_validation
+        for name, attr in vars(cls).items():
+            if isinstance(attr, ItemTemplate) and not inspect.isclass(attr):
+                setattr(cls, name, field(default_factory=attr.new))
 
-        # Potentially raises ValueError if the user is holding it wrong.
-
-        section_validation.validateElementsAreFields(cls)
+        # Create a new instance of this class wrapped as a dataclass.
 
         wrapped = dataclass()(cls)
         return super().__new__(wrapped)
@@ -271,38 +273,3 @@ class Section:
         """
 
         return self.__class__()
-
-
-def NewSection(section: Type[SectionT]) -> SectionT:
-    """
-    Creates a new Section field of the given type, to be used in the definition
-    of a Section or a Settings class.
-
-    This function must be used instead of normal instantiation when adding a
-    Section to a Settings or another Section. (This is because, under the hood,
-    both Section and Settings classes are dataclasses, and their attributes must
-    be fields. This function takes care of that.)
-
-    Args:
-        section: The *type* of the Section to be created.
-
-    Returns:
-        A dataclass field bound to the given Section type.
-
-    Note:
-        It typically does not make sense to call this function outside of the
-        definition of a Settings or a Section.
-
-    Example:
-
-    >>> import sunset
-    >>> class ExampleSettings(sunset.Settings):
-    ...     class ExampleSection(sunset.Section):
-    ...         pass
-    ...
-    ...     subsection: ExampleSection = sunset.NewSection(ExampleSection)
-
-    >>> settings = ExampleSettings()
-    """
-
-    return field(default_factory=section)

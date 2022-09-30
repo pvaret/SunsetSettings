@@ -1,7 +1,6 @@
 import weakref
 
 from itertools import tee
-from dataclasses import field
 from typing import (
     Any,
     Callable,
@@ -11,7 +10,6 @@ from typing import (
     Optional,
     Sequence,
     SupportsIndex,
-    Type,
     TypeVar,
     Union,
     overload,
@@ -22,8 +20,7 @@ from typing_extensions import Self
 from .key import Key
 from .non_hashable_set import WeakNonHashableSet
 from .registry import CallbackRegistry
-from .section import Section, SectionT
-from .serializers import SerializableT
+from .section import Section
 
 ListItemT = TypeVar(
     "ListItemT",
@@ -46,10 +43,6 @@ class List(MutableSequence[ListItemT]):
     inheritance. The inheritance is used in the :meth:`iterAll()` method, which
     iterates on a List and its parent.
 
-    When adding a List to a Settings or a Section definition, do not instantiate
-    the List class directly; use the :func:`sunset.NewSectionList()` and
-    :func:`sunset.NewKeyList()` functions instead.
-
     Instead of creating a new instance of the contained type and inserting or
     appending it, you can use the :meth:`appendOne()` or :meth:`insertOne()`
     methods to do it in one step.
@@ -64,12 +57,12 @@ class List(MutableSequence[ListItemT]):
     >>> import sunset
     >>> class ExampleSettings(sunset.Settings):
     ...     class ExampleSection(sunset.Section):
-    ...         a: sunset.Key[str] = sunset.NewKey(default="")
+    ...         a: sunset.Key[str] = sunset.Key(default="")
     ...
     ...     key_list: sunset.List[sunset.Key[int]] = (
-    ...         sunset.NewKeyList(default=0))
-    ...     section_list: sunset.List[ExampleSection] = sunset.NewSectionList(
-    ...         ExampleSection)
+    ...         sunset.List(sunset.Key(default=0)))
+    ...     section_list: sunset.List[ExampleSection] = sunset.List(
+    ...         ExampleSection())
 
     >>> settings = ExampleSettings()
     >>> settings.section_list.appendOne().a.set("demo")
@@ -252,7 +245,7 @@ class List(MutableSequence[ListItemT]):
 
         >>> import sunset
         >>> class ExampleSection(sunset.Section):
-        ...     item: sunset.Key[int] = sunset.NewKey(default=0)
+        ...     item: sunset.Key[int] = sunset.Key(default=0)
 
         >>> show = lambda l: [elt.item.get() for elt in l]
 
@@ -394,84 +387,3 @@ class List(MutableSequence[ListItemT]):
         ret += ",".join(repr(item) for item in self)
         ret += "]"
         return ret
-
-
-def NewSectionList(section: Type[SectionT]) -> List[SectionT]:
-    """
-    Creates a new List field that will contain instances of the given Section
-    type. This field can be used in the definition of a Section or a Settings.
-
-    This function must be used instead of normal instantiation when adding a
-    List of Section instances to a Settings or a Section definition. (This is
-    because, under the hood, both Section and Settings classes are dataclasses,
-    and their attributes must be dataclass fields. This function takes care of
-    that.)
-
-    Args:
-        section: The *type* of the Section instances that will be held in this
-            List.
-
-    Returns:
-        A dataclass field bound to a List of the requisite type.
-
-    Note:
-        It typically does not make sense to call this function outside of the
-        definition of a Settings or a Section.
-
-    Example:
-
-    >>> import sunset
-    >>> class ExampleSettings(sunset.Settings):
-    ...     class ExampleSection(sunset.Section):
-    ...         pass
-    ...
-    ...     list: sunset.List[ExampleSection] = sunset.NewSectionList(
-    ...         ExampleSection)
-
-    >>> settings = ExampleSettings()
-    >>> settings.list.appendOne()
-    ExampleSettings.ExampleSection()
-    """
-
-    factory: Callable[[], List[SectionT]] = List(section()).new
-    return field(default_factory=factory)
-
-
-def NewKeyList(
-    default: SerializableT,
-) -> List[Key[SerializableT]]:
-    """
-    Creates a new List field for the given Key type, to be used in the
-    definition of a Section or a Settings.
-
-    This function must be used instead of normal instantiation when adding a
-    List of Key instances to a Settings or a Section definition. (This is
-    because, under the hood, both Section and Settings classes are dataclasses,
-    and their attributes must be dataclass fields. This function takes care of
-    that.)
-
-    Args:
-        default: The default value for the Keys that will be held in this List.
-
-    Returns:
-        A dataclass field bound to a List of the requisite type.
-
-    Note:
-        It typically does not make sense to call this function outside of the
-        definition of a Settings or a Section class.
-
-    Example:
-
-    >>> import sunset
-    >>> class ExampleSettings(sunset.Settings):
-    ...     list: sunset.List[sunset.Key[int]] = sunset.NewKeyList(default=0)
-
-    >>> settings = ExampleSettings()
-    >>> settings.list.appendOne()
-    <Key[int]:0>
-    """
-
-    list_factory: Callable[[], List[Key[SerializableT]]] = List(
-        Key(default=default)
-    ).new
-    return field(default_factory=list_factory)

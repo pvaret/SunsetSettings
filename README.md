@@ -68,7 +68,7 @@ arbitrarily deep.
 ````python
 >>> import sunset
 >>> class Animals(sunset.Settings):
-...     paws: sunset.Key[int] = sunset.NewKey(default=4)
+...     paws: sunset.Key[int] = sunset.Key(default=4)
 ... 
 >>> animals = Animals()
 >>> octopuses = animals.deriveAs("octopuses")

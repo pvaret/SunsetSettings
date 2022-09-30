@@ -37,10 +37,10 @@ class Settings(Section):
     >>> import sunset
 
     >>> class AnimalSettings(sunset.Settings):
-    ...     hearts: sunset.Key[int] = sunset.NewKey(default=0)
-    ...     legs: sunset.Key[int] = sunset.NewKey(default=0)
-    ...     wings: sunset.Key[int] = sunset.NewKey(default=0)
-    ...     fur: sunset.Key[bool] = sunset.NewKey(default=False)
+    ...     hearts: sunset.Key[int] = sunset.Key(default=0)
+    ...     legs: sunset.Key[int] = sunset.Key(default=0)
+    ...     wings: sunset.Key[int] = sunset.Key(default=0)
+    ...     fur: sunset.Key[bool] = sunset.Key(default=False)
 
     >>> animals = AnimalSettings()
     >>> animals.hearts.set(1)
