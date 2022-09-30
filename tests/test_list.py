@@ -13,13 +13,15 @@ class ExampleSection(sunset.Section):
 class TestList:
     def test_protocol_implementation(self):
 
-        r: sunset.List[ExampleSection] = sunset.List(lambda: ExampleSection())
+        r: sunset.List[ExampleSection] = sunset.List(ExampleSection())
         assert isinstance(r, sunset.protocols.Inheriter)
+        assert isinstance(r, sunset.protocols.ItemTemplate)
         assert isinstance(r, sunset.protocols.Dumpable)
+        assert isinstance(r, sunset.protocols.Restorable)
 
     def test_add_pop(self):
 
-        r: sunset.List[ExampleSection] = sunset.List(lambda: ExampleSection())
+        r: sunset.List[ExampleSection] = sunset.List(ExampleSection())
         r.append(ExampleSection())
 
         assert len(r) == 1
@@ -33,8 +35,8 @@ class TestList:
 
     def test_inheritance(self):
 
-        r1: sunset.List[ExampleSection] = sunset.List(lambda: ExampleSection())
-        r2: sunset.List[ExampleSection] = sunset.List(lambda: ExampleSection())
+        r1: sunset.List[ExampleSection] = sunset.List(ExampleSection())
+        r2: sunset.List[ExampleSection] = sunset.List(ExampleSection())
 
         assert r2 not in r1.children()
         assert r2.parent() is None
@@ -49,9 +51,9 @@ class TestList:
 
     def test_reparenting(self):
 
-        r1: sunset.List[ExampleSection] = sunset.List(lambda: ExampleSection())
-        r2: sunset.List[ExampleSection] = sunset.List(lambda: ExampleSection())
-        r3: sunset.List[ExampleSection] = sunset.List(lambda: ExampleSection())
+        r1: sunset.List[ExampleSection] = sunset.List(ExampleSection())
+        r2: sunset.List[ExampleSection] = sunset.List(ExampleSection())
+        r3: sunset.List[ExampleSection] = sunset.List(ExampleSection())
 
         assert r3 not in r1.children()
         assert r3 not in r2.children()
@@ -76,8 +78,8 @@ class TestList:
         def flatten(fixtures: Iterator[ExampleSection]) -> list[str]:
             return [f.test.get() for f in fixtures]
 
-        r1: sunset.List[ExampleSection] = sunset.List(lambda: ExampleSection())
-        r2: sunset.List[ExampleSection] = sunset.List(lambda: ExampleSection())
+        r1: sunset.List[ExampleSection] = sunset.List(ExampleSection())
+        r2: sunset.List[ExampleSection] = sunset.List(ExampleSection())
 
         r1.append(ExampleSection())
         r1[0].test.set("test r1")
@@ -92,7 +94,7 @@ class TestList:
 
     def test_dump(self):
 
-        r: sunset.List[ExampleSection] = sunset.List(lambda: ExampleSection())
+        r: sunset.List[ExampleSection] = sunset.List(ExampleSection())
 
         assert r.dump() == []
 
@@ -111,7 +113,7 @@ class TestList:
 
     def test_restore(self, mocker: MockerFixture):
 
-        r: sunset.List[ExampleSection] = sunset.List(lambda: ExampleSection())
+        r: sunset.List[ExampleSection] = sunset.List(ExampleSection())
         callback = mocker.stub()
         r.onKeyModifiedCall(callback)
 
@@ -132,9 +134,7 @@ class TestList:
 
     def test_restore_order(self):
 
-        r: sunset.List[sunset.Key[str]] = sunset.List(
-            lambda: sunset.Key(default="")
-        )
+        r: sunset.List[sunset.Key[str]] = sunset.List(sunset.Key(default=""))
         r.restore(
             [
                 ("5", "five"),
@@ -157,15 +157,11 @@ class TestList:
         # A List does not keep a reference to its parent or children.
 
         section_list: sunset.List[ExampleSection] = sunset.List(
-            lambda: ExampleSection()
+            ExampleSection()
         )
-        level1: sunset.List[ExampleSection] = sunset.List(
-            lambda: ExampleSection()
-        )
+        level1: sunset.List[ExampleSection] = sunset.List(ExampleSection())
         level1.setParent(section_list)
-        level2: sunset.List[ExampleSection] = sunset.List(
-            lambda: ExampleSection()
-        )
+        level2: sunset.List[ExampleSection] = sunset.List(ExampleSection())
         level2.setParent(level1)
 
         assert level1.parent() is not None
@@ -183,7 +179,7 @@ class TestList:
         callback = mocker.stub()
 
         section_list: sunset.List[ExampleSection] = sunset.List(
-            lambda: ExampleSection()
+            ExampleSection()
         )
 
         section_list.onKeyModifiedCall(callback)
@@ -249,7 +245,7 @@ class TestList:
         callback = mocker.stub()
 
         section_list: sunset.List[ExampleSection] = sunset.List(
-            lambda: ExampleSection()
+            ExampleSection()
         )
         section_list.onKeyModifiedCall(callback)
 
@@ -306,7 +302,7 @@ class TestList:
     ):
 
         section_list: sunset.List[ExampleSection] = sunset.List(
-            lambda: ExampleSection()
+            ExampleSection()
         )
 
         s1 = ExampleSection()

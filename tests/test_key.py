@@ -25,6 +25,7 @@ class TestKey:
 
         s = sunset.Key(default="")
         assert isinstance(s, sunset.protocols.Inheriter)
+        assert isinstance(s, sunset.protocols.ItemTemplate)
         assert isinstance(s, sunset.protocols.Dumpable)
         assert isinstance(s, sunset.protocols.Restorable)
 

@@ -22,7 +22,9 @@ class TestSection:
 
         t = ExampleSection()
         assert isinstance(t, sunset.protocols.Inheriter)
+        assert isinstance(t, sunset.protocols.ItemTemplate)
         assert isinstance(t, sunset.protocols.Dumpable)
+        assert isinstance(t, sunset.protocols.Restorable)
 
     def test_creation(self):
 
@@ -247,7 +249,7 @@ class TestSection:
         class TestSection3(sunset.Section):
 
             list: sunset.List[sunset.Key[int]] = sunset.List(
-                lambda: sunset.Key(default=0)
+                sunset.Key(default=0)
             )
 
         with pytest.raises(ValueError):

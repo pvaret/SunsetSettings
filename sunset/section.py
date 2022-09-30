@@ -262,6 +262,16 @@ class Section:
         if self._modification_notification_enabled:
             self._modification_notification_callbacks.callAll(self)
 
+    def new(self) -> Self:
+        """
+        Returns a new instance of this Section with the same fields.
+
+        Returns:
+            A Section instance.
+        """
+
+        return self.__class__()
+
 
 def NewSection(section: Type[SectionT]) -> SectionT:
     """

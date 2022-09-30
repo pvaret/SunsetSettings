@@ -46,18 +46,18 @@ class List(MutableSequence[ListItemT]):
     inheritance. The inheritance is used in the :meth:`iterAll()` method, which
     iterates on a List and its parent.
 
-    When adding a List to a Settings or a Section definition, do not
-    instantiate the List class directly; use the
-    :func:`sunset.NewSectionList()` and :func:`sunset.NewKeyList()`
-    functions instead.
+    When adding a List to a Settings or a Section definition, do not instantiate
+    the List class directly; use the :func:`sunset.NewSectionList()` and
+    :func:`sunset.NewKeyList()` functions instead.
 
     Instead of creating a new instance of the contained type and inserting or
     appending it, you can use the :meth:`appendOne()` or :meth:`insertOne()`
     methods to do it in one step.
 
     Args:
-        factory: A callable that takes no argument and returns a new item
-            of the type contained in this List.
+        template: A Key or a Section that examplifies the items that will be
+            contained in this List. (This template will not be added to the
+            List.)
 
     Example:
 
@@ -85,9 +85,9 @@ class List(MutableSequence[ListItemT]):
     _children: WeakNonHashableSet[Self]
     _modification_notification_callbacks: CallbackRegistry[Self]
     _modification_notification_enabled: bool
-    _item_factory: Callable[[], ListItemT]
+    _template: ListItemT
 
-    def __init__(self, factory: Callable[[], ListItemT]) -> None:
+    def __init__(self, template: ListItemT) -> None:
 
         self._contents = []
 
@@ -95,8 +95,7 @@ class List(MutableSequence[ListItemT]):
         self._children = WeakNonHashableSet()
         self._modification_notification_callbacks = CallbackRegistry()
         self._modification_notification_enabled = True
-
-        self._item_factory = factory
+        self._template = template
 
     def insert(self, index: SupportsIndex, value: ListItemT) -> None:
 
@@ -189,7 +188,7 @@ class List(MutableSequence[ListItemT]):
             An instance of the item type contained in this List.
         """
 
-        item = self._item_factory()
+        item = self._template.new()
         self.append(item)
         return item
 
@@ -205,7 +204,7 @@ class List(MutableSequence[ListItemT]):
             An instance of the item type contained in this List.
         """
 
-        item = self._item_factory()
+        item = self._template.new()
         self.insert(index, item)
         return item
 
@@ -257,10 +256,10 @@ class List(MutableSequence[ListItemT]):
 
         >>> show = lambda l: [elt.item.get() for elt in l]
 
-        >>> l1 = sunset.List(ExampleSection)
+        >>> l1 = sunset.List(ExampleSection())
         >>> l1.appendOne().item.set(1)
         >>> l1.appendOne().item.set(2)
-        >>> l2 = sunset.List(ExampleSection)
+        >>> l2 = sunset.List(ExampleSection())
         >>> l2.appendOne().item.set(3)
         >>> l2.appendOne().item.set(4)
 
@@ -362,7 +361,7 @@ class List(MutableSequence[ListItemT]):
             subitems.setdefault(item_name, []).append((subname, dump))
 
         for k in sorted(subitems.keys(), key=int):
-            item = self._item_factory()
+            item = self._template.new()
             item.restore(subitems[k])
             self.append(item)
 
@@ -378,6 +377,16 @@ class List(MutableSequence[ListItemT]):
 
             if isinstance(value, List) or value in self:
                 self._modification_notification_callbacks.callAll(self)
+
+    def new(self) -> Self:
+        """
+        Returns a new instance of this List capable of holding the same type.
+
+        Returns:
+            A new List.
+        """
+
+        return self.__class__(template=self._template)
 
     def __repr__(self) -> str:
 
@@ -424,7 +433,7 @@ def NewSectionList(section: Type[SectionT]) -> List[SectionT]:
     ExampleSettings.ExampleSection()
     """
 
-    factory: Callable[[], List[SectionT]] = lambda: List[SectionT](section)
+    factory: Callable[[], List[SectionT]] = List(section()).new
     return field(default_factory=factory)
 
 
@@ -462,10 +471,7 @@ def NewKeyList(
     <Key[int]:0>
     """
 
-    def key_factory() -> Key[SerializableT]:
-        return Key(default=default)
-
-    factory: Callable[[], List[Key[SerializableT]]] = lambda: List[
-        Key[SerializableT]
-    ](key_factory)
-    return field(default_factory=factory)
+    list_factory: Callable[[], List[Key[SerializableT]]] = List(
+        Key(default=default)
+    ).new
+    return field(default_factory=list_factory)

@@ -70,3 +70,9 @@ class Restorable(Protocol):
 class ModificationNotifier(Protocol):
     def onKeyModifiedCall(self, callback: Callable[[Self], None]) -> None:
         ...
+
+
+@runtime_checkable
+class ItemTemplate(Protocol):
+    def new(self: Self) -> Self:
+        ...

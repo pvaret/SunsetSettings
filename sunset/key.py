@@ -326,6 +326,16 @@ class Key(Generic[SerializableT]):
 
         self._modification_notification_callbacks.callAll(self)
 
+    def new(self) -> Self:
+        """
+        Returns a new instance of this Key with the same default value.
+
+        Returns:
+            A new Key.
+        """
+
+        return self.__class__(default=self._default)
+
     def __repr__(self) -> str:
 
         return f"<Key[{self._type.__name__}]:{serialize(self.get())}>"
@@ -362,4 +372,4 @@ def NewKey(default: SerializableT) -> Key[SerializableT]:
     >>> settings = ExampleSettings()
     """
 
-    return field(default_factory=lambda: Key(default=default))
+    return field(default_factory=Key(default=default).new)
