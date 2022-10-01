@@ -1,28 +1,28 @@
 from pytest_mock import MockerFixture
 
-import sunset
+from sunset import Key, List, Section, protocols
 
 
-class ExampleSection(sunset.Section):
-    class Subsection(sunset.Section):
-        b = sunset.Key(42)
+class ExampleSection(Section):
+    class Subsection(Section):
+        b = Key(42)
 
-    class Item(sunset.Section):
-        c = sunset.Key("default c")
+    class Item(Section):
+        c = Key("default c")
 
-    a = sunset.Key("default a")
+    a = Key("default a")
     subsection = Subsection()
-    list = sunset.List(Item())
+    list = List(Item())
 
 
 class TestSection:
     def test_protocol_implementation(self):
 
         t = ExampleSection()
-        assert isinstance(t, sunset.protocols.Inheriter)
-        assert isinstance(t, sunset.protocols.ItemTemplate)
-        assert isinstance(t, sunset.protocols.Dumpable)
-        assert isinstance(t, sunset.protocols.Restorable)
+        assert isinstance(t, protocols.Inheriter)
+        assert isinstance(t, protocols.ItemTemplate)
+        assert isinstance(t, protocols.Dumpable)
+        assert isinstance(t, protocols.Restorable)
 
     def test_creation(self):
 
@@ -143,9 +143,9 @@ class TestSection:
         ]
 
     def test_dump_ignores_private_attributes(self):
-        class ExampleSectionWithPrivateAttr(sunset.Section):
-            _private = sunset.Key(default=0)
-            public = sunset.Key(default=0)
+        class ExampleSectionWithPrivateAttr(Section):
+            _private = Key(default=0)
+            public = Key(default=0)
 
         s = ExampleSectionWithPrivateAttr()
         s.public.set(56)

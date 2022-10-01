@@ -38,14 +38,12 @@ class Section:
 
     Example:
 
-    >>> import sunset
-    >>> class MySection(sunset.Section):
-    ...     class MySubsection(sunset.Section):
-    ...         subkey = sunset.Key(default=0)
-    ...
+    >>> from sunset import Key, Section
+    >>> class MySection(Section):
+    ...     class MySubsection(Section):
+    ...         subkey = Key(default=0)
     ...     subsection1 = MySubsection()
     ...     subsection2 = MySubsection()
-
     >>> section = MySection()
     >>> section.subsection1.subkey.get()
     0

@@ -17,15 +17,21 @@ SunsetSettings is type-safe; that is to say, if you are holding it wrong, type
 checkers will tell you.
 
 ```python
->>> import sunset
+>>> from sunset import Key
 
 >>> # Types can be inferred from the provided default value:
->>> number_of_ponies = sunset.Key(default=0)
-
+>>> number_of_ponies = Key(default=0)
+>>> number_of_ponies
+<Key[int]:0>
 >>> number_of_ponies.set(6)  # Works!
 >>> number_of_ponies.set("six")  # Type error!
+>>> number_of_ponies.get()  # Value is unchanged.
+6
+>>> from typing import TYPE_CHECKING
+>>> if TYPE_CHECKING:
+...     reveal_type(number_of_ponies.get())
+>>> # Revealed type is "builtins.int"
 
->>> ponies = number_of_ponies.get()  # 'ponies' correctly typechecks as int
 ```
 
 ### Extensibility
@@ -35,7 +41,7 @@ simple serialization protocol. (See `sunset/protocols.py`.)
 
 ```python
 >>> import re
->>> from typing import Optional
+>>> from typing import Optional, TYPE_CHECKING
 >>> class Coordinates:
 ...     def __init__(self, x: int = 0, y: int = 0) -> None:
 ...         self._x = x
@@ -53,9 +59,12 @@ simple serialization protocol. (See `sunset/protocols.py`.)
 ...         y = int(m.group(2))
 ...         return cls(x, y)
 
->>> import sunset
->>> coordinates = sunset.Key(default=Coordinates())
->>> coordinates.get()  # Correctly typechecks to 'Coordinates'.
+>>> from sunset import Key
+>>> coordinates = Key(default=Coordinates())
+>>> if TYPE_CHECKING:
+...     reveal_type(coordinates.get())
+>>> # Revealed type is "Coordinates"
+
 ```
 
 ### Inheritance
@@ -65,10 +74,10 @@ partially overriden for specific cases (much like your VSCode settings can be
 overriden by workspace, for instance). The hierarchy of inheritance can be
 arbitrarily deep.
 
-````python
->>> import sunset
->>> class Animals(sunset.Settings):
-...     paws = sunset.Key(default=4)
+```python
+>>> from sunset import Key, Settings
+>>> class Animals(Settings):
+...     paws = Key(default=4)
 ... 
 >>> animals = Animals()
 >>> octopuses = animals.deriveAs("octopuses")
@@ -79,21 +88,22 @@ arbitrarily deep.
 8
 >>> animals.paws.get()
 4
-````
+
+```
 
 ### Callbacks
 
 Each setting key can be given callbacks to be called when its value changes.
 
 ```python
->>> import sunset
->>> number_of_ponies = sunset.Key(default=0)
+>>> from sunset import Key
+>>> number_of_ponies = Key(default=0)
 >>> def callback(value):
 ...     print("Pony count updated:", value)
-...     
->>> number_of_ponies.onChangeCall(callback)
+>>> number_of_ponies.onValueChangeCall(callback)
 >>> number_of_ponies.set(6)
 Pony count updated: 6
+
 ```
 
 ## Requirements

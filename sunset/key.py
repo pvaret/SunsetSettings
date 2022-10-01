@@ -21,20 +21,20 @@ class Key(Generic[SerializableT]):
 
     Args:
         default: (str, int, bool, or anything that implements the
-            :class:`sunset.protocols.Serializable` protocol) The value that this
-            Key will return when not otherwise set; the type of this default
-            determines the type of the Key.
+            :class:`protocols.Serializable` protocol) The value that this Key
+            will return when not otherwise set; the type of this default
+            determines the type of the values that can be set on this Key.
 
     Example:
 
-    >>> import sunset
-    >>> key: sunset.Key[int] = sunset.Key(default=0)
+    >>> from sunset import Key
+    >>> key: Key[int] = Key(default=0)
     >>> key.get()
     0
     >>> key.set(42)
     >>> key.get()
     42
-    >>> child_key: sunset.Key[int] = sunset.Key(default=0)
+    >>> child_key: Key[int] = Key(default=0)
     >>> child_key.setParent(key)
     >>> child_key.get()
     42
@@ -102,11 +102,17 @@ class Key(Generic[SerializableT]):
         Sets the given value on this Key.
 
         Args:
-            value: The value that this Key will now hold.
+            value: The value that this Key will now hold. Must be of the type
+                bound to this Key, i.e. the type of this Key's default value.
 
         Returns:
             None.
         """
+
+        # Safety check in case the user is holding it wrong.
+
+        if not isinstance(value, self._type):
+            return
 
         prev_value = self.get()
         previously_set = self.isSet()

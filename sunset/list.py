@@ -48,24 +48,26 @@ class List(MutableSequence[ListItemT]):
     methods to do it in one step.
 
     Args:
-        template: A Key or a Section that examplifies the items that will be
-            contained in this List. (This template will not be added to the
-            List.)
+        template: A Key or a Section *instance* that represents the items that
+            will be contained in this List. (The template itself will not be
+            added to the List.)
 
     Example:
 
-    >>> import sunset
-    >>> class ExampleSettings(sunset.Settings):
-    ...     class ExampleSection(sunset.Section):
-    ...         a = sunset.Key(default="")
-    ...
-    ...     key_list = sunset.List(sunset.Key(default=0))
-    ...     section_list = sunset.List(ExampleSection())
-
+    >>> from sunset import Key, List, Section, Settings
+    >>> class ExampleSettings(Settings):
+    ...     class ExampleSection(Section):
+    ...         a = Key(default="")
+    ...     key_list = List(Key(default=0))
+    ...     section_list = List(ExampleSection())
     >>> settings = ExampleSettings()
+    >>> settings.section_list
+    []
     >>> settings.section_list.appendOne().a.set("demo")
     >>> settings.section_list
     [ExampleSettings.ExampleSection(a=<Key[str]:demo>)]
+    >>> settings.key_list
+    []
     >>> settings.key_list.appendOne().set(12)
     >>> settings.key_list
     [<Key[int]:12>]
@@ -241,25 +243,20 @@ class List(MutableSequence[ListItemT]):
 
         Example:
 
-        >>> import sunset
-        >>> class ExampleSection(sunset.Section):
-        ...     item = sunset.Key(default=0)
-
+        >>> from sunset import Key, List, Section
+        >>> class ExampleSection(Section):
+        ...     item = Key(default=0)
         >>> show = lambda l: [elt.item.get() for elt in l]
-
-        >>> l1 = sunset.List(ExampleSection())
+        >>> l1 = List(ExampleSection())
         >>> l1.appendOne().item.set(1)
         >>> l1.appendOne().item.set(2)
-        >>> l2 = sunset.List(ExampleSection())
+        >>> l2 = List(ExampleSection())
         >>> l2.appendOne().item.set(3)
         >>> l2.appendOne().item.set(4)
-
-
         >>> show(l1)
         [1, 2]
         >>> show(l2)
         [3, 4]
-
         >>> show(l1.iterAll())
         [1, 2]
         >>> l1.setParent(l2)

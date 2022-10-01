@@ -1,6 +1,6 @@
 import pytest
 
-import sunset
+from sunset import CallbackRegistry
 
 
 class TestCallbackRegistry:
@@ -11,7 +11,7 @@ class TestCallbackRegistry:
         def test(value: str) -> None:
             call_args.append(value)
 
-        reg: sunset.CallbackRegistry[str] = sunset.CallbackRegistry()
+        reg: CallbackRegistry[str] = CallbackRegistry()
 
         assert len(reg) == 0
         reg.callAll("not added")
@@ -36,7 +36,7 @@ class TestCallbackRegistry:
             def test(self, value: str) -> None:
                 call_args.append(value)
 
-        reg: sunset.CallbackRegistry[str] = sunset.CallbackRegistry()
+        reg: CallbackRegistry[str] = CallbackRegistry()
 
         t = Test()
 
@@ -58,7 +58,7 @@ class TestCallbackRegistry:
         def test(_: int) -> None:
             pass
 
-        reg: sunset.CallbackRegistry[int] = sunset.CallbackRegistry()
+        reg: CallbackRegistry[int] = CallbackRegistry()
 
         reg.add(test)
         assert test in reg
@@ -72,7 +72,7 @@ class TestCallbackRegistry:
 
         t = Test()
 
-        reg: sunset.CallbackRegistry[int] = sunset.CallbackRegistry()
+        reg: CallbackRegistry[int] = CallbackRegistry()
 
         reg.add(t.test)
         assert t.test in reg
@@ -83,7 +83,7 @@ class TestCallbackRegistry:
         def test(_: bool):
             pass
 
-        reg: sunset.CallbackRegistry[bool] = sunset.CallbackRegistry()
+        reg: CallbackRegistry[bool] = CallbackRegistry()
 
         reg.add(test)
         assert test in reg
@@ -98,7 +98,7 @@ class TestCallbackRegistry:
         def test(value: str) -> None:
             call_args.append(value)
 
-        reg: sunset.CallbackRegistry[str] = sunset.CallbackRegistry()
+        reg: CallbackRegistry[str] = CallbackRegistry()
 
         reg.add(test)
         assert len(reg) == 1
@@ -116,7 +116,7 @@ class TestCallbackRegistry:
             def test(self, value: str) -> None:
                 call_args.append(value)
 
-        reg: sunset.CallbackRegistry[str] = sunset.CallbackRegistry()
+        reg: CallbackRegistry[str] = CallbackRegistry()
 
         t = Test()
 
@@ -147,7 +147,7 @@ class TestCallbackRegistry:
 
             hash(t)
 
-        reg: sunset.CallbackRegistry[int] = sunset.CallbackRegistry()
+        reg: CallbackRegistry[int] = CallbackRegistry()
 
         reg.add(t.test)
         reg.callAll(42)
@@ -162,7 +162,7 @@ class TestCallbackRegistry:
             def test(self, value: str) -> None:
                 call_args.append(value)
 
-        reg: sunset.CallbackRegistry[str] = sunset.CallbackRegistry()
+        reg: CallbackRegistry[str] = CallbackRegistry()
 
         t1 = Test()
         t2 = Test()

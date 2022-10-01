@@ -2,29 +2,29 @@ import io
 
 from pytest_mock import MockerFixture
 
-import sunset
+from sunset import Key, List, Section, Settings, normalize
 
 
 def test_normalize():
 
-    assert sunset.normalize("") == ""
-    assert sunset.normalize("     ") == ""
-    assert sunset.normalize("  A  B  ") == "ab"
-    assert sunset.normalize("(a):?/b") == "ab"
-    assert sunset.normalize("a-b_c") == "a-b_c"
+    assert normalize("") == ""
+    assert normalize("     ") == ""
+    assert normalize("  A  B  ") == "ab"
+    assert normalize("(a):?/b") == "ab"
+    assert normalize("a-b_c") == "a-b_c"
 
 
-class ExampleSettings(sunset.Settings):
-    class ExampleSection(sunset.Section):
-        c = sunset.Key(default=0)
-        d = sunset.Key(default=False)
+class ExampleSettings(Settings):
+    class ExampleSection(Section):
+        c = Key(default=0)
+        d = Key(default=False)
 
     subsection = ExampleSection()
-    section_list = sunset.List(ExampleSection())
-    key_list = sunset.List(sunset.Key(default=""))
+    section_list = List(ExampleSection())
+    key_list = List(Key(default=""))
 
-    a = sunset.Key(default="")
-    b = sunset.Key(default="")
+    a = Key(default="")
+    b = Key(default="")
 
 
 class TestSettings:
@@ -636,7 +636,7 @@ section_list.4.c = 4
         callback.reset_mock()
 
     def test_name_unicity(self):
-        class TestSettings(sunset.Settings):
+        class TestSettings(Settings):
             pass
 
         parent = TestSettings()
@@ -650,7 +650,7 @@ section_list.4.c = 4
         )
 
     def test_anonymous_name_not_unique(self):
-        class TestSettings(sunset.Settings):
+        class TestSettings(Settings):
             pass
 
         parent = TestSettings()

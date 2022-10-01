@@ -1,6 +1,6 @@
 from typing import Any, MutableSet
 
-import sunset
+from sunset import non_hashable_set
 
 
 class Dummy:
@@ -10,7 +10,7 @@ class Dummy:
 class TestNonHashableSet:
     def test_mutableset(self):
 
-        s: MutableSet[Any] = sunset.non_hashable_set.NonHashableSet()
+        s: MutableSet[Any] = non_hashable_set.NonHashableSet()
         item = Dummy()
 
         assert item not in s
@@ -30,7 +30,7 @@ class TestNonHashableSet:
 
     def test_persistence(self):
 
-        s: MutableSet[Any] = sunset.non_hashable_set.NonHashableSet()
+        s: MutableSet[Any] = non_hashable_set.NonHashableSet()
         item = Dummy()
 
         s.add(item)
@@ -42,7 +42,7 @@ class TestNonHashableSet:
 
 class TestWeakNonHashableSet:
     def test_mutableset(self):
-        s: MutableSet[Any] = sunset.non_hashable_set.WeakNonHashableSet()
+        s: MutableSet[Any] = non_hashable_set.WeakNonHashableSet()
         item = Dummy()
 
         assert item not in s
@@ -62,7 +62,7 @@ class TestWeakNonHashableSet:
 
     def test_persistence(self):
 
-        s: MutableSet[Any] = sunset.non_hashable_set.WeakNonHashableSet()
+        s: MutableSet[Any] = non_hashable_set.WeakNonHashableSet()
         item = Dummy()
 
         s.add(item)

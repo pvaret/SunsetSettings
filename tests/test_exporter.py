@@ -1,36 +1,36 @@
 import io
 
-import sunset
+from sunset import exporter
 
 
 def test_escape():
 
-    assert sunset.exporter.maybeEscape("") == '""'
-    assert sunset.exporter.maybeEscape("123") == "123"
-    assert sunset.exporter.maybeEscape("test test") == "test test"
-    assert sunset.exporter.maybeEscape("   ") == '"   "'
-    assert sunset.exporter.maybeEscape(" a") == '" a"'
-    assert sunset.exporter.maybeEscape("a ") == '"a "'
-    assert sunset.exporter.maybeEscape('"') == r'"\""'
-    assert sunset.exporter.maybeEscape("test\ntest") == r'"test\ntest"'
-    assert sunset.exporter.maybeEscape(r"test\test") == r'"test\\test"'
+    assert exporter.maybeEscape("") == '""'
+    assert exporter.maybeEscape("123") == "123"
+    assert exporter.maybeEscape("test test") == "test test"
+    assert exporter.maybeEscape("   ") == '"   "'
+    assert exporter.maybeEscape(" a") == '" a"'
+    assert exporter.maybeEscape("a ") == '"a "'
+    assert exporter.maybeEscape('"') == r'"\""'
+    assert exporter.maybeEscape("test\ntest") == r'"test\ntest"'
+    assert exporter.maybeEscape(r"test\test") == r'"test\\test"'
 
 
 def test_unescape():
 
-    assert sunset.exporter.unescape("") == ""
-    assert sunset.exporter.unescape('""') == ""
-    assert sunset.exporter.unescape('"') == '"'
-    assert sunset.exporter.unescape('"test') == "test"
-    assert sunset.exporter.unescape('test"') == "test"
-    assert sunset.exporter.unescape("123") == "123"
-    assert sunset.exporter.unescape("test \ttest") == "test \ttest"
-    assert sunset.exporter.unescape('"   "') == "   "
-    assert sunset.exporter.unescape('" a"') == " a"
-    assert sunset.exporter.unescape('"a "') == "a "
-    assert sunset.exporter.unescape(r'"\""') == '"'
-    assert sunset.exporter.unescape(r'"test\ntest"') == "test\ntest"
-    assert sunset.exporter.unescape(r'"test\\test"') == r"test\test"
+    assert exporter.unescape("") == ""
+    assert exporter.unescape('""') == ""
+    assert exporter.unescape('"') == '"'
+    assert exporter.unescape('"test') == "test"
+    assert exporter.unescape('test"') == "test"
+    assert exporter.unescape("123") == "123"
+    assert exporter.unescape("test \ttest") == "test \ttest"
+    assert exporter.unescape('"   "') == "   "
+    assert exporter.unescape('" a"') == " a"
+    assert exporter.unescape('"a "') == "a "
+    assert exporter.unescape(r'"\""') == '"'
+    assert exporter.unescape(r'"test\ntest"') == "test\ntest"
+    assert exporter.unescape(r'"test\\test"') == r"test\test"
 
 
 def test_escape_reversible():
@@ -46,10 +46,7 @@ def test_escape_reversible():
         "test\ntest",
         r"test\test",
     ):
-        assert (
-            sunset.exporter.unescape(sunset.exporter.maybeEscape(string))
-            == string
-        )
+        assert exporter.unescape(exporter.maybeEscape(string)) == string
 
 
 def test_save():
@@ -82,7 +79,7 @@ def test_save():
 
     file = io.StringIO()
 
-    sunset.exporter.saveToFile(file, input, MAIN, blanklines=True)
+    exporter.saveToFile(file, input, MAIN, blanklines=True)
     assert (
         file.getvalue()
         == """\
@@ -121,7 +118,7 @@ a = sub sub test
 """
     )
 
-    assert sunset.exporter.loadFromFile(input, MAIN) == [
+    assert exporter.loadFromFile(input, MAIN) == [
         (
             [MAIN],
             [

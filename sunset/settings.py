@@ -34,33 +34,26 @@ class Settings(Section):
 
     Example:
 
-    >>> import sunset
-
-    >>> class AnimalSettings(sunset.Settings):
-    ...     hearts = sunset.Key(default=0)
-    ...     legs = sunset.Key(default=0)
-    ...     wings = sunset.Key(default=0)
-    ...     fur = sunset.Key(default=False)
-
+    >>> from sunset import Key, Settings
+    >>> class AnimalSettings(Settings):
+    ...     hearts = Key(default=0)
+    ...     legs = Key(default=0)
+    ...     wings = Key(default=0)
+    ...     fur = Key(default=False)
     >>> animals = AnimalSettings()
     >>> animals.hearts.set(1)
-
     >>> mammals = animals.deriveAs("mammals")
     >>> mammals.fur.set(True)
     >>> mammals.legs.set(4)
-
     >>> humans = mammals.deriveAs("humans")
     >>> humans.legs.set(2)
     >>> humans.fur.set(False)
-
     >>> birds = animals.deriveAs("birds")
     >>> birds.legs.set(2)
     >>> birds.wings.set(2)
-
     >>> aliens = animals.derive()  # No name given!
     >>> aliens.hearts.set(2)
     >>> aliens.legs.set(7)
-
     >>> print(mammals.hearts.get())
     1
     >>> print(mammals.legs.get())
@@ -69,7 +62,6 @@ class Settings(Section):
     0
     >>> print(mammals.fur.get())
     True
-
     >>> print(birds.hearts.get())
     1
     >>> print(birds.legs.get())
@@ -78,7 +70,6 @@ class Settings(Section):
     2
     >>> print(birds.fur.get())
     False
-
     >>> print(humans.hearts.get())
     1
     >>> print(humans.legs.get())
@@ -87,7 +78,6 @@ class Settings(Section):
     0
     >>> print(humans.fur.get())
     False
-
     >>> print(aliens.hearts.get())
     2
     >>> print(aliens.legs.get())
@@ -96,7 +86,6 @@ class Settings(Section):
     0
     >>> print(aliens.fur.get())
     False
-
     >>> import io
     >>> txt = io.StringIO()
     >>> animals.save(txt)
@@ -200,15 +189,13 @@ class Settings(Section):
 
         Example:
 
-        >>> import sunset
-        >>> class TestSettings(sunset.Settings):
+        >>> from sunset import Settings
+        >>> class TestSettings(Settings):
         ...     pass
         >>> parent = TestSettings()
-
         >>> child1 = parent.derive()
         >>> child2 = parent.derive()
         >>> child3 = parent.derive()
-
         >>> child1.setName("  T ' e ? S / t")
         'test'
         >>> child2.setName("test")

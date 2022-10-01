@@ -2,26 +2,26 @@ from typing import Iterator
 
 from pytest_mock import MockerFixture
 
-import sunset
+from sunset import Key, List, Section, protocols
 
 
-class ExampleSection(sunset.Section):
+class ExampleSection(Section):
 
-    test = sunset.Key("")
+    test = Key("")
 
 
 class TestList:
     def test_protocol_implementation(self):
 
-        r: sunset.List[ExampleSection] = sunset.List(ExampleSection())
-        assert isinstance(r, sunset.protocols.Inheriter)
-        assert isinstance(r, sunset.protocols.ItemTemplate)
-        assert isinstance(r, sunset.protocols.Dumpable)
-        assert isinstance(r, sunset.protocols.Restorable)
+        r: List[ExampleSection] = List(ExampleSection())
+        assert isinstance(r, protocols.Inheriter)
+        assert isinstance(r, protocols.ItemTemplate)
+        assert isinstance(r, protocols.Dumpable)
+        assert isinstance(r, protocols.Restorable)
 
     def test_add_pop(self):
 
-        r: sunset.List[ExampleSection] = sunset.List(ExampleSection())
+        r: List[ExampleSection] = List(ExampleSection())
         r.append(ExampleSection())
 
         assert len(r) == 1
@@ -35,8 +35,8 @@ class TestList:
 
     def test_inheritance(self):
 
-        r1: sunset.List[ExampleSection] = sunset.List(ExampleSection())
-        r2: sunset.List[ExampleSection] = sunset.List(ExampleSection())
+        r1: List[ExampleSection] = List(ExampleSection())
+        r2: List[ExampleSection] = List(ExampleSection())
 
         assert r2 not in r1.children()
         assert r2.parent() is None
@@ -51,9 +51,9 @@ class TestList:
 
     def test_reparenting(self):
 
-        r1: sunset.List[ExampleSection] = sunset.List(ExampleSection())
-        r2: sunset.List[ExampleSection] = sunset.List(ExampleSection())
-        r3: sunset.List[ExampleSection] = sunset.List(ExampleSection())
+        r1: List[ExampleSection] = List(ExampleSection())
+        r2: List[ExampleSection] = List(ExampleSection())
+        r3: List[ExampleSection] = List(ExampleSection())
 
         assert r3 not in r1.children()
         assert r3 not in r2.children()
@@ -78,8 +78,8 @@ class TestList:
         def flatten(fixtures: Iterator[ExampleSection]) -> list[str]:
             return [f.test.get() for f in fixtures]
 
-        r1: sunset.List[ExampleSection] = sunset.List(ExampleSection())
-        r2: sunset.List[ExampleSection] = sunset.List(ExampleSection())
+        r1: List[ExampleSection] = List(ExampleSection())
+        r2: List[ExampleSection] = List(ExampleSection())
 
         r1.append(ExampleSection())
         r1[0].test.set("test r1")
@@ -94,7 +94,7 @@ class TestList:
 
     def test_dump(self):
 
-        r: sunset.List[ExampleSection] = sunset.List(ExampleSection())
+        r: List[ExampleSection] = List(ExampleSection())
 
         assert r.dump() == []
 
@@ -113,7 +113,7 @@ class TestList:
 
     def test_restore(self, mocker: MockerFixture):
 
-        r: sunset.List[ExampleSection] = sunset.List(ExampleSection())
+        r: List[ExampleSection] = List(ExampleSection())
         callback = mocker.stub()
         r.onKeyModifiedCall(callback)
 
@@ -134,7 +134,7 @@ class TestList:
 
     def test_restore_order(self):
 
-        r: sunset.List[sunset.Key[str]] = sunset.List(sunset.Key(default=""))
+        r: List[Key[str]] = List(Key(default=""))
         r.restore(
             [
                 ("5", "five"),
@@ -156,12 +156,10 @@ class TestList:
 
         # A List does not keep a reference to its parent or children.
 
-        section_list: sunset.List[ExampleSection] = sunset.List(
-            ExampleSection()
-        )
-        level1: sunset.List[ExampleSection] = sunset.List(ExampleSection())
+        section_list: List[ExampleSection] = List(ExampleSection())
+        level1: List[ExampleSection] = List(ExampleSection())
         level1.setParent(section_list)
-        level2: sunset.List[ExampleSection] = sunset.List(ExampleSection())
+        level2: List[ExampleSection] = List(ExampleSection())
         level2.setParent(level1)
 
         assert level1.parent() is not None
@@ -178,9 +176,7 @@ class TestList:
 
         callback = mocker.stub()
 
-        section_list: sunset.List[ExampleSection] = sunset.List(
-            ExampleSection()
-        )
+        section_list: List[ExampleSection] = List(ExampleSection())
 
         section_list.onKeyModifiedCall(callback)
 
@@ -244,9 +240,7 @@ class TestList:
 
         callback = mocker.stub()
 
-        section_list: sunset.List[ExampleSection] = sunset.List(
-            ExampleSection()
-        )
+        section_list: List[ExampleSection] = List(ExampleSection())
         section_list.onKeyModifiedCall(callback)
 
         s1 = ExampleSection()
@@ -301,9 +295,7 @@ class TestList:
         self, mocker: MockerFixture
     ):
 
-        section_list: sunset.List[ExampleSection] = sunset.List(
-            ExampleSection()
-        )
+        section_list: List[ExampleSection] = List(ExampleSection())
 
         s1 = ExampleSection()
         s2 = ExampleSection()

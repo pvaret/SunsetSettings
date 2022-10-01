@@ -1,8 +1,8 @@
 API Reference
 =============
 
-sunset.Settings
----------------
+Settings
+--------
 
 .. autoclass:: sunset.Settings
 
@@ -28,8 +28,8 @@ sunset.Settings
 
     .. automethod:: siblings
 
-sunset.Key
-----------
+Key
+---
 
 .. autoclass:: sunset.Key
 
@@ -51,8 +51,8 @@ sunset.Key
 
     .. automethod:: setParent
 
-sunset.Section
---------------
+Section
+-------
 
 .. autoclass:: sunset.Section
 
@@ -66,8 +66,8 @@ sunset.Section
 
     .. automethod:: setParent
 
-sunset.List
------------
+List
+----
 
 .. autoclass:: sunset.List
 
@@ -81,8 +81,8 @@ sunset.List
 
     .. automethod:: setParent
 
-sunset.protocols.Serializable
------------------------------
+protocols.Serializable
+----------------------
 
 .. autoclass:: sunset.protocols.Serializable
 
