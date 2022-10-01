@@ -5,14 +5,14 @@ import sunset
 
 class ExampleSection(sunset.Section):
     class Subsection(sunset.Section):
-        b: sunset.Key[int] = sunset.Key(42)
+        b = sunset.Key(42)
 
     class Item(sunset.Section):
-        c: sunset.Key[str] = sunset.Key("default c")
+        c = sunset.Key("default c")
 
-    a: sunset.Key[str] = sunset.Key("default a")
-    subsection: Subsection = Subsection()
-    list: sunset.List[Item] = sunset.List(Item())
+    a = sunset.Key("default a")
+    subsection = Subsection()
+    list = sunset.List(Item())
 
 
 class TestSection:
@@ -144,8 +144,8 @@ class TestSection:
 
     def test_dump_ignores_private_attributes(self):
         class ExampleSectionWithPrivateAttr(sunset.Section):
-            _private: sunset.Key[int] = sunset.Key(default=0)
-            public: sunset.Key[int] = sunset.Key(default=0)
+            _private = sunset.Key(default=0)
+            public = sunset.Key(default=0)
 
         s = ExampleSectionWithPrivateAttr()
         s.public.set(56)

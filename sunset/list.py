@@ -57,12 +57,10 @@ class List(MutableSequence[ListItemT]):
     >>> import sunset
     >>> class ExampleSettings(sunset.Settings):
     ...     class ExampleSection(sunset.Section):
-    ...         a: sunset.Key[str] = sunset.Key(default="")
+    ...         a = sunset.Key(default="")
     ...
-    ...     key_list: sunset.List[sunset.Key[int]] = (
-    ...         sunset.List(sunset.Key(default=0)))
-    ...     section_list: sunset.List[ExampleSection] = sunset.List(
-    ...         ExampleSection())
+    ...     key_list = sunset.List(sunset.Key(default=0))
+    ...     section_list = sunset.List(ExampleSection())
 
     >>> settings = ExampleSettings()
     >>> settings.section_list.appendOne().a.set("demo")
@@ -245,7 +243,7 @@ class List(MutableSequence[ListItemT]):
 
         >>> import sunset
         >>> class ExampleSection(sunset.Section):
-        ...     item: sunset.Key[int] = sunset.Key(default=0)
+        ...     item = sunset.Key(default=0)
 
         >>> show = lambda l: [elt.item.get() for elt in l]
 

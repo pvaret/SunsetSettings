@@ -7,7 +7,7 @@ import sunset
 
 class ExampleSection(sunset.Section):
 
-    test: sunset.Key[str] = sunset.Key("")
+    test = sunset.Key("")
 
 
 class TestList:

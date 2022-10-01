@@ -16,15 +16,15 @@ def test_normalize():
 
 class ExampleSettings(sunset.Settings):
     class ExampleSection(sunset.Section):
-        c: sunset.Key[int] = sunset.Key(default=0)
-        d: sunset.Key[bool] = sunset.Key(default=False)
+        c = sunset.Key(default=0)
+        d = sunset.Key(default=False)
 
-    subsection: ExampleSection = ExampleSection()
-    section_list: sunset.List[ExampleSection] = sunset.List(ExampleSection())
-    key_list: sunset.List[sunset.Key[str]] = sunset.List(sunset.Key(default=""))
+    subsection = ExampleSection()
+    section_list = sunset.List(ExampleSection())
+    key_list = sunset.List(sunset.Key(default=""))
 
-    a: sunset.Key[str] = sunset.Key(default="")
-    b: sunset.Key[str] = sunset.Key(default="")
+    a = sunset.Key(default="")
+    b = sunset.Key(default="")
 
 
 class TestSettings:

@@ -3,6 +3,7 @@ import weakref
 
 from dataclasses import dataclass, field
 from typing import (
+    Any,
     Callable,
     Iterator,
     MutableSet,
@@ -40,10 +41,10 @@ class Section:
     >>> import sunset
     >>> class MySection(sunset.Section):
     ...     class MySubsection(sunset.Section):
-    ...         subkey: sunset.Key[int] = sunset.Key(default=0)
+    ...         subkey = sunset.Key(default=0)
     ...
-    ...     subsection1: MySubsection = MySubsection()
-    ...     subsection2: MySubsection = MySubsection()
+    ...     subsection1 = MySubsection()
+    ...     subsection2 = MySubsection()
 
     >>> section = MySection()
     >>> section.subsection1.subkey.get()
@@ -67,9 +68,20 @@ class Section:
 
         # Automatically promote relevant attributes to dataclass fields.
 
-        for name, attr in vars(cls).items():
+        potential_fields = list(vars(cls).items())
+        for name, attr in potential_fields:
             if isinstance(attr, ItemTemplate) and not inspect.isclass(attr):
                 setattr(cls, name, field(default_factory=attr.new))
+
+                # Dataclass instantiation raises an error if a field does not
+                # have an explicit type annotation. But our Key, List and
+                # Section fields are unambiguously typed, so we don't actually
+                # need the annotation. So we just tell the dataclass that the
+                # type of non-explicitly-annotated fields is 'Any'. Turns out,
+                # this works.
+
+                if name not in cls.__annotations__:
+                    cls.__annotations__[name] = Any
 
         # Create a new instance of this class wrapped as a dataclass.
 
