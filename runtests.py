@@ -1,3 +1,5 @@
+#!python
+
 import sys
 
 import pytest
