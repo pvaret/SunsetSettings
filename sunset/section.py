@@ -78,8 +78,14 @@ class Section:
                 # type of non-explicitly-annotated fields is 'Any'. Turns out,
                 # this works.
 
-                if name not in cls.__annotations__:
-                    cls.__annotations__[name] = Any
+                # Also note the subtle dance here: the annotations need to be on
+                # *this* class, and not inherited from a parent class. So we
+                # make sure that the __annotations__ mapping does exist in this
+                # class' namespace.
+
+                if "__annotations__" not in cls.__dict__:
+                    setattr(cls, "__annotations__", {})
+                cls.__annotations__.setdefault(name, Any)
 
         # Create a new instance of this class wrapped as a dataclass.
 
