@@ -106,14 +106,14 @@ class TestKey:
         callback.assert_called_once_with("default")
         callback.reset_mock()
 
-    def test_key_modified_callback(self, mocker: MockerFixture):
+    def test_key_updated_callback(self, mocker: MockerFixture):
 
         callback = mocker.stub()
 
         s = Key(default="default")
-        assert isinstance(s, protocols.ModificationNotifier)
+        assert isinstance(s, protocols.UpdateNotifier)
 
-        s.onKeyModifiedCall(callback)
+        s.onUpdateCall(callback)
 
         s.set("default")
         callback.assert_called_once_with(s)
@@ -266,14 +266,14 @@ class TestKey:
 
         si: Key[int] = Key(default=0)
         callback = mocker.stub()
-        si.onKeyModifiedCall(callback)
+        si.onUpdateCall(callback)
 
         si.restore([])
         assert si.get() == 0
         callback.assert_not_called()
 
         si = Key(default=0)
-        si.onKeyModifiedCall(callback)
+        si.onUpdateCall(callback)
         si.restore(
             [
                 ("invalid", "12"),
@@ -288,7 +288,7 @@ class TestKey:
         callback.reset_mock()
 
         si = Key(default=0)
-        si.onKeyModifiedCall(callback)
+        si.onUpdateCall(callback)
         si.restore(
             [
                 ("", " invalid  "),
@@ -302,7 +302,7 @@ class TestKey:
         callback.assert_not_called()
 
         si = Key(default=0)
-        si.onKeyModifiedCall(callback)
+        si.onUpdateCall(callback)
         si.restore(
             [
                 ("", "56"),
@@ -325,7 +325,7 @@ class TestKey:
         callback = mocker.stub()
 
         sstr: Key[str] = Key(default="")
-        sstr.onKeyModifiedCall(callback)
+        sstr.onUpdateCall(callback)
         sstr.restore(
             [
                 ("", "test"),
@@ -336,7 +336,7 @@ class TestKey:
         callback.reset_mock()
 
         si: Key[int] = Key(default=0)
-        si.onKeyModifiedCall(callback)
+        si.onUpdateCall(callback)
         si.restore(
             [
                 ("", "12"),
@@ -347,7 +347,7 @@ class TestKey:
         callback.reset_mock()
 
         sb: Key[bool] = Key(default=False)
-        sb.onKeyModifiedCall(callback)
+        sb.onUpdateCall(callback)
         sb.restore(
             [
                 ("", "true"),
@@ -357,10 +357,8 @@ class TestKey:
         callback.assert_called_once_with(sb)
         callback.reset_mock()
 
-        sser: Key[ExampleSerializable] = Key(
-            default=ExampleSerializable("")
-        )
-        sser.onKeyModifiedCall(callback)
+        sser: Key[ExampleSerializable] = Key(default=ExampleSerializable(""))
+        sser.onUpdateCall(callback)
         sser.restore(
             [
                 ("", "test"),

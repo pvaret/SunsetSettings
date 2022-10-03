@@ -76,8 +76,8 @@ class List(MutableSequence[ListItemT]):
     _contents: list[ListItemT]
     _parent: Optional[weakref.ref[Self]]
     _children: WeakNonHashableSet[Self]
-    _modification_notification_callbacks: CallbackRegistry[Self]
-    _modification_notification_enabled: bool
+    _update_notification_callbacks: CallbackRegistry[Self]
+    _update_notification_enabled: bool
     _template: ListItemT
 
     def __init__(self, template: ListItemT) -> None:
@@ -88,16 +88,16 @@ class List(MutableSequence[ListItemT]):
 
         self._parent = None
         self._children = WeakNonHashableSet()
-        self._modification_notification_callbacks = CallbackRegistry()
-        self._modification_notification_enabled = True
+        self._update_notification_callbacks = CallbackRegistry()
+        self._update_notification_enabled = True
         self._template = template
 
     def insert(self, index: SupportsIndex, value: ListItemT) -> None:
 
         self._contents.insert(index, value)
-        self._notifyModification(self)
+        self._notifyUpdate(self)
 
-        value.onKeyModifiedCall(self._notifyModification)
+        value.onUpdateCall(self._notifyUpdate)
 
     @overload
     def __getitem__(self, index: SupportsIndex) -> ListItemT:
@@ -138,27 +138,27 @@ class List(MutableSequence[ListItemT]):
             self._contents[index] = value
 
             for item in value_copy:
-                item.onKeyModifiedCall(self._notifyModification)
+                item.onUpdateCall(self._notifyUpdate)
 
         else:
             assert isinstance(index, SupportsIndex)
 
             self._contents[index] = value
-            value.onKeyModifiedCall(self._notifyModification)
+            value.onUpdateCall(self._notifyUpdate)
 
-        self._notifyModification(self)
+        self._notifyUpdate(self)
 
     def __delitem__(self, index: Union[SupportsIndex, slice]) -> None:
 
         del self._contents[index]
-        self._notifyModification(self)
+        self._notifyUpdate(self)
 
     def extend(self, values: Iterable[ListItemT]) -> None:
 
         self._contents.extend(values)
         for value in values:
-            value.onKeyModifiedCall(self._notifyModification)
-        self._notifyModification(self)
+            value.onUpdateCall(self._notifyUpdate)
+        self._notifyUpdate(self)
 
     def __iadd__(self, values: Iterable[ListItemT]) -> Self:
 
@@ -168,7 +168,7 @@ class List(MutableSequence[ListItemT]):
     def clear(self) -> None:
 
         self._contents.clear()
-        self._notifyModification(self)
+        self._notifyUpdate(self)
 
     def __len__(self) -> int:
 
@@ -292,10 +292,10 @@ class List(MutableSequence[ListItemT]):
 
         yield from self._children
 
-    def onKeyModifiedCall(self, callback: Callable[[Self], None]) -> None:
+    def onUpdateCall(self, callback: Callable[[Self], None]) -> None:
         """
-        Adds a callback to be called whenever this List, or any item contained
-        in this List, is modified in any way.
+        Adds a callback to be called whenever this List, *or* any item contained
+        in this List, is updated.
 
         The callback will be called with this List instance as its argument.
 
@@ -311,7 +311,7 @@ class List(MutableSequence[ListItemT]):
             callback.
         """
 
-        self._modification_notification_callbacks.add(callback)
+        self._update_notification_callbacks.add(callback)
 
     def dump(self) -> Sequence[tuple[str, str]]:
         """
@@ -334,8 +334,8 @@ class List(MutableSequence[ListItemT]):
         Internal.
         """
 
-        notification_enabled = self._modification_notification_enabled
-        self._modification_notification_enabled = False
+        notification_enabled = self._update_notification_enabled
+        self._update_notification_enabled = False
 
         subitems: dict[str, list[tuple[str, str]]] = {}
 
@@ -355,18 +355,18 @@ class List(MutableSequence[ListItemT]):
             item.restore(subitems[k])
             self.append(item)
 
-        self._modification_notification_enabled = notification_enabled
-        self._notifyModification(self)
+        self._update_notification_enabled = notification_enabled
+        self._notifyUpdate(self)
 
-    def _notifyModification(self, value: Union[ListItemT, Self]) -> None:
+    def _notifyUpdate(self, value: Union[ListItemT, Self]) -> None:
 
-        if self._modification_notification_enabled:
+        if self._update_notification_enabled:
 
-            # Note that if the sender is a Section, we only propagate the
-            # notification if that Section is still in this List.
+            # Note that if the sender is a List item, we only propagate the
+            # notification if that item is still in this List.
 
             if isinstance(value, List) or value in self:
-                self._modification_notification_callbacks.callAll(self)
+                self._update_notification_callbacks.callAll(self)
 
     def new(self) -> Self:
         """

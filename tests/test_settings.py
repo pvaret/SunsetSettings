@@ -284,7 +284,7 @@ subsection.d = false
 
         settings = ExampleSettings()
         callback = mocker.stub()
-        settings.onKeyModifiedCall(callback)
+        settings.onUpdateCall(callback)
         settings.load(
             io.StringIO(
                 """\
@@ -592,12 +592,12 @@ section_list.4.c = 4
         assert settings.section_list[2].c.get() == 4
         assert settings.section_list[3].c.get() == 5
 
-    def test_key_modified_notification(self, mocker: MockerFixture):
+    def test_key_updated_notification(self, mocker: MockerFixture):
 
         callback = mocker.stub()
 
         settings = ExampleSettings()
-        settings.onKeyModifiedCall(callback)
+        settings.onUpdateCall(callback)
 
         settings.a.set("test 1")
         callback.assert_called_once_with(settings)

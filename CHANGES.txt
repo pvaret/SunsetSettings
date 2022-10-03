@@ -5,6 +5,7 @@
   - Removed need for New* functions. Keys, Lists and Sections can now be used directly.
   - Removed need for explicit type annotations in Settings classes.
   - Renamed Setting class to Key.
+  - Renamed onKeyModifiedCall to onUpdateCall.
 
 * SunsetSettings 0.2.0 (2022-08-03)
 

@@ -20,7 +20,7 @@ from .protocols import (
     Dumpable,
     Inheriter,
     ItemTemplate,
-    ModificationNotifier,
+    UpdateNotifier,
     Restorable,
 )
 from .registry import CallbackRegistry
@@ -59,8 +59,8 @@ class Section:
 
     _parent: Optional[weakref.ref[Self]]
     _children: MutableSet[Self]
-    _modification_notification_callbacks: CallbackRegistry[Self]
-    _modification_notification_enabled: bool
+    _update_notification_callbacks: CallbackRegistry[Self]
+    _update_notification_enabled: bool
 
     def __new__(cls: Type[Self]) -> Self:
 
@@ -96,13 +96,13 @@ class Section:
 
         self._parent = None
         self._children = WeakNonHashableSet[Self]()
-        self._modification_notification_callbacks = CallbackRegistry()
-        self._modification_notification_enabled = True
+        self._update_notification_callbacks = CallbackRegistry()
+        self._update_notification_enabled = True
 
         for attr in vars(self).values():
 
-            if isinstance(attr, ModificationNotifier):
-                attr.onKeyModifiedCall(self._notifyModification)
+            if isinstance(attr, UpdateNotifier):
+                attr.onUpdateCall(self._notifyUpdate)
 
     def derive(self: Self) -> Self:
         """
@@ -201,10 +201,10 @@ class Section:
 
         yield from self._children
 
-    def onKeyModifiedCall(self, callback: Callable[[Self], None]) -> None:
+    def onUpdateCall(self, callback: Callable[[Self], None]) -> None:
         """
-        Adds a callback to be called whenever any Key defined on this Section or
-        any of its own Section fields is modified in any way.
+        Adds a callback to be called whenever this Section or any of fields is
+        updated.
 
         The callback will be called with this Section as its argument.
 
@@ -220,7 +220,7 @@ class Section:
             callback.
         """
 
-        self._modification_notification_callbacks.add(callback)
+        self._update_notification_callbacks.add(callback)
 
     def dump(self) -> Sequence[tuple[str, str]]:
         """
@@ -247,8 +247,8 @@ class Section:
         Internal.
         """
 
-        notification_enabled = self._modification_notification_enabled
-        self._modification_notification_enabled = False
+        notification_enabled = self._update_notification_enabled
+        self._update_notification_enabled = False
 
         subitems: dict[str, list[tuple[str, str]]] = {}
 
@@ -272,13 +272,13 @@ class Section:
 
             item.restore(subitems[item_name])
 
-        self._modification_notification_enabled = notification_enabled
-        self._notifyModification(self)
+        self._update_notification_enabled = notification_enabled
+        self._notifyUpdate(self)
 
-    def _notifyModification(self, value: ModificationNotifier) -> None:
+    def _notifyUpdate(self, value: UpdateNotifier) -> None:
 
-        if self._modification_notification_enabled:
-            self._modification_notification_callbacks.callAll(self)
+        if self._update_notification_enabled:
+            self._update_notification_callbacks.callAll(self)
 
     def new(self) -> Self:
         """

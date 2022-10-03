@@ -115,7 +115,7 @@ class TestList:
 
         r: List[ExampleSection] = List(ExampleSection())
         callback = mocker.stub()
-        r.onKeyModifiedCall(callback)
+        r.onUpdateCall(callback)
 
         r.restore(
             [
@@ -128,7 +128,7 @@ class TestList:
         assert r[0].test.get() == "test 1"
         assert r[1].test.get() == "test 2"
 
-        # Ensure that a restore only triggers one modification notification.
+        # Ensure that a restore only triggers one update notification.
 
         callback.assert_called_once_with(r)
 
@@ -170,7 +170,7 @@ class TestList:
         assert level1.parent() is None
         assert len(list(level1.children())) == 0
 
-    def test_modification_callback_called_on_list_contents_changed(
+    def test_update_callback_called_on_list_contents_changed(
         self, mocker: MockerFixture
     ):
 
@@ -178,7 +178,7 @@ class TestList:
 
         section_list: List[ExampleSection] = List(ExampleSection())
 
-        section_list.onKeyModifiedCall(callback)
+        section_list.onUpdateCall(callback)
 
         section_list.append(ExampleSection())
         callback.assert_called_once_with(section_list)
@@ -234,14 +234,14 @@ class TestList:
         callback.assert_called_once_with(section_list)
         callback.reset_mock()
 
-    def test_modification_callback_called_on_contained_item_modification(
+    def test_update_callback_called_on_contained_item_update(
         self, mocker: MockerFixture
     ):
 
         callback = mocker.stub()
 
         section_list: List[ExampleSection] = List(ExampleSection())
-        section_list.onKeyModifiedCall(callback)
+        section_list.onUpdateCall(callback)
 
         s1 = ExampleSection()
         section_list.append(s1)
@@ -291,7 +291,7 @@ class TestList:
         s9.test.set("test")
         callback.assert_called_once_with(section_list)
 
-    def test_modification_callback_not_called_for_removed_items(
+    def test_update_callback_not_called_for_removed_items(
         self, mocker: MockerFixture
     ):
 
@@ -301,7 +301,7 @@ class TestList:
         s2 = ExampleSection()
 
         callback = mocker.stub()
-        section_list.onKeyModifiedCall(callback)
+        section_list.onUpdateCall(callback)
 
         s1.test.clear()
         section_list[:] = [s1]

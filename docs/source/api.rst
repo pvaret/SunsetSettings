@@ -18,7 +18,7 @@ Settings
 
     .. automethod:: setName
 
-    .. automethod:: onKeyModifiedCall
+    .. automethod:: onUpdateCall
 
     .. automethod:: parent
 
@@ -43,7 +43,7 @@ Key
 
     .. automethod:: onValueChangeCall
 
-    .. automethod:: onKeyModifiedCall
+    .. automethod:: onUpdateCall
 
     .. automethod:: parent
 
@@ -58,7 +58,7 @@ Section
 
     .. automethod:: derive
 
-    .. automethod:: onKeyModifiedCall
+    .. automethod:: onUpdateCall
 
     .. automethod:: parent
 
@@ -73,7 +73,7 @@ List
 
     .. automethod:: iterAll
 
-    .. automethod:: onKeyModifiedCall
+    .. automethod:: onUpdateCall
 
     .. automethod:: parent
 

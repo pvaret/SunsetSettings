@@ -67,8 +67,8 @@ class Restorable(Protocol):
 
 
 @runtime_checkable
-class ModificationNotifier(Protocol):
-    def onKeyModifiedCall(self, callback: Callable[[Self], None]) -> None:
+class UpdateNotifier(Protocol):
+    def onUpdateCall(self, callback: Callable[[Self], None]) -> None:
         ...
 
 

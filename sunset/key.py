@@ -62,7 +62,7 @@ class Key(Generic[SerializableT]):
     _value: SerializableT
     _isSet: bool
     _value_change_callbacks: CallbackRegistry[SerializableT]
-    _modification_notification_callbacks: CallbackRegistry[Self]
+    _update_notification_callbacks: CallbackRegistry[Self]
     _parent: Optional[weakref.ref[Self]]
     _children: weakref.WeakSet[Self]
     _type: Type[SerializableT]
@@ -76,7 +76,7 @@ class Key(Generic[SerializableT]):
         self._isSet = False
 
         self._value_change_callbacks = CallbackRegistry()
-        self._modification_notification_callbacks = CallbackRegistry()
+        self._update_notification_callbacks = CallbackRegistry()
 
         self._parent = None
         self._children = weakref.WeakSet()
@@ -135,7 +135,7 @@ class Key(Generic[SerializableT]):
                 child._notifyParentValueChanged()
 
         if not previously_set or prev_value != self.get():
-            self._notifyModification()
+            self._notifyUpdate()
 
     def clear(self) -> None:
         """
@@ -157,7 +157,7 @@ class Key(Generic[SerializableT]):
             for child in self.children():
                 child._notifyParentValueChanged()
 
-        self._notifyModification()
+        self._notifyUpdate()
 
     def isSet(self) -> bool:
         """
@@ -174,11 +174,18 @@ class Key(Generic[SerializableT]):
     ) -> None:
         """
         Adds a callback to be called whenever the value exported by this Key
-        changes, even if it was not modified itself; for instance, this will
+        changes, even if it was not updated itself; for instance, this will
         happen if there is no value currently set on it and its parent's value
         changed.
 
         The callback will be called with the new value as its argument.
+
+        If you want a callback to be called whenever this Key is updated, even
+        if its apparent value does not change, use :meth:onUpdateCall() instead,
+        For example, if you call set(0) on Key with a default value of 0,
+        callbacks added with onUpdateCall() are called and callbacks added with
+        onValueChangeCall() are not.
+
 
         Args:
             callback: A callable that takes one argument of the same type of the
@@ -194,12 +201,19 @@ class Key(Generic[SerializableT]):
 
         self._value_change_callbacks.add(callback)
 
-    def onKeyModifiedCall(self, callback: Callable[[Self], None]) -> None:
+    def onUpdateCall(self, callback: Callable[[Self], None]) -> None:
         """
-        Adds a callback to be called whenever this Key is modified, even if
-        the value it reports does not end up changing.
+        Adds a callback to be called whenever this Key is updated, even if the
+        value returned by :meth:get() does not end up changing.
 
         The callback will be called with this Key instance as its argument.
+
+        If you want a callback to be called only when the apparent value of this
+        Key changes, use :meth:onValueChangeCall() instead. For example, if a
+        Key has no value set on it and has a parent whose value is updated, then
+        callbacks added on this Key with onValueChangeCall() are called, and
+        callbacks added with onUpdateCall() are not, because it's not this Key
+        that was updated.
 
         Args:
             callback: A callable that takes one argument of the same type as
@@ -213,7 +227,7 @@ class Key(Generic[SerializableT]):
             callback.
         """
 
-        self._modification_notification_callbacks.add(callback)
+        self._update_notification_callbacks.add(callback)
 
     def setParent(self: Self, parent: Optional[Self]) -> None:
         """
@@ -332,9 +346,9 @@ class Key(Generic[SerializableT]):
 
         self._value_change_callbacks.callAll(self.get())
 
-    def _notifyModification(self):
+    def _notifyUpdate(self):
 
-        self._modification_notification_callbacks.callAll(self)
+        self._update_notification_callbacks.callAll(self)
 
     def new(self) -> Self:
         """

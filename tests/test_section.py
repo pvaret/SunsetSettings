@@ -162,7 +162,7 @@ class TestSection:
 
         s = ExampleSection()
         callback = mocker.stub()
-        s.onKeyModifiedCall(callback)
+        s.onUpdateCall(callback)
 
         s.restore(
             [
@@ -179,7 +179,7 @@ class TestSection:
         assert s.list[0].c.get() == "test c 1"
         assert s.list[1].c.get() == "test c 2"
 
-        # Ensure that a restore only triggers one modification notification.
+        # Ensure that a restore only triggers one update notification.
 
         callback.assert_called_once_with(s)
 
@@ -199,12 +199,12 @@ class TestSection:
         assert level1.parent() is None
         assert len(list(level1.children())) == 0
 
-    def test_key_modified_notification(self, mocker: MockerFixture):
+    def test_key_updated_notification(self, mocker: MockerFixture):
 
         callback = mocker.stub()
 
         section = ExampleSection()
-        section.onKeyModifiedCall(callback)
+        section.onUpdateCall(callback)
 
         child = section.derive()
 

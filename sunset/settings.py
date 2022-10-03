@@ -4,7 +4,7 @@ from typing_extensions import Self
 
 from .exporter import normalize, loadFromFile, saveToFile
 from .non_hashable_set import NonHashableSet
-from .protocols import ModificationNotifier
+from .protocols import UpdateNotifier
 from .section import Section
 
 _MAIN = "main"
@@ -129,7 +129,7 @@ class Settings(Section):
         """
 
         new = cast(Self, super().derive())
-        new.onKeyModifiedCall(self._notifyModification)
+        new.onUpdateCall(self._notifyUpdate)
 
         return new
 
@@ -218,7 +218,7 @@ class Settings(Section):
         self._name = name
 
         if self.name() != previous_name:
-            self._notifyModification(self)
+            self._notifyUpdate(self)
 
         return self.name()
 
@@ -268,14 +268,14 @@ class Settings(Section):
             self.name()
         ]
 
-    def _notifyModification(self, value: ModificationNotifier) -> None:
+    def _notifyUpdate(self, value: UpdateNotifier) -> None:
 
-        # Do not notify for modifications on anonymous Settings instances.
+        # Do not notify for updates that come from anonymous Settings.
 
         if isinstance(value, Settings) and value.name() == "":
             return
 
-        super()._notifyModification(value)
+        super()._notifyUpdate(value)
 
     def dumpAll(
         self,
@@ -310,8 +310,8 @@ class Settings(Section):
         Internal.
         """
 
-        notification_enabled = self._modification_notification_enabled
-        self._modification_notification_enabled = False
+        notification_enabled = self._update_notification_enabled
+        self._update_notification_enabled = False
 
         own_children: dict[str, Settings] = {}
         own_children_data: list[
@@ -348,8 +348,8 @@ class Settings(Section):
         for child in own_children.values():
             child.restoreAll(own_children_data)
 
-        self._modification_notification_enabled = notification_enabled
-        self._notifyModification(self)
+        self._update_notification_enabled = notification_enabled
+        self._notifyUpdate(self)
 
     def save(self, file: TextIO, blanklines: bool = False) -> None:
         """
