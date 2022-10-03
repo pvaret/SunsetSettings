@@ -1,6 +1,13 @@
 import weakref
 
-from typing import Callable, Generic, Iterator, Optional, Sequence, Type
+from typing import (
+    Callable,
+    Generic,
+    Iterator,
+    Optional,
+    Sequence,
+    Type,
+)
 
 from typing_extensions import Self
 
@@ -61,6 +68,8 @@ class Key(Generic[SerializableT]):
     _type: Type[SerializableT]
 
     def __init__(self, default: SerializableT):
+
+        super().__init__()
 
         self._default = default
         self._value = default

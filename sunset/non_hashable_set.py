@@ -18,6 +18,8 @@ class NonHashableSet(MutableSet[_T]):
         self, mapping_type: Type[MutableMapping[int, _T]] = dict
     ) -> None:
 
+        super().__init__()
+
         self._contents = mapping_type()
 
     def _computeHash(self, value: Any) -> int:

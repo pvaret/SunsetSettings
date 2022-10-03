@@ -14,9 +14,12 @@ class CallbackRegistry(MutableSet[Callable[[_T], None]]):
 
     def __init__(self) -> None:
 
-        # We can just use a WeakIdSet because it does not know how to take
-        # references to methods. Instead we do that ourselves, using a proper
-        # IdSet.
+        super().__init__()
+
+        # We can't just use a WeakNonHashableSet because it does not know how to
+        # take references to methods. Instead we use a regular NonHashableSet
+        # and manually take the proper type of weak reference when adding a
+        # callable to the set.
 
         self._content = NonHashableSet()
 
@@ -31,6 +34,7 @@ class CallbackRegistry(MutableSet[Callable[[_T], None]]):
 
         else:
             r = weakref.ref(value, self._onExpire)
+
         self._content.add(r)
 
     def __contains__(self, callback: Callable[[_T], None]) -> bool:

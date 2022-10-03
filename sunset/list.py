@@ -82,6 +82,8 @@ class List(MutableSequence[ListItemT]):
 
     def __init__(self, template: ListItemT) -> None:
 
+        super().__init__()
+
         self._contents = []
 
         self._parent = None
