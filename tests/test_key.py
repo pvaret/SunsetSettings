@@ -193,9 +193,11 @@ class TestKey:
 
         a = Key(default="test")
         b = Key(default=12)
+        c = Key(default=" test\ntest")
 
         assert repr(a) == "<Key[str]:test>"
         assert repr(b) == "<Key[int]:12>"
+        assert repr(c) == '<Key[str]:" test\\ntest">'
 
     def test_reparenting(self):
 

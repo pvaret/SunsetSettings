@@ -11,6 +11,7 @@ from typing import (
 
 from typing_extensions import Self
 
+from .exporter import maybeEscape
 from .registry import CallbackRegistry
 from .serializers import SerializableT, deserialize, serialize
 
@@ -362,4 +363,6 @@ class Key(Generic[SerializableT]):
 
     def __repr__(self) -> str:
 
-        return f"<Key[{self._type.__name__}]:{serialize(self.get())}>"
+        return (
+            f"<Key[{self._type.__name__}]:{maybeEscape(serialize(self.get()))}>"
+        )
