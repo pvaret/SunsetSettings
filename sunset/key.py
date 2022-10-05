@@ -27,7 +27,7 @@ class Key(Generic[SerializableT]):
     callback with the :meth:`onValueChangeCall()` method.
 
     Args:
-        default: (str, int, bool, or anything that implements the
+        default: (str, int, bool, float, or anything that implements the
             :class:`protocols.Serializable` protocol) The value that this Key
             will return when not otherwise set; the type of this default
             determines the type of the values that can be set on this Key.

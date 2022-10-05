@@ -34,6 +34,12 @@ def test_serialize_bool():
     assert serializers.serialize(False) == "false"
 
 
+def test_serialize_float():
+
+    assert serializers.serialize(1.0) == "1.0"
+    assert serializers.serialize(2.34e-56) == "2.34e-56"
+
+
 def test_serialize_serializable():
 
     t = ExampleSerializable("serializable")
@@ -50,6 +56,13 @@ def test_deserialize_int():
     assert serializers.deserialize(int, "test") is None
     assert serializers.deserialize(int, "   -32 ") == -32
     assert serializers.deserialize(int, "00017") == 17
+
+
+def test_deserialize_float():
+
+    assert serializers.deserialize(float, "test") is None
+    assert serializers.deserialize(float, "   -32.10 ") == -32.1
+    assert serializers.deserialize(float, "2.34e-56") == 2.34e-56
 
 
 def test_deserialize_bool():

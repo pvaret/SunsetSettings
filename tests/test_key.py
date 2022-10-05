@@ -31,8 +31,11 @@ class TestKey:
 
     def test_default(self):
 
-        s = Key(default="default")
-        assert s.get() == "default"
+        assert Key(default="default").get() == "default"
+        assert Key(default=0).get() == 0
+        assert type(Key(default=False).get()) is bool
+        assert not Key(default=False).get()
+        assert Key(default=12.345e-67).get() == 12.345e-67
 
     def test_set(self):
 

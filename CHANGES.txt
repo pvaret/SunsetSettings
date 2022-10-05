@@ -6,6 +6,7 @@
   - Removed need for explicit type annotations in Settings classes.
   - Renamed Setting class to Key.
   - Renamed onKeyModifiedCall to onUpdateCall.
+  - Added float to supported Key value types.
 
 * SunsetSettings 0.2.0 (2022-08-03)
 
