@@ -1,4 +1,4 @@
-from typing import Optional, Type, TypeVar, Union, cast
+from typing import Any, Optional, Type, TypeVar, Union, cast
 
 from .protocols import Serializable
 
@@ -15,9 +15,21 @@ def serialize(value: AnySerializableType) -> str:
         return str(value)
     elif isinstance(value, str):
         return value
-    else:
-        assert isinstance(value, Serializable)
+    elif isinstance(cast(Any, value), Serializable):
+
+        # Note the cast above. It's just so that linters don't complain that
+        # we're using an isinstance() check when that's the only type the value
+        # can possibly be, from the typechecker's point of view. But the
+        # TypeError below is explicitly about catching this kind of user error.
+        # So we do in fact want this isinstance() check.
+
         return value.toStr()
+
+    else:
+        raise TypeError(
+            f"'{repr(value)}' is of type '{value.__class__.__name__}', which is"
+            " not serializable"
+        )
 
 
 def deserialize(

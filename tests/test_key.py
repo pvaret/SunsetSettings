@@ -1,5 +1,7 @@
 from typing import Optional
 
+import pytest
+
 from pytest_mock import MockerFixture
 
 from sunset import Key, protocols
@@ -36,6 +38,8 @@ class TestKey:
         assert type(Key(default=False).get()) is bool
         assert not Key(default=False).get()
         assert Key(default=12.345e-67).get() == 12.345e-67
+        with pytest.raises(TypeError):
+            Key(default=(1, "test"))  # type: ignore - it's the point.
 
     def test_set(self):
 

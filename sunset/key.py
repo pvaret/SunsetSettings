@@ -70,6 +70,13 @@ class Key(Generic[SerializableT]):
 
     def __init__(self, default: SerializableT):
 
+        # serialize() raises an exception if the given value is not
+        # serializable, so this call guarantees that the provided default is of
+        # a type allowed in a Key. In case the user went ahead and ignored the
+        # typechecker error when instantiating their Key with a bad default.
+
+        serialize(default)
+
         super().__init__()
 
         self._default = default
