@@ -7,6 +7,7 @@ from typing import (
     Optional,
     Sequence,
     Type,
+    cast,
 )
 
 from typing_extensions import Self
@@ -60,8 +61,7 @@ class Key(Generic[SerializableT]):
     """
 
     _default: SerializableT
-    _value: SerializableT
-    _isSet: bool
+    _value: Optional[SerializableT]
     _value_change_callbacks: CallbackRegistry[SerializableT]
     _update_notification_callbacks: CallbackRegistry[Self]
     _parent: Optional[weakref.ref[Self]]
@@ -79,9 +79,9 @@ class Key(Generic[SerializableT]):
 
         super().__init__()
 
+        assert default is not None
         self._default = default
-        self._value = default
-        self._isSet = False
+        self._value = None
 
         self._value_change_callbacks = CallbackRegistry()
         self._update_notification_callbacks = CallbackRegistry()
@@ -92,7 +92,7 @@ class Key(Generic[SerializableT]):
         # Keep a runtime reference to the practical type contained in this
         # key.
 
-        self._type = type(default)
+        self._type = cast(Type[SerializableT], default.__class__)
 
     def get(self) -> SerializableT:
         """
@@ -106,8 +106,8 @@ class Key(Generic[SerializableT]):
             This Key's current value.
         """
 
-        if self.isSet():
-            return self._value
+        if (value := self._value) is not None:
+            return value
 
         if (parent := self.parent()) is not None:
             return parent.get()
@@ -131,11 +131,10 @@ class Key(Generic[SerializableT]):
         if not isinstance(value, self._type):
             return
 
-        prev_value = self.get()
         previously_set = self.isSet()
+        prev_value = self.get()
 
         self._value = value
-        self._isSet = True
 
         if prev_value != self.get():
             self._value_change_callbacks.callAll(self.get())
@@ -157,8 +156,7 @@ class Key(Generic[SerializableT]):
             return
 
         prev_value = self.get()
-        self._isSet = False
-        self._value = self._default
+        self._value = None
 
         if prev_value != self.get():
             self._value_change_callbacks.callAll(self.get())
@@ -175,7 +173,7 @@ class Key(Generic[SerializableT]):
             True if a value is set on this Key, else False.
         """
 
-        return self._isSet
+        return self._value is not None
 
     def onValueChangeCall(
         self, callback: Callable[[SerializableT], None]
