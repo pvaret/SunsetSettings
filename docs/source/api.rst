@@ -51,10 +51,10 @@ Key
 
     .. automethod:: setParent
 
-Section
--------
+Bundle
+------
 
-.. autoclass:: sunset.Section
+.. autoclass:: sunset.Bundle
 
     .. automethod:: derive
 

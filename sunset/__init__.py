@@ -7,17 +7,17 @@ __copyright__ = "2022, P. Varet"
 
 from . import exporter, non_hashable_set, protocols, serializers
 
+from .bundle import Bundle
 from .key import Key
 from .list import List
 from .registry import CallbackRegistry
-from .section import Section
 from .settings import Settings, normalize
 
 __all__ = [
+    "Bundle",
     "CallbackRegistry",
     "Key",
     "List",
-    "Section",
     "Settings",
     "exporter",
     "non_hashable_set",

@@ -1,24 +1,24 @@
 from pytest_mock import MockerFixture
 
-from sunset import Key, List, Section, protocols
+from sunset import Bundle, Key, List, protocols
 
 
-class ExampleSection(Section):
-    class Subsection(Section):
+class ExampleBundle(Bundle):
+    class InnerBundle(Bundle):
         b = Key(42)
 
-    class Item(Section):
+    class Item(Bundle):
         c = Key("default c")
 
     a = Key("default a")
-    subsection = Subsection()
+    inner_bundle = InnerBundle()
     list = List(Item())
 
 
-class TestSection:
+class TestBundle:
     def test_protocol_implementation(self):
 
-        t = ExampleSection()
+        t = ExampleBundle()
         assert isinstance(t, protocols.Inheriter)
         assert isinstance(t, protocols.ItemTemplate)
         assert isinstance(t, protocols.Dumpable)
@@ -26,16 +26,16 @@ class TestSection:
 
     def test_creation(self):
 
-        t = ExampleSection()
+        t = ExampleBundle()
         t.list.appendOne()
         assert t.a.get() == "default a"
-        assert t.subsection.b.get() == 42
+        assert t.inner_bundle.b.get() == 42
         assert t.list[0].c.get() == "default c"
 
     def test_inheritance(self):
 
-        t1 = ExampleSection()
-        t2 = ExampleSection()
+        t1 = ExampleBundle()
+        t2 = ExampleBundle()
 
         assert t2 not in t1.children()
         assert t2.parent() is None
@@ -50,9 +50,9 @@ class TestSection:
 
     def test_reparenting(self):
 
-        t1 = ExampleSection()
-        t2 = ExampleSection()
-        t3 = ExampleSection()
+        t1 = ExampleBundle()
+        t2 = ExampleBundle()
+        t3 = ExampleBundle()
 
         assert t3 not in t1.children()
         assert t3 not in t2.children()
@@ -75,7 +75,7 @@ class TestSection:
 
     def test_derivation(self):
 
-        t1 = ExampleSection()
+        t1 = ExampleBundle()
         t2 = t1.derive()
 
         assert t2.parent() is t1
@@ -83,17 +83,17 @@ class TestSection:
 
     def test_inheritance_propagation(self):
 
-        t1 = ExampleSection()
+        t1 = ExampleBundle()
         t2 = t1.derive()
 
         assert t2.a.parent() is t1.a
-        assert t2.subsection.parent() is t1.subsection
-        assert t2.subsection.b.parent() is t1.subsection.b
+        assert t2.inner_bundle.parent() is t1.inner_bundle
+        assert t2.inner_bundle.b.parent() is t1.inner_bundle.b
         assert t2.list.parent() is t1.list
 
     def test_inheritance_values(self):
 
-        t1 = ExampleSection()
+        t1 = ExampleBundle()
         t2 = t1.derive()
 
         t1.a.set("test t1")
@@ -102,11 +102,11 @@ class TestSection:
         assert t2.a.get() == "test t2"
         assert t1.a.get() == "test t1"
 
-        t1.subsection.b.set(101)
-        assert t2.subsection.b.get() == 101
-        t2.subsection.b.set(37)
-        assert t2.subsection.b.get() == 37
-        assert t1.subsection.b.get() == 101
+        t1.inner_bundle.b.set(101)
+        assert t2.inner_bundle.b.get() == 101
+        t2.inner_bundle.b.set(37)
+        assert t2.inner_bundle.b.get() == 37
+        assert t1.inner_bundle.b.get() == 101
 
         t1.list.appendOne()
         t1.list[0].c.set("test t1")
@@ -125,11 +125,11 @@ class TestSection:
 
     def test_dump(self):
 
-        s = ExampleSection()
+        s = ExampleBundle()
         assert list(s.dump()) == []
 
         s.a.set("test dump a")
-        s.subsection.b.set(101)
+        s.inner_bundle.b.set(101)
         s.list.appendOne()
         s.list[-1].c.set("test dump c 1")
         s.list.appendOne()
@@ -137,17 +137,17 @@ class TestSection:
 
         assert s.dump() == [
             ("a", "test dump a"),
+            ("inner_bundle.b", "101"),
             ("list.1.c", "test dump c 1"),
             ("list.2.c", "test dump c 2"),
-            ("subsection.b", "101"),
         ]
 
     def test_dump_ignores_private_attributes(self):
-        class ExampleSectionWithPrivateAttr(Section):
+        class ExampleBundleWithPrivateAttr(Bundle):
             _private = Key(default=0)
             public = Key(default=0)
 
-        s = ExampleSectionWithPrivateAttr()
+        s = ExampleBundleWithPrivateAttr()
         s.public.set(56)
 
         # Ignore the private attribute access warning, it's the whole point.
@@ -160,21 +160,21 @@ class TestSection:
 
     def test_restore(self, mocker: MockerFixture):
 
-        s = ExampleSection()
+        s = ExampleBundle()
         callback = mocker.stub()
         s.onUpdateCall(callback)
 
         s.restore(
             [
                 ("a", "test a"),
-                ("subsection.b", "999"),
+                ("inner_bundle.b", "999"),
                 ("list.1.c", "test c 1"),
                 ("list.2.c", "test c 2"),
             ]
         )
 
         assert s.a.get() == "test a"
-        assert s.subsection.b.get() == 999
+        assert s.inner_bundle.b.get() == 999
         assert len(s.list) == 2
         assert s.list[0].c.get() == "test c 1"
         assert s.list[1].c.get() == "test c 2"
@@ -185,16 +185,16 @@ class TestSection:
 
     def test_persistence(self):
 
-        # A Section does not keep a reference to its parent or children.
+        # A Bundle does not keep a reference to its parent or children.
 
-        section = ExampleSection()
-        level1 = section.derive()
+        bundle = ExampleBundle()
+        level1 = bundle.derive()
         level2 = level1.derive()
 
         assert level1.parent() is not None
         assert len(list(level1.children())) == 1
 
-        del section
+        del bundle
         del level2
         assert level1.parent() is None
         assert len(list(level1.children())) == 0
@@ -203,25 +203,25 @@ class TestSection:
 
         callback = mocker.stub()
 
-        section = ExampleSection()
-        section.onUpdateCall(callback)
+        bundle = ExampleBundle()
+        bundle.onUpdateCall(callback)
 
-        child = section.derive()
+        child = bundle.derive()
 
-        section.a.set("test 1")
-        callback.assert_called_once_with(section)
+        bundle.a.set("test 1")
+        callback.assert_called_once_with(bundle)
         callback.reset_mock()
 
-        section.subsection.b.set(123)
-        callback.assert_called_once_with(section)
+        bundle.inner_bundle.b.set(123)
+        callback.assert_called_once_with(bundle)
         callback.reset_mock()
 
-        section.list.appendOne()
-        callback.assert_called_once_with(section)
+        bundle.list.appendOne()
+        callback.assert_called_once_with(bundle)
         callback.reset_mock()
 
-        section.list[0].c.set("test 2")
-        callback.assert_called_once_with(section)
+        bundle.list[0].c.set("test 2")
+        callback.assert_called_once_with(bundle)
         callback.reset_mock()
 
         child.a.set("test 3")

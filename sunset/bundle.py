@@ -26,35 +26,36 @@ from .protocols import (
 from .registry import CallbackRegistry
 
 
-SectionT = TypeVar("SectionT", bound="Section")
+BundleT = TypeVar("BundleT", bound="Bundle")
 
 
-class Section:
+class Bundle:
     """
-    A collection of related keys.
+    A collection of related Keys.
 
-    Under the hood, a Section is a dataclass, and can be used in the same
-    manner, i.e. by defining attributes directly on the class itself.
+    Under the hood, a Bundle is a dataclass, and can be used in the same manner,
+    i.e. by defining attributes directly on the class itself.
 
     Example:
 
-    >>> from sunset import Key, Section
-    >>> class MySection(Section):
-    ...     class MySubsection(Section):
-    ...         subkey = Key(default=0)
-    ...     subsection1 = MySubsection()
-    ...     subsection2 = MySubsection()
-    >>> section = MySection()
-    >>> section.subsection1.subkey.get()
-    0
-    >>> section.subsection2.subkey.get()
-    0
-    >>> section.subsection1.subkey.set(42)
-    >>> section.subsection2.subkey.set(101)
-    >>> section.subsection1.subkey.get()
-    42
-    >>> section.subsection2.subkey.get()
-    101
+    >>> from sunset import Key, Bundle
+    >>> class Appearance(Bundle):
+    ...     class Font(Bundle):
+    ...         name = Key(default="Arial")
+    ...         size = Key(default=14)
+    ...     main_font = Font()
+    ...     secondary_font = Font()
+    >>> appearance = Appearance()
+    >>> appearance.main_font.name.get()
+    'Arial'
+    >>> appearance.secondary_font.name.get()
+    'Arial'
+    >>> appearance.main_font.name.set("Times New Roman")
+    >>> appearance.secondary_font.name.set("Calibri")
+    >>> appearance.main_font.name.get()
+    'Times New Roman'
+    >>> appearance.secondary_font.name.get()
+    'Calibri'
     """
 
     _parent: Optional[weakref.ref[Self]]
@@ -73,7 +74,7 @@ class Section:
 
                 # Dataclass instantiation raises an error if a field does not
                 # have an explicit type annotation. But our Key, List and
-                # Section fields are unambiguously typed, so we don't actually
+                # Bundle fields are unambiguously typed, so we don't actually
                 # need the annotation. So we just tell the dataclass that the
                 # type of non-explicitly-annotated fields is 'Any'. Turns out,
                 # this works.
@@ -106,11 +107,11 @@ class Section:
 
     def derive(self: Self) -> Self:
         """
-        Creates a new instance of this Section's class, and set this one as the
+        Creates a new instance of this Bundle's class, and set this one as the
         parent of that instance.
 
         Returns:
-            A new instance of this Section.
+            A new instance of this Bundle.
         """
 
         new = self.__class__()
@@ -119,26 +120,26 @@ class Section:
 
     def setParent(self: Self, parent: Optional[Self]) -> None:
         """
-        Makes the given Section the parent of this one. If None, remove this
-        Section's parent, if any.
+        Makes the given Bundle the parent of this one. If None, remove this
+        Bundle's parent, if any.
 
-        All the Key, List and Section fields defined on this Section instance
-        will be recursively reparented to the corresponding Key / List / Section
+        All the Key, List and Bundle fields defined on this Bundle instance
+        will be recursively reparented to the corresponding Key / List / Bundle
         field on the given parent.
 
         This method is for internal purposes and you will typically not need to
         call it directly.
 
         Args:
-            parent: Either a Section that will become this Section's parent, or
-                None. The parent Section must have the same type as this
-                Section.
+            parent: Either a Bundle that will become this Bundle's parent, or
+                None. The parent Bundle must have the same type as this
+                Bundle.
 
         Returns:
             None.
 
         Note:
-            A Section and its parent, if any, do not increase each other's
+            A Bundle and its parent, if any, do not increase each other's
             reference count.
         """
 
@@ -182,35 +183,35 @@ class Section:
 
     def parent(self: Self) -> Optional[Self]:
         """
-        Returns the parent of this Section, if any.
+        Returns the parent of this Bundle, if any.
 
         Returns:
-            A Section instance of the same type as this one, or None.
+            A Bundle instance of the same type as this one, or None.
         """
 
         return self._parent() if self._parent is not None else None
 
     def children(self: Self) -> Iterator[Self]:
         """
-        Returns an iterator over the Section instances that have this Section
+        Returns an iterator over the Bundle instances that have this Bundle
         as their parent.
 
         Returns:
-            An iterator over Section instances of the same type as this one.
+            An iterator over Bundle instances of the same type as this one.
         """
 
         yield from self._children
 
     def onUpdateCall(self, callback: Callable[[Self], None]) -> None:
         """
-        Adds a callback to be called whenever this Section or any of fields is
+        Adds a callback to be called whenever this Bundle or any of fields is
         updated.
 
-        The callback will be called with this Section as its argument.
+        The callback will be called with this Bundle as its argument.
 
         Args:
             callback: A callable that takes one argument of the same type as
-                this Section, and that returns None.
+                this Bundle, and that returns None.
 
         Returns:
             None.
@@ -282,10 +283,10 @@ class Section:
 
     def new(self) -> Self:
         """
-        Returns a new instance of this Section with the same fields.
+        Returns a new instance of this Bundle with the same fields.
 
         Returns:
-            A Section instance.
+            A Bundle instance.
         """
 
         return self.__class__()

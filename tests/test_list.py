@@ -2,10 +2,10 @@ from typing import Iterator
 
 from pytest_mock import MockerFixture
 
-from sunset import Key, List, Section, protocols
+from sunset import Bundle, Key, List, protocols
 
 
-class ExampleSection(Section):
+class ExampleBundle(Bundle):
 
     test = Key("")
 
@@ -13,7 +13,7 @@ class ExampleSection(Section):
 class TestList:
     def test_protocol_implementation(self):
 
-        r: List[ExampleSection] = List(ExampleSection())
+        r: List[ExampleBundle] = List(ExampleBundle())
         assert isinstance(r, protocols.Inheriter)
         assert isinstance(r, protocols.ItemTemplate)
         assert isinstance(r, protocols.Dumpable)
@@ -21,8 +21,8 @@ class TestList:
 
     def test_add_pop(self):
 
-        r: List[ExampleSection] = List(ExampleSection())
-        r.append(ExampleSection())
+        r: List[ExampleBundle] = List(ExampleBundle())
+        r.append(ExampleBundle())
 
         assert len(r) == 1
 
@@ -35,8 +35,8 @@ class TestList:
 
     def test_inheritance(self):
 
-        r1: List[ExampleSection] = List(ExampleSection())
-        r2: List[ExampleSection] = List(ExampleSection())
+        r1: List[ExampleBundle] = List(ExampleBundle())
+        r2: List[ExampleBundle] = List(ExampleBundle())
 
         assert r2 not in r1.children()
         assert r2.parent() is None
@@ -51,9 +51,9 @@ class TestList:
 
     def test_reparenting(self):
 
-        r1: List[ExampleSection] = List(ExampleSection())
-        r2: List[ExampleSection] = List(ExampleSection())
-        r3: List[ExampleSection] = List(ExampleSection())
+        r1: List[ExampleBundle] = List(ExampleBundle())
+        r2: List[ExampleBundle] = List(ExampleBundle())
+        r3: List[ExampleBundle] = List(ExampleBundle())
 
         assert r3 not in r1.children()
         assert r3 not in r2.children()
@@ -75,15 +75,15 @@ class TestList:
         assert r3.parent() is None
 
     def test_iter_inheritance(self):
-        def flatten(fixtures: Iterator[ExampleSection]) -> list[str]:
+        def flatten(fixtures: Iterator[ExampleBundle]) -> list[str]:
             return [f.test.get() for f in fixtures]
 
-        r1: List[ExampleSection] = List(ExampleSection())
-        r2: List[ExampleSection] = List(ExampleSection())
+        r1: List[ExampleBundle] = List(ExampleBundle())
+        r2: List[ExampleBundle] = List(ExampleBundle())
 
-        r1.append(ExampleSection())
+        r1.append(ExampleBundle())
         r1[0].test.set("test r1")
-        r2.append(ExampleSection())
+        r2.append(ExampleBundle())
         r2[0].test.set("test r2")
 
         assert flatten(r2.iterAll()) == ["test r2"]
@@ -94,15 +94,15 @@ class TestList:
 
     def test_dump(self):
 
-        r: List[ExampleSection] = List(ExampleSection())
+        r: List[ExampleBundle] = List(ExampleBundle())
 
         assert r.dump() == []
 
-        t = ExampleSection()
+        t = ExampleBundle()
         r.append(t)
         t.test.set("test 1")
 
-        t = ExampleSection()
+        t = ExampleBundle()
         r.append(t)
         t.test.set("test 2")
 
@@ -113,7 +113,7 @@ class TestList:
 
     def test_restore(self, mocker: MockerFixture):
 
-        r: List[ExampleSection] = List(ExampleSection())
+        r: List[ExampleBundle] = List(ExampleBundle())
         callback = mocker.stub()
         r.onUpdateCall(callback)
 
@@ -156,16 +156,16 @@ class TestList:
 
         # A List does not keep a reference to its parent or children.
 
-        section_list: List[ExampleSection] = List(ExampleSection())
-        level1: List[ExampleSection] = List(ExampleSection())
-        level1.setParent(section_list)
-        level2: List[ExampleSection] = List(ExampleSection())
+        bundle_list: List[ExampleBundle] = List(ExampleBundle())
+        level1: List[ExampleBundle] = List(ExampleBundle())
+        level1.setParent(bundle_list)
+        level2: List[ExampleBundle] = List(ExampleBundle())
         level2.setParent(level1)
 
         assert level1.parent() is not None
         assert len(list(level1.children())) == 1
 
-        del section_list
+        del bundle_list
         del level2
         assert level1.parent() is None
         assert len(list(level1.children())) == 0
@@ -176,62 +176,60 @@ class TestList:
 
         callback = mocker.stub()
 
-        section_list: List[ExampleSection] = List(ExampleSection())
+        bundle_list: List[ExampleBundle] = List(ExampleBundle())
 
-        section_list.onUpdateCall(callback)
+        bundle_list.onUpdateCall(callback)
 
-        section_list.append(ExampleSection())
-        callback.assert_called_once_with(section_list)
+        bundle_list.append(ExampleBundle())
+        callback.assert_called_once_with(bundle_list)
         callback.reset_mock()
 
-        section_list.insert(0, ExampleSection())
-        callback.assert_called_once_with(section_list)
+        bundle_list.insert(0, ExampleBundle())
+        callback.assert_called_once_with(bundle_list)
         callback.reset_mock()
 
-        section_list[0] = ExampleSection()
-        callback.assert_called_once_with(section_list)
+        bundle_list[0] = ExampleBundle()
+        callback.assert_called_once_with(bundle_list)
         callback.reset_mock()
 
-        section_list += [ExampleSection(), ExampleSection(), ExampleSection()]
-        callback.assert_called_once_with(section_list)
+        bundle_list += [ExampleBundle(), ExampleBundle(), ExampleBundle()]
+        callback.assert_called_once_with(bundle_list)
         callback.reset_mock()
 
-        section_list.extend(
-            [ExampleSection(), ExampleSection(), ExampleSection()]
-        )
-        callback.assert_called_once_with(section_list)
+        bundle_list.extend([ExampleBundle(), ExampleBundle(), ExampleBundle()])
+        callback.assert_called_once_with(bundle_list)
         callback.reset_mock()
 
-        section_list[2:4] = [
-            ExampleSection(),
-            ExampleSection(),
-            ExampleSection(),
+        bundle_list[2:4] = [
+            ExampleBundle(),
+            ExampleBundle(),
+            ExampleBundle(),
         ]
-        callback.assert_called_once_with(section_list)
+        callback.assert_called_once_with(bundle_list)
         callback.reset_mock()
 
-        section_list.pop()
-        callback.assert_called_once_with(section_list)
+        bundle_list.pop()
+        callback.assert_called_once_with(bundle_list)
         callback.reset_mock()
 
-        s1 = section_list[0]
-        section_list.remove(s1)
-        assert s1 not in section_list
-        callback.assert_called_once_with(section_list)
+        s1 = bundle_list[0]
+        bundle_list.remove(s1)
+        assert s1 not in bundle_list
+        callback.assert_called_once_with(bundle_list)
         callback.reset_mock()
 
-        del section_list[0]
-        callback.assert_called_once_with(section_list)
+        del bundle_list[0]
+        callback.assert_called_once_with(bundle_list)
         callback.reset_mock()
 
-        assert len(section_list[1:3]) == 2
-        del section_list[1:3]
-        callback.assert_called_once_with(section_list)
+        assert len(bundle_list[1:3]) == 2
+        del bundle_list[1:3]
+        callback.assert_called_once_with(bundle_list)
         callback.reset_mock()
 
-        assert len(section_list) > 1
-        section_list.clear()
-        callback.assert_called_once_with(section_list)
+        assert len(bundle_list) > 1
+        bundle_list.clear()
+        callback.assert_called_once_with(bundle_list)
         callback.reset_mock()
 
     def test_update_callback_called_on_contained_item_update(
@@ -240,72 +238,72 @@ class TestList:
 
         callback = mocker.stub()
 
-        section_list: List[ExampleSection] = List(ExampleSection())
-        section_list.onUpdateCall(callback)
+        bundle_list: List[ExampleBundle] = List(ExampleBundle())
+        bundle_list.onUpdateCall(callback)
 
-        s1 = ExampleSection()
-        section_list.append(s1)
+        s1 = ExampleBundle()
+        bundle_list.append(s1)
         callback.reset_mock()
         s1.test.set("test")
-        callback.assert_called_once_with(section_list)
+        callback.assert_called_once_with(bundle_list)
 
-        s2 = ExampleSection()
-        section_list.insert(0, s2)
+        s2 = ExampleBundle()
+        bundle_list.insert(0, s2)
         callback.reset_mock()
         s2.test.set("test")
-        callback.assert_called_once_with(section_list)
+        callback.assert_called_once_with(bundle_list)
 
-        s3 = ExampleSection()
-        section_list[0] = s3
+        s3 = ExampleBundle()
+        bundle_list[0] = s3
         callback.reset_mock()
         s3.test.set("test")
-        callback.assert_called_once_with(section_list)
+        callback.assert_called_once_with(bundle_list)
 
-        s4 = ExampleSection()
-        s5 = ExampleSection()
-        section_list[1:2] = [s4, s5]
+        s4 = ExampleBundle()
+        s5 = ExampleBundle()
+        bundle_list[1:2] = [s4, s5]
         callback.reset_mock()
         s4.test.set("test")
-        callback.assert_called_once_with(section_list)
+        callback.assert_called_once_with(bundle_list)
         callback.reset_mock()
         s5.test.set("test")
-        callback.assert_called_once_with(section_list)
+        callback.assert_called_once_with(bundle_list)
 
-        s6 = ExampleSection()
-        s7 = ExampleSection()
-        section_list += [s6, s7]
+        s6 = ExampleBundle()
+        s7 = ExampleBundle()
+        bundle_list += [s6, s7]
         callback.reset_mock()
         s6.test.set("test")
-        callback.assert_called_once_with(section_list)
+        callback.assert_called_once_with(bundle_list)
         callback.reset_mock()
         s7.test.set("test")
-        callback.assert_called_once_with(section_list)
+        callback.assert_called_once_with(bundle_list)
 
-        s8 = ExampleSection()
-        s9 = ExampleSection()
-        section_list.extend([s8, s9])
+        s8 = ExampleBundle()
+        s9 = ExampleBundle()
+        bundle_list.extend([s8, s9])
         callback.reset_mock()
         s8.test.set("test")
-        callback.assert_called_once_with(section_list)
+        callback.assert_called_once_with(bundle_list)
         callback.reset_mock()
         s9.test.set("test")
-        callback.assert_called_once_with(section_list)
+        callback.assert_called_once_with(bundle_list)
 
     def test_update_callback_not_called_for_removed_items(
         self, mocker: MockerFixture
     ):
 
-        section_list: List[ExampleSection] = List(ExampleSection())
+        bundle_list: List[ExampleBundle] = List(ExampleBundle())
 
-        s1 = ExampleSection()
-        s2 = ExampleSection()
+        s1 = ExampleBundle()
+        s2 = ExampleBundle()
 
         callback = mocker.stub()
-        section_list.onUpdateCall(callback)
+        bundle_list.onUpdateCall(callback)
 
         s1.test.clear()
-        section_list[:] = [s1]
-        del section_list[0]
+        bundle_list[:] = [s1]
+        del bundle_list[0]
 
         callback.reset_mock()
         s1.test.set("test")
@@ -313,8 +311,8 @@ class TestList:
 
         s1.test.clear()
         s2.test.clear()
-        section_list[:] = [s1, s2]
-        del section_list[0:2]
+        bundle_list[:] = [s1, s2]
+        del bundle_list[0:2]
 
         callback.reset_mock()
         s1.test.set("test")
@@ -323,8 +321,8 @@ class TestList:
 
         s1.test.clear()
         s2.test.clear()
-        section_list[:] = [s1, s2]
-        section_list.clear()
+        bundle_list[:] = [s1, s2]
+        bundle_list.clear()
 
         callback.reset_mock()
         s1.test.set("test")
@@ -332,17 +330,17 @@ class TestList:
         callback.assert_not_called()
 
         s1.test.clear()
-        section_list[:] = [s1]
-        section_list.pop()
+        bundle_list[:] = [s1]
+        bundle_list.pop()
 
         callback.reset_mock()
         s1.test.set("test")
         callback.assert_not_called()
 
         s1.test.clear()
-        section_list[:] = [s1]
-        section_list.remove(s1)
-        assert s1 not in section_list
+        bundle_list[:] = [s1]
+        bundle_list.remove(s1)
+        assert s1 not in bundle_list
 
         callback.reset_mock()
         s1.test.set("test")

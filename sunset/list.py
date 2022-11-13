@@ -17,23 +17,23 @@ from typing import (
 
 from typing_extensions import Self
 
+from .bundle import Bundle
 from .key import Key
 from .non_hashable_set import WeakNonHashableSet
 from .registry import CallbackRegistry
-from .section import Section
 
 ListItemT = TypeVar(
     "ListItemT",
     # Note that we match on Key[Any] and not Key[SerializableT], because a
     # TypeVar cannot be defined in terms of another TypeVar. This is fine,
     # because Keys can only be created bound to a SerializableT type anyway.
-    bound=Union[Section, Key[Any]],
+    bound=Union[Bundle, Key[Any]],
 )
 
 
 class List(MutableSequence[ListItemT]):
     """
-    A list-like container for Keys or Sections of a given type, to be used in a
+    A list-like container for Keys or Bundles of a given type, to be used in a
     Settings' definition.
 
     It is type-compatible with standard Python lists and supports indexing,
@@ -48,24 +48,24 @@ class List(MutableSequence[ListItemT]):
     methods to do it in one step.
 
     Args:
-        template: A Key or a Section *instance* that represents the items that
+        template: A Key or a Bundle *instance* that represents the items that
             will be contained in this List. (The template itself will not be
             added to the List.)
 
     Example:
 
-    >>> from sunset import Key, List, Section, Settings
+    >>> from sunset import Bundle, Key, List, Settings
     >>> class ExampleSettings(Settings):
-    ...     class ExampleSection(Section):
+    ...     class ExampleBundle(Bundle):
     ...         a = Key(default="")
     ...     key_list = List(Key(default=0))
-    ...     section_list = List(ExampleSection())
+    ...     bundle_list = List(ExampleBundle())
     >>> settings = ExampleSettings()
-    >>> settings.section_list
+    >>> settings.bundle_list
     []
-    >>> settings.section_list.appendOne().a.set("demo")
-    >>> settings.section_list
-    [ExampleSettings.ExampleSection(a=<Key[str]:demo>)]
+    >>> settings.bundle_list.appendOne().a.set("demo")
+    >>> settings.bundle_list
+    [ExampleSettings.ExampleBundle(a=<Key[str]:demo>)]
     >>> settings.key_list
     []
     >>> settings.key_list.appendOne().set(12)
@@ -241,18 +241,18 @@ class List(MutableSequence[ListItemT]):
         Yields the element contained in this List and its parent, if any.
 
         Returns:
-            An iterator over Section instances.
+            An iterator over the items contained in this List.
 
         Example:
 
-        >>> from sunset import Key, List, Section
-        >>> class ExampleSection(Section):
+        >>> from sunset import Bundle, Key, List
+        >>> class ExampleBundle(Bundle):
         ...     item = Key(default=0)
         >>> show = lambda l: [elt.item.get() for elt in l]
-        >>> l1 = List(ExampleSection())
+        >>> l1 = List(ExampleBundle())
         >>> l1.appendOne().item.set(1)
         >>> l1.appendOne().item.set(2)
-        >>> l2 = List(ExampleSection())
+        >>> l2 = List(ExampleBundle())
         >>> l2.appendOne().item.set(3)
         >>> l2.appendOne().item.set(4)
         >>> show(l1)

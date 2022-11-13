@@ -2,15 +2,15 @@ from typing import Iterator, MutableSet, Sequence, TextIO, cast
 
 from typing_extensions import Self
 
+from .bundle import Bundle
 from .exporter import normalize, loadFromFile, saveToFile
 from .non_hashable_set import NonHashableSet
 from .protocols import UpdateNotifier
-from .section import Section
 
 _MAIN = "main"
 
 
-class Settings(Section):
+class Settings(Bundle):
     """
     A collection of keys that can be saved to and loaded from text, and supports
     inheritance.

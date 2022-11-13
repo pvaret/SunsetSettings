@@ -2,7 +2,7 @@ import io
 
 from pytest_mock import MockerFixture
 
-from sunset import Key, List, Section, Settings, normalize
+from sunset import Bundle, Key, List, Settings, normalize
 
 
 def test_normalize():
@@ -15,12 +15,12 @@ def test_normalize():
 
 
 class ExampleSettings(Settings):
-    class ExampleSection(Section):
+    class ExampleBundle(Bundle):
         c = Key(default=0)
         d = Key(default=False)
 
-    subsection = ExampleSection()
-    section_list = List(ExampleSection())
+    inner_bundle = ExampleBundle()
+    bundle_list = List(ExampleBundle())
     key_list = List(Key(default=""))
 
     a = Key(default="")
@@ -71,10 +71,10 @@ class TestSettings:
 
         settings.a.set("new a")
         settings.b.set("new b")
-        settings.subsection.c.set(40)
-        settings.subsection.d.set(True)
-        settings.section_list.appendOne().c.set(100)
-        settings.section_list.appendOne().d.set(True)
+        settings.inner_bundle.c.set(40)
+        settings.inner_bundle.d.set(True)
+        settings.bundle_list.appendOne().c.set(100)
+        settings.bundle_list.appendOne().d.set(True)
         settings.key_list.appendOne().set("one")
         settings.key_list.appendOne().set("two")
         assert settings.dumpAll() == [
@@ -83,27 +83,27 @@ class TestSettings:
                 [
                     ("a", "new a"),
                     ("b", "new b"),
+                    ("bundle_list.1.c", "100"),
+                    ("bundle_list.2.d", "true"),
+                    ("inner_bundle.c", "40"),
+                    ("inner_bundle.d", "true"),
                     ("key_list.1", "one"),
                     ("key_list.2", "two"),
-                    ("section_list.1.c", "100"),
-                    ("section_list.2.d", "true"),
-                    ("subsection.c", "40"),
-                    ("subsection.d", "true"),
                 ],
             )
         ]
 
         settings = ExampleSettings()
         settings.a.set("a")
-        settings.section_list.appendOne().c.set(100)
+        settings.bundle_list.appendOne().c.set(100)
 
         s1 = settings.deriveAs("Level 1")
         s1.a.set("sub a")
         s1.b.set("sub b")
-        s1.section_list.appendOne().c.set(1000)
+        s1.bundle_list.appendOne().c.set(1000)
 
         s2 = settings.deriveAs("Other level 1")
-        s2.subsection.d.set(False)
+        s2.inner_bundle.d.set(False)
 
         anonymous = settings.derive()
         anonymous.a.set("anonymous")
@@ -112,14 +112,14 @@ class TestSettings:
         subanonymous.b.set("anonymous 2")
 
         ss1 = s1.deriveAs("Level 2")
-        ss1.subsection.c.set(200)
+        ss1.inner_bundle.c.set(200)
 
         assert settings.dumpAll() == [
             (
                 ["main"],
                 [
                     ("a", "a"),
-                    ("section_list.1.c", "100"),
+                    ("bundle_list.1.c", "100"),
                 ],
             ),
             (
@@ -127,19 +127,19 @@ class TestSettings:
                 [
                     ("a", "sub a"),
                     ("b", "sub b"),
-                    ("section_list.1.c", "1000"),
+                    ("bundle_list.1.c", "1000"),
                 ],
             ),
             (
                 ["main", "level1", "level2"],
                 [
-                    ("subsection.c", "200"),
+                    ("inner_bundle.c", "200"),
                 ],
             ),
             (
                 ["main", "otherlevel1"],
                 [
-                    ("subsection.d", "false"),
+                    ("inner_bundle.d", "false"),
                 ],
             ),
         ]
@@ -153,7 +153,7 @@ class TestSettings:
                     ("a", "a"),
                     ("key_list.1", "one"),
                     ("key_list.2", "two"),
-                    ("section_list.1.c", "100"),
+                    ("bundle_list.1.c", "100"),
                 ],
             ),
             (
@@ -163,19 +163,19 @@ class TestSettings:
                     ("b", "sub b"),
                     ("key_list.1", "one"),
                     ("key_list.2", "two"),
-                    ("section_list.1.c", "1000"),
+                    ("bundle_list.1.c", "1000"),
                 ],
             ),
             (
                 ["main", "level1", "level2"],
                 [
-                    ("subsection.c", "200"),
+                    ("inner_bundle.c", "200"),
                 ],
             ),
             (
                 ["main", "otherlevel1"],
                 [
-                    ("subsection.d", "false"),
+                    ("inner_bundle.d", "false"),
                 ],
             ),
         ]
@@ -184,8 +184,8 @@ class TestSettings:
         settings.restoreAll(data)
 
         assert settings.a.get() == "a"
-        assert len(settings.section_list) == 1
-        assert settings.section_list[0].c.get() == 100
+        assert len(settings.bundle_list) == 1
+        assert settings.bundle_list[0].c.get() == 100
         assert len(settings.key_list) == 2
         assert settings.key_list[0].get() == "one"
         assert settings.key_list[1].get() == "two"
@@ -199,20 +199,20 @@ class TestSettings:
 
         assert level1.a.get() == "sub a"
         assert level1.b.get() == "sub b"
-        assert len(level1.section_list) == 1
-        assert level1.section_list[0].c.get() == 1000
+        assert len(level1.bundle_list) == 1
+        assert level1.bundle_list[0].c.get() == 1000
         assert len(level1.key_list) == 2
         assert level1.key_list[0].get() == "one"
         assert level1.key_list[1].get() == "two"
 
-        assert not otherlevel1.subsection.d.get()
+        assert not otherlevel1.inner_bundle.d.get()
 
         level1_children = {c.name(): c for c in level1.children()}
         assert len(level1_children) == 1
         assert "level2" in level1_children
         level2 = level1_children["level2"]
 
-        assert level2.subsection.c.get() == 200
+        assert level2.inner_bundle.c.get() == 200
 
     def test_persistence(self):
 
@@ -234,17 +234,17 @@ class TestSettings:
 
         settings = ExampleSettings()
         settings.a.set("a")
-        settings.section_list.appendOne().c.set(100)
+        settings.bundle_list.appendOne().c.set(100)
 
         s1 = settings.deriveAs("Level 1")
         s1.a.set("sub a")
         s1.b.set("sub b")
-        s1.section_list.appendOne().c.set(1000)
+        s1.bundle_list.appendOne().c.set(1000)
         s1.key_list.appendOne().set("one")
         s1.key_list.appendOne().set("two")
 
         s2 = settings.deriveAs("Other level 1")
-        s2.subsection.d.set(False)
+        s2.inner_bundle.d.set(False)
 
         anonymous = settings.derive()
         anonymous.a.set("anonymous")
@@ -253,7 +253,7 @@ class TestSettings:
         subanonymous.b.set("anonymous 2")
 
         ss1 = s1.deriveAs("Level 2")
-        ss1.subsection.c.set(200)
+        ss1.inner_bundle.c.set(200)
 
         file = io.StringIO()
         settings.save(file, blanklines=True)
@@ -263,20 +263,20 @@ class TestSettings:
             == """\
 [main]
 a = a
-section_list.1.c = 100
+bundle_list.1.c = 100
 
 [level1]
 a = sub a
 b = sub b
+bundle_list.1.c = 1000
 key_list.1 = one
 key_list.2 = two
-section_list.1.c = 1000
 
 [level1/level2]
-subsection.c = 200
+inner_bundle.c = 200
 
 [otherlevel1]
-subsection.d = false
+inner_bundle.d = false
 """
         )
 
@@ -290,19 +290,19 @@ subsection.d = false
                 """\
 [main]
 a = a
-section_list.1.c = 100
+bundle_list.1.c = 100
 
 [level1]
 a = sub a
 b = sub b
 key_list.1 = one
-section_list.1.c = 1000
+bundle_list.1.c = 1000
 
 [level1/level2]
-subsection.c = 200
+inner_bundle.c = 200
 
 [otherlevel1]
-subsection.d = false
+inner_bundle.d = false
 """
             )
         )
@@ -310,8 +310,8 @@ subsection.d = false
         callback.assert_called_once_with(settings)
 
         assert settings.a.get() == "a"
-        assert len(settings.section_list) == 1
-        assert settings.section_list[0].c.get() == 100
+        assert len(settings.bundle_list) == 1
+        assert settings.bundle_list[0].c.get() == 100
 
         settings_children = {c.name(): c for c in settings.children()}
         assert len(settings_children) == 2
@@ -322,27 +322,27 @@ subsection.d = false
 
         assert level1.a.get() == "sub a"
         assert level1.b.get() == "sub b"
-        assert len(level1.section_list) == 1
-        assert level1.section_list[0].c.get() == 1000
+        assert len(level1.bundle_list) == 1
+        assert level1.bundle_list[0].c.get() == 1000
         assert len(level1.key_list) == 1
         assert level1.key_list[0].get() == "one"
 
-        assert not otherlevel1.subsection.d.get()
+        assert not otherlevel1.inner_bundle.d.get()
 
         level1_children = {c.name(): c for c in level1.children()}
         assert len(level1_children) == 1
         assert "level2" in level1_children
         level2 = level1_children["level2"]
 
-        assert level2.subsection.c.get() == 200
+        assert level2.inner_bundle.c.get() == 200
 
-    def test_load_invalid_no_section(self):
+    def test_load_invalid_no_bundle(self):
 
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
                 """\
-a = no section header
+a = no bundle header
 """
             )
         )
@@ -364,24 +364,24 @@ a = last value should be used
 
         assert settings.a.get() == "last value should be used"
 
-    def test_load_invalid_repeated_section(self):
+    def test_load_invalid_repeated_bundle(self):
 
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
                 """\
 [main]
-a = repeated section
+a = repeated bundle
 
 [main]
-a = section values will be merged, last takes precedence
+a = bundle values will be merged, last takes precedence
 """
             )
         )
 
         assert (
             settings.a.get()
-            == "section values will be merged, last takes precedence"
+            == "bundle values will be merged, last takes precedence"
         )
 
     def test_load_invalid_missing_main(self):
@@ -391,7 +391,7 @@ a = section values will be merged, last takes precedence
             io.StringIO(
                 """\
 [level1]
-a = main section is implicitly created if needed
+a = main bundle is implicitly created if needed
 """
             )
         )
@@ -399,11 +399,10 @@ a = main section is implicitly created if needed
         children = list(settings.children())
         assert len(children) == 1
         assert (
-            children[0].a.get()
-            == "main section is implicitly created if needed"
+            children[0].a.get() == "main bundle is implicitly created if needed"
         )
 
-    def test_load_invalid_extra_section_separators(self):
+    def test_load_invalid_extra_bundle_separators(self):
 
         settings = ExampleSettings()
         settings.load(
@@ -452,7 +451,7 @@ a = extra separators should be skipped
         assert len(children) == 1
         assert children[0].a.get() == "extra separators should be skipped"
 
-    def test_load_invalid_bad_section_is_skipped(self):
+    def test_load_invalid_bad_bundle_is_skipped(self):
 
         settings = ExampleSettings()
         settings.load(
@@ -462,7 +461,7 @@ a = extra separators should be skipped
 a = main
 
 [!%$?]
-a = bad section
+a = bad bundle
 """
             )
         )
@@ -490,7 +489,7 @@ a = merged
         assert len(children) == 0
         assert settings.a.get() == "merged"
 
-    def test_load_invalid_empty_section_is_skipped(self):
+    def test_load_invalid_empty_bundle_is_skipped(self):
 
         settings = ExampleSettings()
         settings.load(
@@ -571,11 +570,11 @@ key_list.3 = three
 key_list.1 = dropped
 key_list.1 = one
 key_list.2 = two
-section_list.5.c = 5
-section_list.1.c = 0
-section_list.2.c = 2
-section_list.1.c = 1
-section_list.4.c = 4
+bundle_list.5.c = 5
+bundle_list.1.c = 0
+bundle_list.2.c = 2
+bundle_list.1.c = 1
+bundle_list.4.c = 4
 """
             )
         )
@@ -586,11 +585,11 @@ section_list.4.c = 4
         assert settings.key_list[2].get() == "three"
         assert settings.key_list[3].get() == "five"
 
-        assert len(settings.section_list) == 4
-        assert settings.section_list[0].c.get() == 1
-        assert settings.section_list[1].c.get() == 2
-        assert settings.section_list[2].c.get() == 4
-        assert settings.section_list[3].c.get() == 5
+        assert len(settings.bundle_list) == 4
+        assert settings.bundle_list[0].c.get() == 1
+        assert settings.bundle_list[1].c.get() == 2
+        assert settings.bundle_list[2].c.get() == 4
+        assert settings.bundle_list[3].c.get() == 5
 
     def test_key_updated_notification(self, mocker: MockerFixture):
 
