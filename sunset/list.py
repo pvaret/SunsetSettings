@@ -226,6 +226,12 @@ class List(MutableSequence[ListItemT]):
             reference count.
         """
 
+        # Runtime check to affirm the type check of the method.
+
+        if parent is not None:
+            if type(self) is not type(parent):
+                return
+
         old_parent = self.parent()
         if old_parent is not None:
             old_parent._children.discard(self)
