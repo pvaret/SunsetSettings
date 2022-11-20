@@ -13,7 +13,7 @@ class ExampleBundle(Bundle):
 class TestList:
     def test_protocol_implementation(self):
 
-        r: List[ExampleBundle] = List(ExampleBundle())
+        r: List[Key[int]] = List(Key(default=0))
         assert isinstance(r, protocols.Inheriter)
         assert isinstance(r, protocols.ItemTemplate)
         assert isinstance(r, protocols.Dumpable)
@@ -21,13 +21,13 @@ class TestList:
 
     def test_add_pop(self):
 
-        r: List[ExampleBundle] = List(ExampleBundle())
-        r.append(ExampleBundle())
+        r: List[Key[str]] = List(Key(default=""))
+        r.appendOne()
 
         assert len(r) == 1
 
-        r[0].test.set("test")
-        assert r[0].test.get() == "test"
+        r[0].set("test")
+        assert r[0].get() == "test"
 
         r.pop()
 
@@ -35,8 +35,8 @@ class TestList:
 
     def test_inheritance(self):
 
-        r1: List[ExampleBundle] = List(ExampleBundle())
-        r2: List[ExampleBundle] = List(ExampleBundle())
+        r1: List[Key[int]] = List(Key(default=0))
+        r2: List[Key[int]] = List(Key(default=0))
 
         assert r2 not in r1.children()
         assert r2.parent() is None
@@ -51,9 +51,9 @@ class TestList:
 
     def test_reparenting(self):
 
-        r1: List[ExampleBundle] = List(ExampleBundle())
-        r2: List[ExampleBundle] = List(ExampleBundle())
-        r3: List[ExampleBundle] = List(ExampleBundle())
+        r1: List[Key[int]] = List(Key(default=0))
+        r2: List[Key[int]] = List(Key(default=0))
+        r3: List[Key[int]] = List(Key(default=0))
 
         assert r3 not in r1.children()
         assert r3 not in r2.children()
@@ -117,26 +117,35 @@ class TestList:
             "parent",
         ]
 
-    def test_dump(self):
+    def test_dump_bundles(self):
 
         r: List[ExampleBundle] = List(ExampleBundle())
 
         assert r.dump() == []
 
-        t = ExampleBundle()
-        r.append(t)
-        t.test.set("test 1")
-
-        t = ExampleBundle()
-        r.append(t)
-        t.test.set("test 2")
+        r.appendOne().test.set("test 1")
+        r.appendOne().test.set("test 2")
 
         assert r.dump() == [
             ("1.test", "test 1"),
             ("2.test", "test 2"),
         ]
 
-    def test_restore(self, mocker: MockerFixture):
+    def test_dump_keys(self):
+
+        r: List[Key[str]] = List(Key(default=""))
+
+        assert r.dump() == []
+
+        r.appendOne().set("test 1")
+        r.appendOne().set("test 2")
+
+        assert r.dump() == [
+            ("1", "test 1"),
+            ("2", "test 2"),
+        ]
+
+    def test_restore_bundles(self, mocker: MockerFixture):
 
         r: List[ExampleBundle] = List(ExampleBundle())
         callback = mocker.stub()
@@ -152,6 +161,27 @@ class TestList:
         assert len(r) == 2
         assert r[0].test.get() == "test 1"
         assert r[1].test.get() == "test 2"
+
+        # Ensure that a restore only triggers one update notification.
+
+        callback.assert_called_once_with(r)
+
+    def test_restore_keys(self, mocker: MockerFixture):
+
+        r: List[Key[str]] = List(Key(default=""))
+        callback = mocker.stub()
+        r.onUpdateCall(callback)
+
+        r.restore(
+            [
+                ("1", "test 1"),
+                ("2", "test 2"),
+            ]
+        )
+
+        assert len(r) == 2
+        assert r[0].get() == "test 1"
+        assert r[1].get() == "test 2"
 
         # Ensure that a restore only triggers one update notification.
 
@@ -181,10 +211,10 @@ class TestList:
 
         # A List does not keep a reference to its parent or children.
 
-        bundle_list: List[ExampleBundle] = List(ExampleBundle())
-        level1: List[ExampleBundle] = List(ExampleBundle())
+        bundle_list: List[Key[int]] = List(Key(default=0))
+        level1: List[Key[int]] = List(Key(default=0))
         level1.setParent(bundle_list)
-        level2: List[ExampleBundle] = List(ExampleBundle())
+        level2: List[Key[int]] = List(Key(default=0))
         level2.setParent(level1)
 
         assert level1.parent() is not None
@@ -201,60 +231,64 @@ class TestList:
 
         callback = mocker.stub()
 
-        bundle_list: List[ExampleBundle] = List(ExampleBundle())
+        key_list: List[Key[int]] = List(Key(default=0))
 
-        bundle_list.onUpdateCall(callback)
+        key_list.onUpdateCall(callback)
 
-        bundle_list.append(ExampleBundle())
-        callback.assert_called_once_with(bundle_list)
+        key_list.appendOne()
+        callback.assert_called_once_with(key_list)
         callback.reset_mock()
 
-        bundle_list.insert(0, ExampleBundle())
-        callback.assert_called_once_with(bundle_list)
+        key_list.append(Key(default=0))
+        callback.assert_called_once_with(key_list)
         callback.reset_mock()
 
-        bundle_list[0] = ExampleBundle()
-        callback.assert_called_once_with(bundle_list)
+        key_list.insert(0, Key(default=0))
+        callback.assert_called_once_with(key_list)
         callback.reset_mock()
 
-        bundle_list += [ExampleBundle(), ExampleBundle(), ExampleBundle()]
-        callback.assert_called_once_with(bundle_list)
+        key_list[0] = Key(default=0)
+        callback.assert_called_once_with(key_list)
         callback.reset_mock()
 
-        bundle_list.extend([ExampleBundle(), ExampleBundle(), ExampleBundle()])
-        callback.assert_called_once_with(bundle_list)
+        key_list += [Key(default=0), Key(default=0), Key(default=0)]
+        callback.assert_called_once_with(key_list)
         callback.reset_mock()
 
-        bundle_list[2:4] = [
-            ExampleBundle(),
-            ExampleBundle(),
-            ExampleBundle(),
+        key_list.extend([Key(default=0), Key(default=0), Key(default=0)])
+        callback.assert_called_once_with(key_list)
+        callback.reset_mock()
+
+        key_list[2:4] = [
+            Key(default=0),
+            Key(default=0),
+            Key(default=0),
         ]
-        callback.assert_called_once_with(bundle_list)
+        callback.assert_called_once_with(key_list)
         callback.reset_mock()
 
-        bundle_list.pop()
-        callback.assert_called_once_with(bundle_list)
+        key_list.pop()
+        callback.assert_called_once_with(key_list)
         callback.reset_mock()
 
-        s1 = bundle_list[0]
-        bundle_list.remove(s1)
-        assert s1 not in bundle_list
-        callback.assert_called_once_with(bundle_list)
+        s1 = key_list[0]
+        key_list.remove(s1)
+        assert s1 not in key_list
+        callback.assert_called_once_with(key_list)
         callback.reset_mock()
 
-        del bundle_list[0]
-        callback.assert_called_once_with(bundle_list)
+        del key_list[0]
+        callback.assert_called_once_with(key_list)
         callback.reset_mock()
 
-        assert len(bundle_list[1:3]) == 2
-        del bundle_list[1:3]
-        callback.assert_called_once_with(bundle_list)
+        assert len(key_list[1:3]) == 2
+        del key_list[1:3]
+        callback.assert_called_once_with(key_list)
         callback.reset_mock()
 
-        assert len(bundle_list) > 1
-        bundle_list.clear()
-        callback.assert_called_once_with(bundle_list)
+        assert len(key_list) > 1
+        key_list.clear()
+        callback.assert_called_once_with(key_list)
         callback.reset_mock()
 
     def test_update_callback_called_on_contained_item_update(
