@@ -1,5 +1,6 @@
 import weakref
 
+from enum import Enum, auto
 from itertools import tee
 from typing import (
     Any,
@@ -31,6 +32,12 @@ ListItemT = TypeVar(
 )
 
 
+class IterOrder(Enum):
+    NO_PARENT = auto()
+    PARENT_FIRST = auto()
+    PARENT_LAST = auto()
+
+
 class List(MutableSequence[ListItemT]):
     """
     A list-like container for Keys or Bundles of a given type, to be used in a
@@ -40,8 +47,9 @@ class List(MutableSequence[ListItemT]):
     insertion, appending, etc.
 
     In addition, it offers support for update notification callbacks, and
-    inheritance. The inheritance is used in the :meth:`iterAll()` method, which
-    iterates on a List and its parent.
+    inheritance. The inheritance is used when iterating on the List's contents
+    using the :meth:`iter()` method, which iterates on a List and, optionally,
+    its parents.
 
     Instead of creating a new instance of the contained type and inserting or
     appending it, you can use the :meth:`appendOne()` or :meth:`insertOne()`
@@ -51,6 +59,9 @@ class List(MutableSequence[ListItemT]):
         template: A Key or a Bundle *instance* that represents the items that
             will be contained in this List. (The template itself will not be
             added to the List.)
+        order: One of List.NO_PARENT, List.PARENT_FIRST or List.PARENT_LAST.
+            Sets the default iteration order used in :meth:`iter()` when not
+            otherwise specified. Default: List.NO_PARENT.
 
     Example:
 
@@ -73,14 +84,21 @@ class List(MutableSequence[ListItemT]):
     [<Key[int]:12>]
     """
 
+    NO_PARENT = IterOrder.NO_PARENT
+    PARENT_FIRST = IterOrder.PARENT_FIRST
+    PARENT_LAST = IterOrder.PARENT_LAST
+
     _contents: list[ListItemT]
     _parent: Optional[weakref.ref[Self]]
     _children: WeakNonHashableSet[Self]
+    _iter_order: IterOrder
     _update_notification_callbacks: CallbackRegistry[Self]
     _update_notification_enabled: bool
     _template: ListItemT
 
-    def __init__(self, template: ListItemT) -> None:
+    def __init__(
+        self, template: ListItemT, order: IterOrder = IterOrder.NO_PARENT
+    ) -> None:
 
         super().__init__()
 
@@ -88,6 +106,7 @@ class List(MutableSequence[ListItemT]):
 
         self._parent = None
         self._children = WeakNonHashableSet()
+        self._iter_order = order
         self._update_notification_callbacks = CallbackRegistry()
         self._update_notification_enabled = True
         self._template = template
@@ -242,40 +261,59 @@ class List(MutableSequence[ListItemT]):
             self._parent = weakref.ref(parent)
             parent._children.add(self)
 
-    def iterAll(self) -> Iterator[ListItemT]:
+    def iter(self, order: Optional[IterOrder] = None) -> Iterator[ListItemT]:
         """
-        Yields the element contained in this List and its parent, if any.
+        Yields the elements contained in this List, and optionally in its
+        parents, if any.
+
+        Args:
+            order: One of List.NO_PARENT, List.PARENT_FIRST, List.PARENT_LAST,
+                or None. If None, the order set on the List itself at creation
+                time will be used. If List.NO_PARENT, this method only yields
+                the contents of this List instance. If List.PARENT_FIRST, it
+                yields from this List's parents, if any, then this List itself.
+                If List.PARENT_LAST, it yields from this List itself, then from
+                its parents if any. Default: None.
 
         Returns:
-            An iterator over the items contained in this List.
+            An iterator over the items contained in this List and optionally its
+                parents.
 
         Example:
 
-        >>> from sunset import Bundle, Key, List
-        >>> class ExampleBundle(Bundle):
-        ...     item = Key(default=0)
-        >>> show = lambda l: [elt.item.get() for elt in l]
-        >>> l1 = List(ExampleBundle())
-        >>> l1.appendOne().item.set(1)
-        >>> l1.appendOne().item.set(2)
-        >>> l2 = List(ExampleBundle())
-        >>> l2.appendOne().item.set(3)
-        >>> l2.appendOne().item.set(4)
-        >>> show(l1)
+        >>> from sunset import Key, List
+        >>> show = lambda l: [key.get() for key in l]
+        >>> parent = List(Key(default=0))
+        >>> parent.appendOne().set(1)
+        >>> parent.appendOne().set(2)
+        >>> child = List(Key(default=0))
+        >>> child.appendOne().set(3)
+        >>> child.appendOne().set(4)
+        >>> show(parent)
         [1, 2]
-        >>> show(l2)
+        >>> show(child)
         [3, 4]
-        >>> show(l1.iterAll())
-        [1, 2]
-        >>> l1.setParent(l2)
-        >>> show(l1.iterAll())
+        >>> child.setParent(parent)
+        >>> show(child.iter())
+        [3, 4]
+        >>> show(child.iter(order=List.PARENT_FIRST))
         [1, 2, 3, 4]
+        >>> show(child.iter(order=List.PARENT_LAST))
+        [3, 4, 1, 2]
         """
 
-        yield from self
         parent = self.parent()
-        if parent is not None:
-            yield from parent.iterAll()
+
+        if order is None:
+            order = self._iter_order
+
+        if parent is not None and order == IterOrder.PARENT_FIRST:
+            yield from parent.iter(order)
+
+        yield from self._contents
+
+        if parent is not None and order == IterOrder.PARENT_LAST:
+            yield from parent.iter(order)
 
     def parent(self) -> Optional[Self]:
         """
@@ -382,11 +420,18 @@ class List(MutableSequence[ListItemT]):
             A new List.
         """
 
-        return self.__class__(template=self._template)
+        return self.__class__(template=self._template, order=self._iter_order)
 
     def __repr__(self) -> str:
 
+        parent = self.parent()
+        items = [repr(item) for item in self.iter(order=IterOrder.NO_PARENT)]
+        if parent is not None and self._iter_order == IterOrder.PARENT_FIRST:
+            items.insert(0, "<parent>")
+        if parent is not None and self._iter_order == IterOrder.PARENT_LAST:
+            items.append("<parent>")
+
         ret = "["
-        ret += ",".join(repr(item) for item in self)
+        ret += ",".join(items)
         ret += "]"
         return ret

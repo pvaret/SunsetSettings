@@ -12,7 +12,7 @@ class ExampleBundle(Bundle):
 
     a = Key("default a")
     inner_bundle = InnerBundle()
-    list = List(Item())
+    list = List(Item(), order=List.PARENT_LAST)
 
 
 class TestBundle:
@@ -108,20 +108,18 @@ class TestBundle:
         assert t2.inner_bundle.b.get() == 37
         assert t1.inner_bundle.b.get() == 101
 
-        t1.list.appendOne()
-        t1.list[0].c.set("test t1")
-        assert [s.c.get() for s in t1.list.iterAll()] == ["test t1"]
-        assert [s.c.get() for s in t2.list.iterAll()] == ["test t1"]
-        t2.list.appendOne()
-        t2.list[0].c.set("test t2")
-        assert [s.c.get() for s in t1.list.iterAll()] == ["test t1"]
-        assert [s.c.get() for s in t2.list.iterAll()] == [
+        t1.list.appendOne().c.set("test t1")
+        assert [s.c.get() for s in t1.list.iter()] == ["test t1"]
+        assert [s.c.get() for s in t2.list.iter()] == ["test t1"]
+        t2.list.appendOne().c.set("test t2")
+        assert [s.c.get() for s in t1.list.iter()] == ["test t1"]
+        assert [s.c.get() for s in t2.list.iter()] == [
             "test t2",
             "test t1",
         ]
         del t1.list[0]
-        assert [s.c.get() for s in t1.list.iterAll()] == []
-        assert [s.c.get() for s in t2.list.iterAll()] == ["test t2"]
+        assert [s.c.get() for s in t1.list.iter()] == []
+        assert [s.c.get() for s in t2.list.iter()] == ["test t2"]
 
     def test_dump(self):
 

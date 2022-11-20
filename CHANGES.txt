@@ -6,6 +6,7 @@
   - Removed need for explicit type annotations in Settings classes.
   - Renamed Setting class to Key.
   - Renamed Section class to Bundle.
+  - Renamed List.iterAll() to iter() and added order parameter.
   - Renamed onKeyModifiedCall to onUpdateCall.
   - Added float to supported Key value types.
 

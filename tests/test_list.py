@@ -75,22 +75,47 @@ class TestList:
         assert r3.parent() is None
 
     def test_iter_inheritance(self):
-        def flatten(fixtures: Iterator[ExampleBundle]) -> list[str]:
-            return [f.test.get() for f in fixtures]
+        def flatten(fixtures: Iterator[Key[str]]) -> list[str]:
+            return [f.get() for f in fixtures]
 
-        r1: List[ExampleBundle] = List(ExampleBundle())
-        r2: List[ExampleBundle] = List(ExampleBundle())
+        parent: List[Key[str]] = List(Key(default=""))
+        child_default: List[Key[str]] = List(Key(default=""))
+        child_iter_no_parent: List[Key[str]] = List(
+            Key(default=""), order=List.NO_PARENT
+        )
+        child_iter_parent_first: List[Key[str]] = List(
+            Key(default=""), order=List.PARENT_FIRST
+        )
+        child_iter_parent_last: List[Key[str]] = List(
+            Key(default=""), order=List.PARENT_LAST
+        )
 
-        r1.append(ExampleBundle())
-        r1[0].test.set("test r1")
-        r2.append(ExampleBundle())
-        r2[0].test.set("test r2")
+        parent.appendOne().set("parent")
+        child_default.appendOne().set("child")
+        child_iter_no_parent.appendOne().set("child")
+        child_iter_parent_first.appendOne().set("child")
+        child_iter_parent_last.appendOne().set("child")
 
-        assert flatten(r2.iterAll()) == ["test r2"]
+        assert flatten(child_default.iter()) == ["child"]
 
-        r2.setParent(r1)
+        child_default.setParent(parent)
+        child_iter_no_parent.setParent(parent)
+        child_iter_parent_first.setParent(parent)
+        child_iter_parent_last.setParent(parent)
 
-        assert flatten(r2.iterAll()) == ["test r2", "test r1"]
+        assert flatten(child_default.iter()) == ["child"]
+        assert flatten(child_iter_no_parent.iter()) == ["child"]
+        assert flatten(child_iter_parent_first.iter()) == ["parent", "child"]
+        assert flatten(child_iter_parent_last.iter()) == ["child", "parent"]
+        assert flatten(child_default.iter(order=List.NO_PARENT)) == ["child"]
+        assert flatten(child_default.iter(order=List.PARENT_FIRST)) == [
+            "parent",
+            "child",
+        ]
+        assert flatten(child_default.iter(order=List.PARENT_LAST)) == [
+            "child",
+            "parent",
+        ]
 
     def test_dump(self):
 
@@ -345,3 +370,22 @@ class TestList:
         callback.reset_mock()
         s1.test.set("test")
         callback.assert_not_called()
+
+    def test_repr(self):
+
+        parent = List(Key(default=0))
+        list_iter_no_parent = List(Key(default=0), order=List.NO_PARENT)
+        list_iter_parent_first = List(Key(default=0), order=List.PARENT_FIRST)
+        list_iter_parent_last = List(Key(default=0), order=List.PARENT_LAST)
+
+        list_iter_no_parent.setParent(parent)
+        list_iter_parent_first.setParent(parent)
+        list_iter_parent_last.setParent(parent)
+
+        list_iter_no_parent.appendOne().set(1)
+        list_iter_parent_first.appendOne().set(1)
+        list_iter_parent_last.appendOne().set(1)
+
+        assert repr(list_iter_no_parent) == "[<Key[int]:1>]"
+        assert repr(list_iter_parent_first) == "[<parent>,<Key[int]:1>]"
+        assert repr(list_iter_parent_last) == "[<Key[int]:1>,<parent>]"

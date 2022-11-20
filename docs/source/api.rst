@@ -71,7 +71,7 @@ List
 
 .. autoclass:: sunset.List
 
-    .. automethod:: iterAll
+    .. automethod:: iter
 
     .. automethod:: onUpdateCall
 
