@@ -53,6 +53,18 @@ class TestBundle:
 
         FineBundle()
 
+    def test_fields_cant_override_existing_attributes(self):
+
+        # "dump" is an attribute that happens to exist on the class.
+
+        assert getattr(Bundle, "dump", None) is not None
+
+        class FaultyBundle(Bundle):
+            dump = Key(default="test")  # type: ignore -- that's the point
+
+        with pytest.raises(TypeError):
+            FaultyBundle()
+
     def test_inheritance(self):
 
         t1 = ExampleBundle()

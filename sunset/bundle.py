@@ -67,6 +67,8 @@ class Bundle:
 
         # Automatically promote relevant attributes to dataclass fields.
 
+        cls_parents = cls.__bases__
+
         potential_fields = list(vars(cls).items())
         for name, attr in potential_fields:
 
@@ -86,6 +88,20 @@ class Bundle:
                 )
 
             if isinstance(attr, ItemTemplate):
+
+                # Safety check: make sure the user isn't accidentally overriding
+                # an existing attribute.
+
+                for cls_parent in cls_parents:
+                    if getattr(cls_parent, name, None) is not None:
+                        raise TypeError(
+                            f"Field '{name}' in the definition of"
+                            f" '{cls.__name__}' overrides attribute of the same"
+                            f" name declared in parent class "
+                            f"'{cls_parent.__name__}'; consider"
+                            f" renaming this field to '{name}_' for instance"
+                        )
+
                 setattr(cls, name, field(default_factory=attr.new))
 
                 # Dataclass instantiation raises an error if a field does not
