@@ -146,7 +146,7 @@ class Settings(Bundle):
             An instance of the same type as self.
         """
 
-        new = self.new()
+        new = self.newInstance()
         new.setParent(self)
         new.onUpdateCall(self._notifyUpdate)
 

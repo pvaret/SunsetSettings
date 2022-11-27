@@ -193,6 +193,11 @@ class List(MutableSequence[ListItemT]):
 
         return len(self._contents)
 
+    def _newItem(self) -> ListItemT:
+
+        item = self._template.newInstance()
+        return item
+
     def appendOne(self) -> ListItemT:
         """
         Creates a new item of the type contained in this List, appends it to
@@ -202,7 +207,7 @@ class List(MutableSequence[ListItemT]):
             An instance of the item type contained in this List.
         """
 
-        item = self._template.new()
+        item = self._newItem()
         self.append(item)
         return item
 
@@ -218,7 +223,7 @@ class List(MutableSequence[ListItemT]):
             An instance of the item type contained in this List.
         """
 
-        item = self._template.new()
+        item = self._newItem()
         self.insert(index, item)
         return item
 
@@ -395,7 +400,7 @@ class List(MutableSequence[ListItemT]):
             subitems.setdefault(item_name, []).append((subname, dump))
 
         for k in sorted(subitems.keys(), key=int):
-            item = self._template.new()
+            item = self._newItem()
             item.restore(subitems[k])
             self.append(item)
 
@@ -412,9 +417,10 @@ class List(MutableSequence[ListItemT]):
             if isinstance(value, List) or value in self:
                 self._update_notification_callbacks.callAll(self)
 
-    def new(self) -> Self:
+    def newInstance(self) -> Self:
         """
-        Returns a new instance of this List capable of holding the same type.
+        Internal. Returns a new instance of this List capable of holding the
+        same type.
 
         Returns:
             A new List.

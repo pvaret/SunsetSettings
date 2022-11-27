@@ -74,5 +74,5 @@ class UpdateNotifier(Protocol):
 
 @runtime_checkable
 class ItemTemplate(Protocol):
-    def new(self: Self) -> Self:
+    def newInstance(self: Self) -> Self:
         ...

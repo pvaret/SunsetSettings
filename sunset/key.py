@@ -356,9 +356,10 @@ class Key(Generic[SerializableT]):
 
         self._update_notification_callbacks.callAll(self)
 
-    def new(self) -> Self:
+    def newInstance(self) -> Self:
         """
-        Returns a new instance of this Key with the same default value.
+        Internal. Returns a new instance of this Key with the same default
+        value.
 
         Returns:
             A new Key.

@@ -102,7 +102,7 @@ class Bundle:
                             f" renaming this field to '{name}_' for instance"
                         )
 
-                setattr(cls, name, field(default_factory=attr.new))
+                setattr(cls, name, field(default_factory=attr.newInstance))
 
                 # Dataclass instantiation raises an error if a field does not
                 # have an explicit type annotation. But our Key, List and
@@ -300,12 +300,13 @@ class Bundle:
         if self._update_notification_enabled:
             self._update_notification_callbacks.callAll(self)
 
-    def new(self: Self) -> Self:
+    def newInstance(self: Self) -> Self:
         """
-        Returns a new instance of this Bundle with the same fields.
+        Internal. Returns a new instance of this Bundle with the same fields.
 
         Returns:
             A Bundle instance.
         """
 
-        return self.__class__()
+        new = self.__class__()
+        return new
