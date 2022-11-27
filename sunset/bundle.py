@@ -69,7 +69,23 @@ class Bundle:
 
         potential_fields = list(vars(cls).items())
         for name, attr in potential_fields:
-            if isinstance(attr, ItemTemplate) and not inspect.isclass(attr):
+
+            if inspect.isclass(attr):
+
+                if attr.__name__ == name:
+
+                    # This is probably a class definition that just happens to
+                    # be located inside the containing Bundle definition. This
+                    # is fine.
+
+                    continue
+
+                raise TypeError(
+                    f"Field '{name}' in the definition of '{cls.__name__}'"
+                    " is uninstantiated"
+                )
+
+            if isinstance(attr, ItemTemplate):
                 setattr(cls, name, field(default_factory=attr.new))
 
                 # Dataclass instantiation raises an error if a field does not

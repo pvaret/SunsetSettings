@@ -1,3 +1,5 @@
+import pytest
+
 from pytest_mock import MockerFixture
 
 from sunset import Bundle, Key, List, protocols
@@ -31,6 +33,25 @@ class TestBundle:
         assert t.a.get() == "default a"
         assert t.inner_bundle.b.get() == 42
         assert t.list[0].c.get() == "default c"
+
+    def test_uninstantiated_attribute_fails(self):
+        class InnerBundle(Bundle):
+            pass
+
+        class FaultyBundle(Bundle):
+            inner = InnerBundle
+
+        with pytest.raises(TypeError):
+            FaultyBundle()
+
+    def test_inner_bundle_definition_is_fine(self):
+        class FineBundle(Bundle):
+            class InnerBundle(Bundle):
+                pass
+
+            inner = InnerBundle()
+
+        FineBundle()
 
     def test_inheritance(self):
 
