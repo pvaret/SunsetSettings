@@ -7,6 +7,7 @@
   - Renamed Setting class to Key.
   - Renamed Section class to Bundle.
   - Renamed List.iterAll() to iter() and added order parameter.
+  - Replaced derive() and deriveAs() with newSection() and assorted functions.
   - Renamed onKeyModifiedCall to onUpdateCall.
   - Added float to supported Key value types.
 

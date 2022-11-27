@@ -73,10 +73,11 @@ class TestBundle:
         assert t3 not in t2.children()
         assert t3.parent() is None
 
-    def test_derivation(self):
+    def test_parenting(self):
 
         t1 = ExampleBundle()
-        t2 = t1.derive()
+        t2 = ExampleBundle()
+        t2.setParent(t1)
 
         assert t2.parent() is t1
         assert t2 in t1.children()
@@ -84,7 +85,8 @@ class TestBundle:
     def test_inheritance_propagation(self):
 
         t1 = ExampleBundle()
-        t2 = t1.derive()
+        t2 = ExampleBundle()
+        t2.setParent(t1)
 
         assert t2.a.parent() is t1.a
         assert t2.inner_bundle.parent() is t1.inner_bundle
@@ -94,7 +96,8 @@ class TestBundle:
     def test_inheritance_values(self):
 
         t1 = ExampleBundle()
-        t2 = t1.derive()
+        t2 = ExampleBundle()
+        t2.setParent(t1)
 
         t1.a.set("test t1")
         assert t2.a.get() == "test t1"
@@ -186,8 +189,10 @@ class TestBundle:
         # A Bundle does not keep a reference to its parent or children.
 
         bundle = ExampleBundle()
-        level1 = bundle.derive()
-        level2 = level1.derive()
+        level1 = ExampleBundle()
+        level2 = ExampleBundle()
+        level1.setParent(bundle)
+        level2.setParent(level1)
 
         assert level1.parent() is not None
         assert len(list(level1.children())) == 1
@@ -204,7 +209,8 @@ class TestBundle:
         bundle = ExampleBundle()
         bundle.onUpdateCall(callback)
 
-        child = bundle.derive()
+        child = ExampleBundle()
+        child.setParent(bundle)
 
         bundle.a.set("test 1")
         callback.assert_called_once_with(bundle)

@@ -38,7 +38,7 @@ class Bundle:
 
     Example:
 
-    >>> from sunset import Key, Bundle
+    >>> from sunset import Bundle, Key
     >>> class Appearance(Bundle):
     ...     class Font(Bundle):
     ...         name = Key(default="Arial")
@@ -104,19 +104,6 @@ class Bundle:
 
             if isinstance(attr, UpdateNotifier):
                 attr.onUpdateCall(self._notifyUpdate)
-
-    def derive(self: Self) -> Self:
-        """
-        Creates a new instance of this Bundle's class, and set this one as the
-        parent of that instance.
-
-        Returns:
-            A new instance of this Bundle.
-        """
-
-        new = self.__class__()
-        new.setParent(self)
-        return new
 
     def setParent(self: Self, parent: Optional[Self]) -> None:
         """
@@ -204,8 +191,8 @@ class Bundle:
 
     def onUpdateCall(self, callback: Callable[[Self], None]) -> None:
         """
-        Adds a callback to be called whenever this Bundle or any of fields is
-        updated.
+        Adds a callback to be called whenever this Bundle or any of its fields
+        is updated.
 
         The callback will be called with this Bundle as its argument.
 
@@ -281,7 +268,7 @@ class Bundle:
         if self._update_notification_enabled:
             self._update_notification_callbacks.callAll(self)
 
-    def new(self) -> Self:
+    def new(self: Self) -> Self:
         """
         Returns a new instance of this Bundle with the same fields.
 

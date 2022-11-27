@@ -28,41 +28,41 @@ class ExampleSettings(Settings):
 
 
 class TestSettings:
-    def test_derive(self):
+    def test_new_section(self):
 
         s = ExampleSettings()
         assert s.hierarchy() == ["main"]
 
-        s1 = s.deriveAs("One level down")
+        s1 = s.newSection(name="One level down")
         assert s1.hierarchy() == ["main", "oneleveldown"]
 
-        s2 = s.deriveAs("One level down too")
+        s2 = s.newSection(name="One level down too")
         assert s2.hierarchy() == ["main", "oneleveldowntoo"]
 
-        ss1 = s1.deriveAs("Two levels down")
+        ss1 = s1.newSection(name="Two levels down")
         assert ss1.hierarchy() == ["main", "oneleveldown", "twolevelsdown"]
 
-        anonymous = s.derive()
+        anonymous = s.newSection()
         assert anonymous.hierarchy() == []
 
-        anonymous2 = anonymous.deriveAs(
-            "No anonymous itself but in a anonymous hierachy"
+        anonymous2 = anonymous.newSection(
+            name="Not anonymous itself but in a anonymous hierachy"
         )
         assert anonymous2.hierarchy() == []
 
-    def test_deriveas(self):
+    def test_new_named_section(self):
 
         s = ExampleSettings()
 
-        assert len(list(s.children())) == 0
+        assert len(list(s.sections())) == 0
 
-        child = s.deriveAs("same name")
-        assert len(list(s.children())) == 1
+        section = s.newSection(name="same name")
+        assert len(list(s.sections())) == 1
 
-        otherchild = s.deriveAs("same name")
-        assert len(list(s.children())) == 1
+        othersection = s.getOrCreateSection(name="same name")
+        assert len(list(s.sections())) == 1
 
-        assert otherchild is child
+        assert othersection is section
 
     def test_dumpall(self):
 
@@ -97,21 +97,21 @@ class TestSettings:
         settings.a.set("a")
         settings.bundle_list.appendOne().c.set(100)
 
-        s1 = settings.deriveAs("Level 1")
+        s1 = settings.newSection(name="Level 1")
         s1.a.set("sub a")
         s1.b.set("sub b")
         s1.bundle_list.appendOne().c.set(1000)
 
-        s2 = settings.deriveAs("Other level 1")
+        s2 = settings.newSection(name="Other level 1")
         s2.inner_bundle.d.set(False)
 
-        anonymous = settings.derive()
+        anonymous = settings.newSection()
         anonymous.a.set("anonymous")
 
-        subanonymous = anonymous.deriveAs("Should be ignored too")
+        subanonymous = anonymous.newSection(name="Should be ignored too")
         subanonymous.b.set("anonymous 2")
 
-        ss1 = s1.deriveAs("Level 2")
+        ss1 = s1.newSection(name="Level 2")
         ss1.inner_bundle.c.set(200)
 
         assert settings.dumpAll() == [
@@ -190,12 +190,12 @@ class TestSettings:
         assert settings.key_list[0].get() == "one"
         assert settings.key_list[1].get() == "two"
 
-        settings_children = {c.name(): c for c in settings.children()}
-        assert len(settings_children) == 2
-        assert "level1" in settings_children
-        level1 = settings_children["level1"]
-        assert "otherlevel1" in settings_children
-        otherlevel1 = settings_children["otherlevel1"]
+        settings_sections = {c.name(): c for c in settings.sections()}
+        assert len(settings_sections) == 2
+        assert "level1" in settings_sections
+        level1 = settings_sections["level1"]
+        assert "otherlevel1" in settings_sections
+        otherlevel1 = settings_sections["otherlevel1"]
 
         assert level1.a.get() == "sub a"
         assert level1.b.get() == "sub b"
@@ -207,28 +207,28 @@ class TestSettings:
 
         assert not otherlevel1.inner_bundle.d.get()
 
-        level1_children = {c.name(): c for c in level1.children()}
-        assert len(level1_children) == 1
-        assert "level2" in level1_children
-        level2 = level1_children["level2"]
+        level1_sections = {c.name(): c for c in level1.sections()}
+        assert len(level1_sections) == 1
+        assert "level2" in level1_sections
+        level2 = level1_sections["level2"]
 
         assert level2.inner_bundle.c.get() == 200
 
     def test_persistence(self):
 
-        # Settings keep a reference to their children, but not to their parent.
+        # Settings keep a reference to their sections, but not to their parent.
 
         settings = ExampleSettings()
-        level1 = settings.deriveAs("level 1")
-        level2 = level1.deriveAs("level 2")
+        level1 = settings.newSection(name="level 1")
+        level2 = level1.newSection(name="level 2")
 
         assert level1.parent() is not None
-        assert len(list(level1.children())) == 1
+        assert len(list(level1.sections())) == 1
 
         del settings
         del level2
         assert level1.parent() is None
-        assert len(list(level1.children())) == 1
+        assert len(list(level1.sections())) == 1
 
     def test_save(self):
 
@@ -236,23 +236,23 @@ class TestSettings:
         settings.a.set("a")
         settings.bundle_list.appendOne().c.set(100)
 
-        s1 = settings.deriveAs("Level 1")
+        s1 = settings.newSection(name="Level 1")
         s1.a.set("sub a")
         s1.b.set("sub b")
         s1.bundle_list.appendOne().c.set(1000)
         s1.key_list.appendOne().set("one")
         s1.key_list.appendOne().set("two")
 
-        s2 = settings.deriveAs("Other level 1")
+        s2 = settings.newSection(name="Other level 1")
         s2.inner_bundle.d.set(False)
 
-        anonymous = settings.derive()
+        anonymous = settings.newSection()
         anonymous.a.set("anonymous")
 
-        subanonymous = anonymous.deriveAs("Should be ignored too")
+        subanonymous = anonymous.newSection(name="Should be ignored too")
         subanonymous.b.set("anonymous 2")
 
-        ss1 = s1.deriveAs("Level 2")
+        ss1 = s1.newSection(name="Level 2")
         ss1.inner_bundle.c.set(200)
 
         file = io.StringIO()
@@ -313,12 +313,12 @@ inner_bundle.d = false
         assert len(settings.bundle_list) == 1
         assert settings.bundle_list[0].c.get() == 100
 
-        settings_children = {c.name(): c for c in settings.children()}
-        assert len(settings_children) == 2
-        assert "level1" in settings_children
-        level1 = settings_children["level1"]
-        assert "otherlevel1" in settings_children
-        otherlevel1 = settings_children["otherlevel1"]
+        settings_sections = {c.name(): c for c in settings.sections()}
+        assert len(settings_sections) == 2
+        assert "level1" in settings_sections
+        level1 = settings_sections["level1"]
+        assert "otherlevel1" in settings_sections
+        otherlevel1 = settings_sections["otherlevel1"]
 
         assert level1.a.get() == "sub a"
         assert level1.b.get() == "sub b"
@@ -329,10 +329,10 @@ inner_bundle.d = false
 
         assert not otherlevel1.inner_bundle.d.get()
 
-        level1_children = {c.name(): c for c in level1.children()}
-        assert len(level1_children) == 1
-        assert "level2" in level1_children
-        level2 = level1_children["level2"]
+        level1_sections = {c.name(): c for c in level1.sections()}
+        assert len(level1_sections) == 1
+        assert "level2" in level1_sections
+        level2 = level1_sections["level2"]
 
         assert level2.inner_bundle.c.get() == 200
 
@@ -396,10 +396,10 @@ a = main bundle is implicitly created if needed
             )
         )
 
-        children = list(settings.children())
-        assert len(children) == 1
+        sections = list(settings.sections())
+        assert len(sections) == 1
         assert (
-            children[0].a.get() == "main bundle is implicitly created if needed"
+            sections[0].a.get() == "main bundle is implicitly created if needed"
         )
 
     def test_load_invalid_extra_bundle_separators(self):
@@ -415,11 +415,11 @@ a = extra separators should be skipped
             )
         )
 
-        children = list(settings.children())
-        assert len(children) == 1
-        subchildren = list(children[0].children())
-        assert len(subchildren) == 1
-        assert subchildren[0].a.get() == "extra separators should be skipped"
+        sections = list(settings.sections())
+        assert len(sections) == 1
+        subsections = list(sections[0].sections())
+        assert len(subsections) == 1
+        assert subsections[0].a.get() == "extra separators should be skipped"
 
         settings = ExampleSettings()
         settings.load(
@@ -432,9 +432,9 @@ a = extra separators should be skipped
             )
         )
 
-        children = list(settings.children())
-        assert len(children) == 1
-        assert children[0].a.get() == "extra separators should be skipped"
+        sections = list(settings.sections())
+        assert len(sections) == 1
+        assert sections[0].a.get() == "extra separators should be skipped"
 
         settings = ExampleSettings()
         settings.load(
@@ -447,9 +447,9 @@ a = extra separators should be skipped
             )
         )
 
-        children = list(settings.children())
-        assert len(children) == 1
-        assert children[0].a.get() == "extra separators should be skipped"
+        sections = list(settings.sections())
+        assert len(sections) == 1
+        assert sections[0].a.get() == "extra separators should be skipped"
 
     def test_load_invalid_bad_bundle_is_skipped(self):
 
@@ -466,8 +466,8 @@ a = bad bundle
             )
         )
 
-        children = list(settings.children())
-        assert len(children) == 0
+        sections = list(settings.sections())
+        assert len(sections) == 0
         assert settings.a.get() == "main"
 
     def test_load_invalid_similar_are_merged(self):
@@ -485,8 +485,8 @@ a = merged
             )
         )
 
-        children = list(settings.children())
-        assert len(children) == 0
+        sections = list(settings.sections())
+        assert len(sections) == 0
         assert settings.a.get() == "merged"
 
     def test_load_invalid_empty_bundle_is_skipped(self):
@@ -504,8 +504,8 @@ a = skipped
             )
         )
 
-        children = list(settings.children())
-        assert len(children) == 0
+        sections = list(settings.sections())
+        assert len(sections) == 0
         assert settings.a.get() == "main"
 
     def test_load_invalid_bad_key(self):
@@ -602,15 +602,15 @@ bundle_list.4.c = 4
         callback.assert_called_once_with(settings)
         callback.reset_mock()
 
-        child = settings.deriveAs("child")
+        section = settings.newSection(name="section")
         callback.assert_called_once_with(settings)
         callback.reset_mock()
 
-        child.a.set("test 2")
+        section.a.set("test 2")
         callback.assert_called_once_with(settings)
         callback.reset_mock()
 
-        anonymous = settings.derive()
+        anonymous = settings.newSection()
         callback.assert_not_called()
         callback.reset_mock()
 
@@ -618,11 +618,11 @@ bundle_list.4.c = 4
         callback.assert_not_called()
         callback.reset_mock()
 
-        anonymousChild = anonymous.deriveAs("other child")
+        anonymoussection = anonymous.newSection(name="other section")
         callback.assert_not_called()
         callback.reset_mock()
 
-        anonymousChild.a.set("test 4")
+        anonymoussection.a.set("test 4")
         callback.assert_not_called()
         callback.reset_mock()
 
@@ -630,7 +630,7 @@ bundle_list.4.c = 4
         callback.assert_called_once_with(settings)
         callback.reset_mock()
 
-        anonymousChild.a.set("test 5")
+        anonymoussection.a.set("test 5")
         callback.assert_called_once_with(settings)
         callback.reset_mock()
 
@@ -639,13 +639,14 @@ bundle_list.4.c = 4
             pass
 
         parent = TestSettings()
-        children = [parent.derive() for _ in range(10)]
-        for child in children:
-            child.setName("test")
+        sections = [parent.newSection() for _ in range(10)]
+        for section in sections:
+            section.setName("test")
 
         assert all(
-            child.name() not in {sibling.name() for sibling in child.siblings()}
-            for child in children
+            section.name()
+            not in {sibling.name() for sibling in section.siblings()}
+            for section in sections
         )
 
     def test_anonymous_name_not_unique(self):
@@ -653,8 +654,8 @@ bundle_list.4.c = 4
             pass
 
         parent = TestSettings()
-        children = [parent.derive() for _ in range(10)]
-        for child in children:
-            child.setName("")
+        sections = [parent.newSection() for _ in range(10)]
+        for section in sections:
+            section.setName("")
 
-        assert all(child.name() == "" for child in children)
+        assert all(section.name() == "" for section in sections)

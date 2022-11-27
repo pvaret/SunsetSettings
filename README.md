@@ -43,7 +43,7 @@ simple serialization protocol. (See `sunset/protocols.py`.)
 >>> import re
 >>> from typing import Optional, TYPE_CHECKING
 >>> class Coordinates:
-...     def __init__(self, x: int = 0, y: int = 0) -> None:
+...     def __init__(self, x: int, y: int) -> None:
 ...         self._x = x
 ...         self._y = y
 ...
@@ -60,7 +60,7 @@ simple serialization protocol. (See `sunset/protocols.py`.)
 ...         return cls(x, y)
 
 >>> from sunset import Key
->>> coordinates = Key(default=Coordinates())
+>>> coordinates = Key(default=Coordinates(0, 0))
 >>> if TYPE_CHECKING:
 ...     reveal_type(coordinates.get())
 >>> # Revealed type is "Coordinates"
@@ -80,7 +80,7 @@ arbitrarily deep.
 ...     paws = Key(default=4)
 ... 
 >>> animals = Animals()
->>> octopuses = animals.deriveAs("octopuses")
+>>> octopuses = animals.newSection(name="octopuses")
 >>> octopuses.paws.get()
 4
 >>> octopuses.paws.set(8)

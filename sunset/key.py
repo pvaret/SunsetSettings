@@ -187,10 +187,10 @@ class Key(Generic[SerializableT]):
         The callback will be called with the new value as its argument.
 
         If you want a callback to be called whenever this Key is updated, even
-        if its apparent value does not change, use :meth:onUpdateCall() instead,
-        For example, if you call set(0) on Key with a default value of 0,
-        callbacks added with onUpdateCall() are called and callbacks added with
-        onValueChangeCall() are not.
+        if its apparent value does not change, use :meth:`onUpdateCall()`
+        instead, For example, if you call set(0) on Key with a default value of
+        0, callbacks added with onUpdateCall() are called and callbacks added
+        with onValueChangeCall() are not.
 
 
         Args:
@@ -210,12 +210,12 @@ class Key(Generic[SerializableT]):
     def onUpdateCall(self, callback: Callable[[Self], None]) -> None:
         """
         Adds a callback to be called whenever this Key is updated, even if the
-        value returned by :meth:get() does not end up changing.
+        value returned by :meth:`get()` does not end up changing.
 
         The callback will be called with this Key instance as its argument.
 
         If you want a callback to be called only when the apparent value of this
-        Key changes, use :meth:onValueChangeCall() instead. For example, if a
+        Key changes, use :meth:`onValueChangeCall()` instead. For example, if a
         Key has no value set on it and has a parent whose value is updated, then
         callbacks added on this Key with onValueChangeCall() are called, and
         callbacks added with onUpdateCall() are not, because it's not this Key

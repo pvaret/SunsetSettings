@@ -1,35 +1,27 @@
 API Reference
 =============
 
-Settings
---------
-
 .. autoclass:: sunset.Settings
 
     .. automethod:: load
 
     .. automethod:: save
 
-    .. automethod:: derive
+    .. automethod:: newSection
 
-    .. automethod:: deriveAs
+    .. automethod:: getOrCreateSection
+
+    .. automethod:: getSection
+
+    .. automethod:: sections
+
+    .. automethod:: siblings
 
     .. automethod:: name
 
     .. automethod:: setName
 
     .. automethod:: onUpdateCall
-
-    .. automethod:: parent
-
-    .. automethod:: children
-
-    .. automethod:: setParent
-
-    .. automethod:: siblings
-
-Key
----
 
 .. autoclass:: sunset.Key
 
@@ -51,12 +43,7 @@ Key
 
     .. automethod:: setParent
 
-Bundle
-------
-
 .. autoclass:: sunset.Bundle
-
-    .. automethod:: derive
 
     .. automethod:: onUpdateCall
 
@@ -65,9 +52,6 @@ Bundle
     .. automethod:: children
 
     .. automethod:: setParent
-
-List
-----
 
 .. autoclass:: sunset.List
 
@@ -80,9 +64,6 @@ List
     .. automethod:: children
 
     .. automethod:: setParent
-
-protocols.Serializable
-----------------------
 
 .. autoclass:: sunset.protocols.Serializable
 

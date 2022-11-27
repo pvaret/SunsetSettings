@@ -10,6 +10,7 @@ project, per folder, per user, etc.
 
 
 .. toctree::
+   :maxdepth: 2
 
    installation
    usage

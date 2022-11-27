@@ -1,8 +1,14 @@
 Installation
 ============
 
-From PyPI (recommended)
------------------------
+Python version
+--------------
+
+SunsetSettings requires Python 3.9 or later.
+
+
+Installing from PyPI (recommended)
+----------------------------------
 
 From a command line prompt, type:
 
@@ -11,8 +17,8 @@ From a command line prompt, type:
   pip install SunsetSettings
 
 
-From GitHub
------------
+Installing from GitHub
+----------------------
 
 - Dependencies: install `flit <https://pypi.org/project/flit/>`_:
 

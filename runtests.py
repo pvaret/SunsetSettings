@@ -13,6 +13,7 @@ if __name__ == "__main__":
                 "--cov=.",
                 "--doctest-modules",
                 "--doctest-glob=README.md",
+                "--doctest-glob=docs/*.rst",
             ]
         )
     )
