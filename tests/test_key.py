@@ -4,7 +4,7 @@ import pytest
 
 from pytest_mock import MockerFixture
 
-from sunset import Key, protocols
+from sunset import Bundle, Key, protocols
 
 
 class ExampleSerializable:
@@ -25,11 +25,12 @@ class ExampleSerializable:
 class TestKey:
     def test_protocol_implementation(self):
 
-        s = Key(default="")
-        assert isinstance(s, protocols.Inheriter)
-        assert isinstance(s, protocols.ItemTemplate)
-        assert isinstance(s, protocols.Dumpable)
-        assert isinstance(s, protocols.Restorable)
+        key = Key(default="")
+        assert isinstance(key, protocols.Inheriter)
+        assert isinstance(key, protocols.ItemTemplate)
+        assert isinstance(key, protocols.Dumpable)
+        assert isinstance(key, protocols.Restorable)
+        assert isinstance(key, protocols.Containable)
 
     def test_default(self):
 
@@ -43,73 +44,73 @@ class TestKey:
 
     def test_set(self):
 
-        s = Key(default="test")
-        s.set("other")
-        assert s.get() == "other"
+        key = Key(default="test")
+        key.set("other")
+        assert key.get() == "other"
 
     def test_clear(self):
 
-        s = Key(default="default")
-        s.set("other")
-        assert s.get() != "default"
+        key = Key(default="default")
+        key.set("other")
+        assert key.get() != "default"
 
-        s.clear()
-        assert s.get() == "default"
+        key.clear()
+        assert key.get() == "default"
 
     def test_serializable_type(self):
 
-        t = ExampleSerializable.fromStr("dummy")
-        assert t is not None
-        s: Key[ExampleSerializable] = Key(default=t)
+        value = ExampleSerializable.fromStr("dummy")
+        assert value is not None
+        key: Key[ExampleSerializable] = Key(default=value)
 
-        assert s.get().toStr() == "dummy"
+        assert key.get().toStr() == "dummy"
 
     def test_value_change_callback(self, mocker: MockerFixture):
 
         callback = mocker.stub()
 
-        s = Key(default="default")
+        key = Key(default="default")
 
-        s.onValueChangeCall(callback)
+        key.onValueChangeCall(callback)
 
-        s.set("default")
+        key.set("default")
         callback.assert_not_called()
         callback.reset_mock()
 
-        s.set("not default")
+        key.set("not default")
         callback.assert_called_once_with("not default")
         callback.reset_mock()
 
-        s.clear()
+        key.clear()
         callback.assert_called_once_with("default")
         callback.reset_mock()
 
-        s.clear()
+        key.clear()
         callback.assert_not_called()
 
     def test_value_change_callback_inheritance(self, mocker: MockerFixture):
 
         callback = mocker.stub()
 
-        s = Key(default="default")
-        s2 = Key(default="default")
-        s2.setParent(s)
+        parent_key = Key(default="default")
+        child_key = Key(default="default")
+        child_key.setParent(parent_key)
 
-        s2.onValueChangeCall(callback)
+        child_key.onValueChangeCall(callback)
 
-        s.set("inheritance")
+        parent_key.set("inheritance")
         callback.assert_called_once_with("inheritance")
         callback.reset_mock()
 
-        s2.set("inheritance")
+        child_key.set("inheritance")
         callback.assert_not_called()
         callback.reset_mock()
 
-        s2.clear()
+        child_key.clear()
         callback.assert_not_called()
         callback.reset_mock()
 
-        s.clear()
+        parent_key.clear()
         callback.assert_called_once_with("default")
         callback.reset_mock()
 
@@ -117,173 +118,174 @@ class TestKey:
 
         callback = mocker.stub()
 
-        s = Key(default="default")
-        assert isinstance(s, protocols.UpdateNotifier)
+        key = Key(default="default")
+        assert isinstance(key, protocols.UpdateNotifier)
 
-        s.onUpdateCall(callback)
+        key.onUpdateCall(callback)
 
-        s.set("default")
-        callback.assert_called_once_with(s)
+        key.set("default")
+        callback.assert_called_once_with(key)
         callback.reset_mock()
 
-        s.set("not default")
-        callback.assert_called_once_with(s)
+        key.set("not default")
+        callback.assert_called_once_with(key)
         callback.reset_mock()
 
-        s.set("not default")
+        key.set("not default")
         callback.assert_not_called()
         callback.reset_mock()
 
-        s.clear()
-        callback.assert_called_once_with(s)
+        key.clear()
+        callback.assert_called_once_with(key)
         callback.reset_mock()
 
-        s.clear()
+        key.clear()
         callback.assert_not_called()
         callback.reset_mock()
 
     def test_inheritance(self):
 
-        a = Key(default="default a")
-        b = Key(default="")
+        parent_key = Key(default="default a")
+        child_key = Key(default="")
 
-        assert b not in a.children()
-        b.setParent(a)
-        assert b in a.children()
+        assert child_key not in parent_key.children()
+        child_key.setParent(parent_key)
+        assert child_key in parent_key.children()
 
-        assert b.get() == "default a"
+        assert child_key.get() == "default a"
 
-        a.set("new a")
-        assert b.get() == "new a"
+        parent_key.set("new a")
+        assert child_key.get() == "new a"
 
-        b.set("new b")
-        assert b.get() == "new b"
+        child_key.set("new b")
+        assert child_key.get() == "new b"
 
-        a.clear()
-        assert b.get() == "new b"
+        parent_key.clear()
+        assert child_key.get() == "new b"
 
-        b.clear()
-        assert b.get() == "default a"
+        child_key.clear()
+        assert child_key.get() == "default a"
 
     def test_inherit_wrong_type(self):
 
-        a = Key(default="str")
-        b = Key(default=0)
+        parent_key = Key(default="str")
+        child_key = Key(default=0)
 
         # Ignore the type error, as it's the whole point of the test.
-        b.setParent(a)  # type: ignore
 
-        assert b.parent() is None
+        child_key.setParent(parent_key)  # type: ignore
+
+        assert child_key.parent() is None
 
     def test_inherit_revert(self):
 
-        a = Key(default="default a")
-        b = Key(default="default b")
+        parent_key = Key(default="default a")
+        child_key = Key(default="default b")
 
-        assert b not in a.children()
-        assert b.parent() is None
+        assert child_key not in parent_key.children()
+        assert child_key.parent() is None
 
-        b.setParent(a)
+        child_key.setParent(parent_key)
 
-        assert b in a.children()
-        assert b.parent() is a
+        assert child_key in parent_key.children()
+        assert child_key.parent() is parent_key
 
-        b.setParent(None)
+        child_key.setParent(None)
 
-        assert b not in a.children()
-        assert b.parent() is None
+        assert child_key not in parent_key.children()
+        assert child_key.parent() is None
 
     def test_repr(self):
 
-        a = Key(default="test")
-        b = Key(default=12)
-        c = Key(default=" test\ntest")
+        key1 = Key(default="test")
+        key2 = Key(default=12)
+        key3 = Key(default=" test\ntest")
 
-        assert repr(a) == "<Key[str]:test>"
-        assert repr(b) == "<Key[int]:12>"
-        assert repr(c) == '<Key[str]:" test\\ntest">'
+        assert repr(key1) == "<Key[str]:test>"
+        assert repr(key2) == "<Key[int]:12>"
+        assert repr(key3) == '<Key[str]:" test\\ntest">'
 
     def test_reparenting(self):
 
-        a = Key(default="default a")
-        b = Key(default="default b")
-        c = Key(default="default c")
+        key1 = Key(default="default a")
+        key2 = Key(default="default b")
+        child_key = Key(default="default c")
 
-        assert c not in a.children()
-        assert c not in b.children()
+        assert child_key not in key1.children()
+        assert child_key not in key2.children()
 
-        c.setParent(a)
-        assert c in a.children()
-        assert c not in b.children()
+        child_key.setParent(key1)
+        assert child_key in key1.children()
+        assert child_key not in key2.children()
 
-        c.setParent(b)
-        assert c not in a.children()
-        assert c in b.children()
+        child_key.setParent(key2)
+        assert child_key not in key1.children()
+        assert child_key in key2.children()
 
-        c.setParent(None)
-        assert c not in a.children()
-        assert c not in b.children()
+        child_key.setParent(None)
+        assert child_key not in key1.children()
+        assert child_key not in key2.children()
 
     def test_callback_triggered_on_parent_value_change(
         self, mocker: MockerFixture
     ):
         stub = mocker.stub()
 
-        a = Key(default="default a")
-        b = Key(default="default b")
-        b.setParent(a)
+        parent_key = Key(default="default a")
+        child_key = Key(default="default b")
+        child_key.setParent(parent_key)
 
-        b.onValueChangeCall(stub)
+        child_key.onValueChangeCall(stub)
 
-        b.set("test 1")
+        child_key.set("test 1")
         stub.assert_called_once_with("test 1")
         stub.reset_mock()
 
-        b.clear()
+        child_key.clear()
         stub.assert_called_once_with("default a")
         stub.reset_mock()
 
-        a.set("test 2")
+        parent_key.set("test 2")
         stub.assert_called_once_with("test 2")
         stub.reset_mock()
 
-        a.clear()
+        parent_key.clear()
         stub.assert_called_once_with("default a")
 
     def test_dump(self):
 
-        s: Key[str] = Key(default="default")
+        key: Key[str] = Key(default="default")
 
         # No value has been set.
-        assert list(s.dump()) == []
+        assert list(key.dump()) == []
 
-        s.set("test")
-        assert s.dump() == [("", "test")]
+        key.set("test")
+        assert key.dump() == [("", "test")]
 
     def test_dump_serialization(self):
 
-        t = ExampleSerializable.fromStr("test")
-        assert t is not None
+        value = ExampleSerializable.fromStr("test")
+        assert value is not None
 
-        s = Key(default=t)
-        assert s.dump() == []
+        key = Key(default=value)
+        assert key.dump() == []
 
-        s.set(ExampleSerializable("value"))
-        assert s.dump() == [("", "value")]
+        key.set(ExampleSerializable("value"))
+        assert key.dump() == [("", "value")]
 
     def test_restore_invalid(self, mocker: MockerFixture):
 
-        si: Key[int] = Key(default=0)
+        key: Key[int] = Key(default=0)
         callback = mocker.stub()
-        si.onUpdateCall(callback)
+        key.onUpdateCall(callback)
 
-        si.restore([])
-        assert si.get() == 0
+        key.restore([])
+        assert key.get() == 0
         callback.assert_not_called()
 
-        si = Key(default=0)
-        si.onUpdateCall(callback)
-        si.restore(
+        key = Key(default=0)
+        key.onUpdateCall(callback)
+        key.restore(
             [
                 ("invalid", "12"),
             ]
@@ -292,13 +294,13 @@ class TestKey:
         # Restoring a key with an attribute name is invalid, so the value should
         # not be updated.
 
-        assert si.get() == 0
+        assert key.get() == 0
         callback.assert_not_called()
         callback.reset_mock()
 
-        si = Key(default=0)
-        si.onUpdateCall(callback)
-        si.restore(
+        key = Key(default=0)
+        key.onUpdateCall(callback)
+        key.restore(
             [
                 ("", " invalid  "),
             ]
@@ -307,12 +309,12 @@ class TestKey:
         # Restoring a value that does not deserialize to the target type is
         # invalid and fails silently.
 
-        assert si.get() == 0
+        assert key.get() == 0
         callback.assert_not_called()
 
-        si = Key(default=0)
-        si.onUpdateCall(callback)
-        si.restore(
+        key = Key(default=0)
+        key.onUpdateCall(callback)
+        key.restore(
             [
                 ("", "56"),
                 ("", "78"),
@@ -325,56 +327,69 @@ class TestKey:
         # something is better than dropping everything. Arbitrarily, we restore
         # the last valid value.
 
-        assert si.get() == 78
-        callback.assert_called_once_with(si)
+        assert key.get() == 78
+        callback.assert_called_once_with(key)
         callback.reset_mock()
 
     def test_restore_valid(self, mocker: MockerFixture):
 
         callback = mocker.stub()
 
-        sstr: Key[str] = Key(default="")
-        sstr.onUpdateCall(callback)
-        sstr.restore(
+        key_str: Key[str] = Key(default="")
+        key_str.onUpdateCall(callback)
+        key_str.restore(
             [
                 ("", "test"),
             ]
         )
-        assert sstr.get() == "test"
-        callback.assert_called_once_with(sstr)
+        assert key_str.get() == "test"
+        callback.assert_called_once_with(key_str)
         callback.reset_mock()
 
-        si: Key[int] = Key(default=0)
-        si.onUpdateCall(callback)
-        si.restore(
+        key_int: Key[int] = Key(default=0)
+        key_int.onUpdateCall(callback)
+        key_int.restore(
             [
                 ("", "12"),
             ]
         )
-        assert si.get() == 12
-        callback.assert_called_once_with(si)
+        assert key_int.get() == 12
+        callback.assert_called_once_with(key_int)
         callback.reset_mock()
 
-        sb: Key[bool] = Key(default=False)
-        sb.onUpdateCall(callback)
-        sb.restore(
+        key_float: Key[float] = Key(default=1.2)
+        key_float.onUpdateCall(callback)
+        key_float.restore(
+            [
+                ("", "3.4"),
+            ]
+        )
+        assert key_float.get() == 3.4
+        callback.assert_called_once_with(key_float)
+        callback.reset_mock()
+
+        key_bool: Key[bool] = Key(default=False)
+        key_bool.onUpdateCall(callback)
+        key_bool.restore(
             [
                 ("", "true"),
             ]
         )
-        assert sb.get()
-        callback.assert_called_once_with(sb)
+        assert key_bool.get()
+        callback.assert_called_once_with(key_bool)
         callback.reset_mock()
 
-        sser: Key[ExampleSerializable] = Key(default=ExampleSerializable(""))
-        sser.onUpdateCall(callback)
-        sser.restore(
+        key_custom: Key[ExampleSerializable] = Key(
+            default=ExampleSerializable("")
+        )
+        key_custom.onUpdateCall(callback)
+        key_custom.restore(
             [
                 ("", "test"),
             ]
         )
-        assert sser.get().toStr() == "test"
-        callback.assert_called_once_with(sser)
+        assert key_custom.get().toStr() == "test"
+        callback.assert_called_once_with(key_custom)
         callback.reset_mock()
 
     def test_persistence(self):
