@@ -20,19 +20,21 @@ class ExampleBundle(Bundle):
 class TestBundle:
     def test_protocol_implementation(self):
 
-        t = ExampleBundle()
-        assert isinstance(t, protocols.Inheriter)
-        assert isinstance(t, protocols.ItemTemplate)
-        assert isinstance(t, protocols.Dumpable)
-        assert isinstance(t, protocols.Restorable)
+        bundle = ExampleBundle()
+        assert isinstance(bundle, protocols.Inheriter)
+        assert isinstance(bundle, protocols.ItemTemplate)
+        assert isinstance(bundle, protocols.Dumpable)
+        assert isinstance(bundle, protocols.Restorable)
+        assert isinstance(bundle, protocols.Container)
+        assert isinstance(bundle, protocols.Containable)
 
     def test_creation(self):
 
-        t = ExampleBundle()
-        t.list.appendOne()
-        assert t.a.get() == "default a"
-        assert t.inner_bundle.b.get() == 42
-        assert t.list[0].c.get() == "default c"
+        bundle = ExampleBundle()
+        bundle.list.appendOne()
+        assert bundle.a.get() == "default a"
+        assert bundle.inner_bundle.b.get() == 42
+        assert bundle.list[0].c.get() == "default c"
 
     def test_uninstantiated_attribute_fails(self):
         class InnerBundle(Bundle):
@@ -67,109 +69,119 @@ class TestBundle:
 
     def test_inheritance(self):
 
-        t1 = ExampleBundle()
-        t2 = ExampleBundle()
+        parent_bundle = ExampleBundle()
+        child_bundle = ExampleBundle()
 
-        assert t2 not in t1.children()
-        assert t2.parent() is None
+        assert child_bundle not in parent_bundle.children()
+        assert child_bundle.parent() is None
 
-        t2.setParent(t1)
-        assert t2 in t1.children()
-        assert t2.parent() is t1
+        child_bundle.setParent(parent_bundle)
+        assert child_bundle in parent_bundle.children()
+        assert child_bundle.parent() is parent_bundle
 
-        t2.setParent(None)
-        assert t2 not in t1.children()
-        assert t2.parent() is None
-
-    def test_reparenting(self):
-
-        t1 = ExampleBundle()
-        t2 = ExampleBundle()
-        t3 = ExampleBundle()
-
-        assert t3 not in t1.children()
-        assert t3 not in t2.children()
-        assert t3.parent() is None
-
-        t3.setParent(t1)
-        assert t3 in t1.children()
-        assert t3 not in t2.children()
-        assert t3.parent() is t1
-
-        t3.setParent(t2)
-        assert t3 not in t1.children()
-        assert t3 in t2.children()
-        assert t3.parent() is t2
-
-        t3.setParent(None)
-        assert t3 not in t1.children()
-        assert t3 not in t2.children()
-        assert t3.parent() is None
+        child_bundle.setParent(None)
+        assert child_bundle not in parent_bundle.children()
+        assert child_bundle.parent() is None
 
     def test_parenting(self):
 
-        t1 = ExampleBundle()
-        t2 = ExampleBundle()
-        t2.setParent(t1)
+        parent_bundle = ExampleBundle()
+        child_bundle = ExampleBundle()
+        child_bundle.setParent(parent_bundle)
 
-        assert t2.parent() is t1
-        assert t2 in t1.children()
+        assert child_bundle.parent() is parent_bundle
+        assert child_bundle in parent_bundle.children()
+
+    def test_reparenting(self):
+
+        bundle1 = ExampleBundle()
+        bundle2 = ExampleBundle()
+        child_bundle = ExampleBundle()
+
+        assert child_bundle not in bundle1.children()
+        assert child_bundle not in bundle2.children()
+        assert child_bundle.parent() is None
+
+        child_bundle.setParent(bundle1)
+        assert child_bundle in bundle1.children()
+        assert child_bundle not in bundle2.children()
+        assert child_bundle.parent() is bundle1
+
+        child_bundle.setParent(bundle2)
+        assert child_bundle not in bundle1.children()
+        assert child_bundle in bundle2.children()
+        assert child_bundle.parent() is bundle2
+
+        child_bundle.setParent(None)
+        assert child_bundle not in bundle1.children()
+        assert child_bundle not in bundle2.children()
+        assert child_bundle.parent() is None
 
     def test_inheritance_propagation(self):
 
-        t1 = ExampleBundle()
-        t2 = ExampleBundle()
-        t2.setParent(t1)
+        parent_bundle = ExampleBundle()
+        child_bundle = ExampleBundle()
+        child_bundle.setParent(parent_bundle)
 
-        assert t2.a.parent() is t1.a
-        assert t2.inner_bundle.parent() is t1.inner_bundle
-        assert t2.inner_bundle.b.parent() is t1.inner_bundle.b
-        assert t2.list.parent() is t1.list
+        assert child_bundle.a.parent() is parent_bundle.a
+        assert child_bundle.inner_bundle.parent() is parent_bundle.inner_bundle
+        assert (
+            child_bundle.inner_bundle.b.parent() is parent_bundle.inner_bundle.b
+        )
+        assert child_bundle.list.parent() is parent_bundle.list
 
     def test_inheritance_values(self):
 
-        t1 = ExampleBundle()
-        t2 = ExampleBundle()
-        t2.setParent(t1)
+        parent_bundle = ExampleBundle()
+        child_bundle = ExampleBundle()
+        child_bundle.setParent(parent_bundle)
 
-        t1.a.set("test t1")
-        assert t2.a.get() == "test t1"
-        t2.a.set("test t2")
-        assert t2.a.get() == "test t2"
-        assert t1.a.get() == "test t1"
+        parent_bundle.a.set("test parent")
+        assert child_bundle.a.get() == "test parent"
+        child_bundle.a.set("test child")
+        assert child_bundle.a.get() == "test child"
+        assert parent_bundle.a.get() == "test parent"
 
-        t1.inner_bundle.b.set(101)
-        assert t2.inner_bundle.b.get() == 101
-        t2.inner_bundle.b.set(37)
-        assert t2.inner_bundle.b.get() == 37
-        assert t1.inner_bundle.b.get() == 101
+        parent_bundle.inner_bundle.b.set(101)
+        assert child_bundle.inner_bundle.b.get() == 101
+        child_bundle.inner_bundle.b.set(37)
+        assert child_bundle.inner_bundle.b.get() == 37
+        assert parent_bundle.inner_bundle.b.get() == 101
 
-        t1.list.appendOne().c.set("test t1")
-        assert [s.c.get() for s in t1.list.iter()] == ["test t1"]
-        assert [s.c.get() for s in t2.list.iter()] == ["test t1"]
-        t2.list.appendOne().c.set("test t2")
-        assert [s.c.get() for s in t1.list.iter()] == ["test t1"]
-        assert [s.c.get() for s in t2.list.iter()] == [
-            "test t2",
-            "test t1",
+        parent_bundle.list.appendOne().c.set("test parent")
+        assert [item.c.get() for item in parent_bundle.list.iter()] == [
+            "test parent"
         ]
-        del t1.list[0]
-        assert [s.c.get() for s in t1.list.iter()] == []
-        assert [s.c.get() for s in t2.list.iter()] == ["test t2"]
+        assert [item.c.get() for item in child_bundle.list.iter()] == [
+            "test parent"
+        ]
+        child_bundle.list.appendOne().c.set("test child")
+        assert [item.c.get() for item in parent_bundle.list.iter()] == [
+            "test parent"
+        ]
+        assert [item.c.get() for item in child_bundle.list.iter()] == [
+            "test child",
+            "test parent",
+        ]
+        del parent_bundle.list[0]
+        assert [item.c.get() for item in parent_bundle.list.iter()] == []
+        assert [item.c.get() for item in child_bundle.list.iter()] == [
+            "test child"
+        ]
 
     def test_dump(self):
 
-        s = ExampleBundle()
-        assert list(s.dump()) == []
+        bundle = ExampleBundle()
+        assert list(bundle.dump()) == []
 
-        s.a.set("test dump a")
-        s.inner_bundle.b.set(101)
-        s.list.appendOne()
-        s.list[-1].c.set("test dump c 1")
-        s.list.appendOne()
-        s.list[-1].c.set("test dump c 2")
+        bundle.a.set("test dump a")
+        bundle.inner_bundle.b.set(101)
+        bundle.list.appendOne()
+        bundle.list[-1].c.set("test dump c 1")
+        bundle.list.appendOne()
+        bundle.list[-1].c.set("test dump c 2")
 
-        assert s.dump() == [
+        assert bundle.dump() == [
             ("a", "test dump a"),
             ("inner_bundle.b", "101"),
             ("list.1.c", "test dump c 1"),
@@ -181,24 +193,24 @@ class TestBundle:
             _private = Key(default=0)
             public = Key(default=0)
 
-        s = ExampleBundleWithPrivateAttr()
-        s.public.set(56)
+        bundle = ExampleBundleWithPrivateAttr()
+        bundle.public.set(56)
 
         # Ignore the private attribute access warning, it's the whole point.
 
-        s._private.set(42)  # type:ignore
+        bundle._private.set(42)  # type:ignore
 
-        assert s.dump() == [
+        assert bundle.dump() == [
             ("public", "56"),
         ]
 
     def test_restore(self, mocker: MockerFixture):
 
-        s = ExampleBundle()
+        bundle = ExampleBundle()
         callback = mocker.stub()
-        s.onUpdateCall(callback)
+        bundle.onUpdateCall(callback)
 
-        s.restore(
+        bundle.restore(
             [
                 ("a", "test a"),
                 ("inner_bundle.b", "999"),
@@ -207,15 +219,15 @@ class TestBundle:
             ]
         )
 
-        assert s.a.get() == "test a"
-        assert s.inner_bundle.b.get() == 999
-        assert len(s.list) == 2
-        assert s.list[0].c.get() == "test c 1"
-        assert s.list[1].c.get() == "test c 2"
+        assert bundle.a.get() == "test a"
+        assert bundle.inner_bundle.b.get() == 999
+        assert len(bundle.list) == 2
+        assert bundle.list[0].c.get() == "test c 1"
+        assert bundle.list[1].c.get() == "test c 2"
 
         # Ensure that a restore only triggers one update notification.
 
-        callback.assert_called_once_with(s)
+        callback.assert_called_once_with(bundle)
 
     def test_persistence(self):
 
