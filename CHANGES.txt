@@ -1,15 +1,16 @@
 * Unreleased
 
   - Sphinx documentation added.
-  - List overhaul: it now supports both Section and Key instances.
-  - Removed need for New* functions. Keys, Lists and Sections can now be used directly.
-  - Removed need for explicit type annotations in Settings classes.
   - Renamed Setting class to Key.
   - Renamed Section class to Bundle.
+  - List overhaul: it now supports both Bundle and Key instances.
+  - Removed need for New* functions. Keys, Lists and Bundles can now be used directly in Settings definitions.
+  - Removed need for explicit type annotations in Settings class definitions.
   - Renamed List.iterAll() to iter() and added order parameter.
   - Replaced derive() and deriveAs() with newSection() and assorted functions.
   - Renamed onKeyModifiedCall to onUpdateCall.
   - Added float to supported Key value types.
+  - Renamed Settings.name() to Settings.sectionName() and Settings.setName() to Settings.setSectionName().
 
 * SunsetSettings 0.2.0 (2022-08-03)
 

@@ -17,9 +17,9 @@ API Reference
 
     .. automethod:: siblings
 
-    .. automethod:: name
+    .. automethod:: sectionName
 
-    .. automethod:: setName
+    .. automethod:: setSectionName
 
     .. automethod:: onUpdateCall
 

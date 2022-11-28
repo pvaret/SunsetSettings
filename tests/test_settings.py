@@ -190,7 +190,7 @@ class TestSettings:
         assert settings.key_list[0].get() == "one"
         assert settings.key_list[1].get() == "two"
 
-        settings_sections = {c.name(): c for c in settings.sections()}
+        settings_sections = {s.sectionName(): s for s in settings.sections()}
         assert len(settings_sections) == 2
         assert "level1" in settings_sections
         level1 = settings_sections["level1"]
@@ -207,7 +207,7 @@ class TestSettings:
 
         assert not otherlevel1.inner_bundle.d.get()
 
-        level1_sections = {c.name(): c for c in level1.sections()}
+        level1_sections = {s.sectionName(): s for s in level1.sections()}
         assert len(level1_sections) == 1
         assert "level2" in level1_sections
         level2 = level1_sections["level2"]
@@ -313,7 +313,7 @@ inner_bundle.d = false
         assert len(settings.bundle_list) == 1
         assert settings.bundle_list[0].c.get() == 100
 
-        settings_sections = {c.name(): c for c in settings.sections()}
+        settings_sections = {s.sectionName(): s for s in settings.sections()}
         assert len(settings_sections) == 2
         assert "level1" in settings_sections
         level1 = settings_sections["level1"]
@@ -329,7 +329,7 @@ inner_bundle.d = false
 
         assert not otherlevel1.inner_bundle.d.get()
 
-        level1_sections = {c.name(): c for c in level1.sections()}
+        level1_sections = {s.sectionName(): s for s in level1.sections()}
         assert len(level1_sections) == 1
         assert "level2" in level1_sections
         level2 = level1_sections["level2"]
@@ -626,7 +626,7 @@ bundle_list.4.c = 4
         callback.assert_not_called()
         callback.reset_mock()
 
-        anonymous.setName("no longer anonymous")
+        anonymous.setSectionName("no longer anonymous")
         callback.assert_called_once_with(settings)
         callback.reset_mock()
 
@@ -641,11 +641,11 @@ bundle_list.4.c = 4
         parent = TestSettings()
         sections = [parent.newSection() for _ in range(10)]
         for section in sections:
-            section.setName("test")
+            section.setSectionName("test")
 
         assert all(
-            section.name()
-            not in {sibling.name() for sibling in section.siblings()}
+            section.sectionName()
+            not in {sibling.sectionName() for sibling in section.siblings()}
             for section in sections
         )
 
@@ -656,6 +656,6 @@ bundle_list.4.c = 4
         parent = TestSettings()
         sections = [parent.newSection() for _ in range(10)]
         for section in sections:
-            section.setName("")
+            section.setSectionName("")
 
-        assert all(section.name() == "" for section in sections)
+        assert all(section.sectionName() == "" for section in sections)
