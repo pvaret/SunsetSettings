@@ -25,8 +25,6 @@ class TestBundle:
         assert isinstance(bundle, protocols.ItemTemplate)
         assert isinstance(bundle, protocols.Dumpable)
         assert isinstance(bundle, protocols.Restorable)
-        assert isinstance(bundle, protocols.Container)
-        assert isinstance(bundle, protocols.Containable)
 
     def test_creation(self):
 

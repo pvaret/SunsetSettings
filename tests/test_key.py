@@ -30,7 +30,6 @@ class TestKey:
         assert isinstance(key, protocols.ItemTemplate)
         assert isinstance(key, protocols.Dumpable)
         assert isinstance(key, protocols.Restorable)
-        assert isinstance(key, protocols.Containable)
 
     def test_default(self):
 
