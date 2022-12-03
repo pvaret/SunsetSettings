@@ -7,13 +7,10 @@ from typing import (
     Protocol,
     Sequence,
     Type,
-    TypeVar,
     runtime_checkable,
 )
 
 from typing_extensions import Self
-
-_T = TypeVar("_T")
 
 
 @runtime_checkable
@@ -45,14 +42,14 @@ class Serializable(Protocol):
 
 
 @runtime_checkable
-class Inheriter(Protocol[_T]):
-    def setParent(self: _T, parent: Optional[_T]) -> None:
+class Inheriter(Protocol):
+    def setParent(self: Self, parent: Optional[Self]) -> None:
         ...
 
-    def parent(self: _T) -> Optional[_T]:
+    def parent(self: Self) -> Optional[Self]:
         ...
 
-    def children(self: _T) -> Iterator[_T]:
+    def children(self: Self) -> Iterator[Self]:
         ...
 
 
@@ -61,9 +58,6 @@ class Dumpable(Protocol):
     def dump(self) -> Sequence[tuple[str, str]]:
         ...
 
-
-@runtime_checkable
-class Restorable(Protocol):
     def restore(self, data: Sequence[tuple[str, str]]) -> None:
         ...
 
@@ -82,7 +76,7 @@ class ItemTemplate(Protocol):
 
 @runtime_checkable
 class Container(Protocol):
-    def containsField(self, field: "Containable") -> bool:
+    def containsFieldWithLabel(self, label: str, field: "Containable") -> bool:
         ...
 
 
@@ -140,7 +134,7 @@ class ContainableImpl:
         # Make sure this Containable is in fact still held in its supposed
         # Container. Else update the situation.
 
-        if not container.containsField(self):
+        if not container.containsFieldWithLabel(self._field_label, self):
             self.setContainer("", None)
             return None
 
@@ -158,3 +152,15 @@ class ContainableImpl:
 
 
 assert isinstance(ContainableImpl, Containable)
+
+
+@runtime_checkable
+class Field(
+    Containable,
+    Dumpable,
+    Inheriter,
+    ItemTemplate,
+    UpdateNotifier,
+    Protocol,
+):
+    ...

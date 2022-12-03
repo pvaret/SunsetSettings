@@ -173,15 +173,6 @@ class List(MutableSequence[ListItemT], ContainableImpl):
 
     def __delitem__(self, index: Union[SupportsIndex, slice]) -> None:
 
-        if isinstance(index, SupportsIndex):
-            item = self._contents[index]
-            item.setContainer("", None)
-        else:
-            assert isinstance(index, slice)
-            items = self._contents[index]
-            for item in items:
-                item.setContainer("", None)
-
         del self._contents[index]
         self._relabelItems()
         self._notifyUpdate(self)
@@ -204,9 +195,6 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         return self
 
     def clear(self) -> None:
-
-        for item in self._contents:
-            item.setContainer("", None)
 
         self._contents.clear()
         self._relabelItems()
@@ -250,14 +238,31 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         self.insert(index, item)
         return item
 
+    def containsFieldWithLabel(self, label: str, field: Containable) -> bool:
+
+        index = self._indexForLabel(label)
+        if index is None:
+            return False
+
+        try:
+            return self._contents[index] is field
+        except IndexError:
+            return False
+
     def _relabelItems(self) -> None:
 
-        for i, item in enumerate(self._contents, start=1):
-            item.setContainer(str(i), self)
+        for i, item in enumerate(self._contents):
+            item.setContainer(self._labelForIndex(i), self)
 
-    def containsField(self, field: Containable) -> bool:
+    @staticmethod
+    def _labelForIndex(index: SupportsIndex) -> str:
+        return str(int(index) + 1)
 
-        return field in self._contents
+    @staticmethod
+    def _indexForLabel(label: str) -> Optional[SupportsIndex]:
+        if not label.isdigit():
+            return None
+        return int(label) - 1
 
     def setParent(self, parent: Optional[Self]):
         """
@@ -401,11 +406,11 @@ class List(MutableSequence[ListItemT], ContainableImpl):
 
         ret: list[tuple[str, str]] = []
 
-        # Count from 1, as it's more human friendly.
-
-        for i, value in enumerate(self, start=1):
+        for i, value in enumerate(self):
             for sub_field_label, dump in value.dump():
-                label = ".".join(s for s in (str(i), sub_field_label) if s)
+                label = ".".join(
+                    s for s in (self._labelForIndex(i), sub_field_label) if s
+                )
                 ret.append((label, dump))
 
         return ret

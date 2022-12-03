@@ -14,12 +14,8 @@ class TestList:
     def test_protocol_implementation(self):
 
         list_key: List[Key[int]] = List(Key(default=0))
-        assert isinstance(list_key, protocols.Inheriter)
-        assert isinstance(list_key, protocols.ItemTemplate)
-        assert isinstance(list_key, protocols.Dumpable)
-        assert isinstance(list_key, protocols.Restorable)
+        assert isinstance(list_key, protocols.Field)
         assert isinstance(list_key, protocols.Container)
-        assert isinstance(list_key, protocols.Containable)
 
     def test_add_pop(self):
 

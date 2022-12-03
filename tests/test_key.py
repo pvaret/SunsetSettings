@@ -26,11 +26,7 @@ class TestKey:
     def test_protocol_implementation(self):
 
         key = Key(default="")
-        assert isinstance(key, protocols.Inheriter)
-        assert isinstance(key, protocols.ItemTemplate)
-        assert isinstance(key, protocols.Dumpable)
-        assert isinstance(key, protocols.Restorable)
-        assert isinstance(key, protocols.Containable)
+        assert isinstance(key, protocols.Field)
 
     def test_default(self):
 

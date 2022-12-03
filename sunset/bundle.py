@@ -19,11 +19,9 @@ from .non_hashable_set import WeakNonHashableSet
 from .protocols import (
     Containable,
     ContainableImpl,
-    Dumpable,
-    Inheriter,
+    Field,
     ItemTemplate,
     UpdateNotifier,
-    Restorable,
 )
 from .registry import CallbackRegistry
 
@@ -62,6 +60,7 @@ class Bundle(ContainableImpl):
 
     _parent: Optional[weakref.ref[Self]]
     _children: MutableSet[Self]
+    _fields: dict[str, Field]
     _update_notification_callbacks: CallbackRegistry[Self]
     _update_notification_enabled: bool
 
@@ -137,20 +136,20 @@ class Bundle(ContainableImpl):
 
         self._parent = None
         self._children = WeakNonHashableSet[Self]()
+        self._fields = {}
         self._update_notification_callbacks = CallbackRegistry()
         self._update_notification_enabled = True
 
         for label, field in vars(self).items():
 
-            if isinstance(field, UpdateNotifier):
+            if isinstance(field, Field):
+                self._fields[label] = field
+                field.setContainer(label, self)
                 field.onUpdateCall(self._notifyUpdate)
 
-            if isinstance(field, Containable):
-                field.setContainer(label, self)
+    def containsFieldWithLabel(self, label: str, field: Containable) -> bool:
 
-    def containsField(self, field: Containable) -> bool:
-
-        return any(field is attr for attr in vars(self).values())
+        return self._fields.get(label) is field
 
     def setParent(self: Self, parent: Optional[Self]) -> None:
         """
@@ -193,16 +192,13 @@ class Bundle(ContainableImpl):
             self._parent = weakref.ref(parent)
             parent._children.add(self)
 
-        for field_label, field in vars(self).items():
-
-            if not isinstance(field, Inheriter):
-                continue
+        for label, field in self._fields.items():
 
             if parent is None:
-                field.setParent(None)  # type: ignore
+                field.setParent(None)
                 continue
 
-            parent_field = getattr(parent, field_label, None)
+            parent_field = parent._fields.get(label)
             if parent_field is None:
 
                 # This is a safety check, but it shouldn't happen. By
@@ -211,9 +207,8 @@ class Bundle(ContainableImpl):
 
                 continue
 
-            assert isinstance(parent_field, Inheriter)
-            assert type(field) is type(parent_field)  # type: ignore
-            field.setParent(parent_field)  # type: ignore
+            assert type(field) is type(parent_field)
+            field.setParent(parent_field)
 
     def parent(self: Self) -> Optional[Self]:
         """
@@ -264,9 +259,7 @@ class Bundle(ContainableImpl):
 
         ret: list[tuple[str, str]] = []
 
-        for field_label, field in sorted(vars(self).items()):
-            if not isinstance(field, Dumpable):
-                continue
+        for field_label, field in sorted(self._fields.items()):
 
             if field_label.startswith("_"):
                 continue
@@ -297,15 +290,8 @@ class Bundle(ContainableImpl):
 
         for item_label in subitems:
 
-            try:
-                item = getattr(self, item_label)
-            except AttributeError:
-                continue
-
-            if not isinstance(item, Restorable):
-                continue
-
-            item.restore(subitems[item_label])
+            if (item := self._fields.get(item_label)) is not None:
+                item.restore(subitems[item_label])
 
         self._update_notification_enabled = notification_enabled
         self._notifyUpdate(self)
