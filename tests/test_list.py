@@ -18,6 +18,8 @@ class TestList:
         assert isinstance(list_key, protocols.ItemTemplate)
         assert isinstance(list_key, protocols.Dumpable)
         assert isinstance(list_key, protocols.Restorable)
+        assert isinstance(list_key, protocols.Container)
+        assert isinstance(list_key, protocols.Containable)
 
     def test_add_pop(self):
 
@@ -404,6 +406,119 @@ class TestList:
         callback.reset_mock()
         bundle1.test.set("test")
         callback.assert_not_called()
+
+    def test_label_set_on_contained_items(self):
+
+        # Testing List.appendOne()
+
+        key_list = List(Key(""))
+        key = key_list.appendOne()
+        assert key.fieldLabel() == "1"
+
+        # Testing List.insertOne()
+
+        other_key = key_list.insertOne(0)
+        assert other_key.fieldLabel() == "1"
+        assert key.fieldLabel() == "2"
+
+        # Testing List.append()
+
+        key = Key("")
+        assert key.fieldLabel() == ""
+        key_list.append(key)
+        assert key.fieldLabel() == "3"
+
+        # Testing List.extend()
+
+        key = Key("")
+        last_key = Key("")
+        key_list.extend((key, last_key))
+        assert key.fieldLabel() == "4"
+        assert last_key.fieldLabel() == "5"
+
+        # Testing List.insert()
+
+        key = Key("")
+        key_list.insert(3, key)
+        assert key.fieldLabel() == "4"
+        assert last_key.fieldLabel() == "6"
+
+        # Testing List.__setitem__(index)
+
+        key = Key("")
+        key_list[2] = key
+        assert key.fieldLabel() == "3"
+        assert last_key.fieldLabel() == "6"
+
+        # Testing List.__setitem__(slice)
+
+        key = Key("")
+        other_key = Key("")
+        key_list[1:4] = [key, other_key]
+        assert key.fieldLabel() == "2"
+        assert other_key.fieldLabel() == "3"
+        assert last_key.fieldLabel() == "5"
+
+        # Testing List.__iadd__()
+
+        key = Key("")
+        other_key = Key("")
+        key_list += [key, other_key]
+        assert key.fieldLabel() == "6"
+        assert other_key.fieldLabel() == "7"
+
+        # Testing assignment order
+
+        key_list[2], key_list[4] = key_list[4], key_list[2]
+        assert key_list[2].fieldLabel() == "3"
+        assert key_list[4].fieldLabel() == "5"
+
+    def test_label_unset_on_removed_items(self):
+
+        key_list = List(Key(""))
+        for _ in range(15):
+            key_list.appendOne()
+
+        # Test List.__delitem__(index)
+
+        key = key_list[3]
+        assert key.fieldLabel() == "4"
+        del key_list[3]
+        assert key.fieldLabel() == ""
+
+        # Test List.__delitem__(slice)
+
+        keys = key_list[2:5]
+        assert [key.fieldLabel() for key in keys] == ["3", "4", "5"]
+        del key_list[2:5]
+        assert [key.fieldLabel() for key in keys] == ["", "", ""]
+
+        # Test List.__setitem__(index)
+
+        key = key_list[5]
+        assert key.fieldLabel() == "6"
+        key_list[5] = Key("")
+        assert key.fieldLabel() == ""
+
+        # Test List.__setitem__(slice)
+
+        keys = key_list[4:7]
+        assert [key.fieldLabel() for key in keys] == ["5", "6", "7"]
+        key_list[4:7] = [Key(""), Key("")]
+        assert [key.fieldLabel() for key in keys] == ["", "", ""]
+
+        # Test List.pop()
+
+        last_key = key_list[9]
+        assert last_key.fieldLabel() == "10"
+        key_list.pop()
+        assert last_key.fieldLabel() == ""
+
+        # Test List.clear()
+
+        keys = key_list[:]
+        key_list.clear()
+        assert all(key.fieldLabel() == "" for key in keys)
 
     def test_repr(self):
 

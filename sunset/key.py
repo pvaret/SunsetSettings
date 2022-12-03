@@ -13,11 +13,12 @@ from typing import (
 from typing_extensions import Self
 
 from .exporter import maybeEscape
+from .protocols import ContainableImpl
 from .registry import CallbackRegistry
 from .serializers import SerializableT, deserialize, serialize
 
 
-class Key(Generic[SerializableT]):
+class Key(Generic[SerializableT], ContainableImpl):
     """
     A single setting key containing a typed value.
 
@@ -79,7 +80,6 @@ class Key(Generic[SerializableT]):
 
         super().__init__()
 
-        assert default is not None
         self._default = default
         self._value = None
 
@@ -319,16 +319,16 @@ class Key(Generic[SerializableT]):
         """
 
         # Normally, a Key should be restored from one single item of data, with
-        # an empty name. However, if we are loading a partially corrupted dump
+        # an empty label. However, if we are loading a partially corrupted dump
         # where an entry is duplicated, it's better to restore one of the
         # duplicates than drop them all. Arbitrarily, we restore the last valid
         # one.
 
-        for name, dump in reversed(data):
+        for label, dump in reversed(data):
 
-            if name:
+            if label:
 
-                # For a Key there should be no name. This entry is not valid.
+                # For a Key there should be no label. This entry is not valid.
 
                 continue
 

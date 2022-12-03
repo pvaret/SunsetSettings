@@ -21,6 +21,7 @@ from typing_extensions import Self
 from .bundle import Bundle
 from .key import Key
 from .non_hashable_set import WeakNonHashableSet
+from .protocols import Containable, ContainableImpl
 from .registry import CallbackRegistry
 
 ListItemT = TypeVar(
@@ -38,7 +39,7 @@ class IterOrder(Enum):
     PARENT_LAST = auto()
 
 
-class List(MutableSequence[ListItemT]):
+class List(MutableSequence[ListItemT], ContainableImpl):
     """
     A list-like container for Keys or Bundles of a given type, to be used in a
     Settings' definition.
@@ -116,6 +117,7 @@ class List(MutableSequence[ListItemT]):
         self._contents.insert(index, value)
         self._notifyUpdate(self)
 
+        self._relabelItems()
         value.onUpdateCall(self._notifyUpdate)
 
     @overload
@@ -146,8 +148,8 @@ class List(MutableSequence[ListItemT]):
         value: Union[ListItemT, Iterable[ListItemT]],
     ) -> None:
 
-        if isinstance(value, Iterable):
-            assert isinstance(index, slice)
+        if isinstance(index, slice):
+            assert isinstance(value, Iterable)
 
             # Take a copy of the iterable, because it's not a given that it will
             # be iterable twice.
@@ -161,15 +163,27 @@ class List(MutableSequence[ListItemT]):
 
         else:
             assert isinstance(index, SupportsIndex)
+            assert not isinstance(value, Iterable)
 
             self._contents[index] = value
             value.onUpdateCall(self._notifyUpdate)
 
+        self._relabelItems()
         self._notifyUpdate(self)
 
     def __delitem__(self, index: Union[SupportsIndex, slice]) -> None:
 
+        if isinstance(index, SupportsIndex):
+            item = self._contents[index]
+            item.setContainer("", None)
+        else:
+            assert isinstance(index, slice)
+            items = self._contents[index]
+            for item in items:
+                item.setContainer("", None)
+
         del self._contents[index]
+        self._relabelItems()
         self._notifyUpdate(self)
 
     def extend(self, values: Iterable[ListItemT]) -> None:
@@ -177,7 +191,12 @@ class List(MutableSequence[ListItemT]):
         self._contents.extend(values)
         for value in values:
             value.onUpdateCall(self._notifyUpdate)
+        self._relabelItems()
         self._notifyUpdate(self)
+
+    def append(self, value: ListItemT) -> None:
+
+        self.extend((value,))
 
     def __iadd__(self, values: Iterable[ListItemT]) -> Self:
 
@@ -186,7 +205,11 @@ class List(MutableSequence[ListItemT]):
 
     def clear(self) -> None:
 
+        for item in self._contents:
+            item.setContainer("", None)
+
         self._contents.clear()
+        self._relabelItems()
         self._notifyUpdate(self)
 
     def __len__(self) -> int:
@@ -226,6 +249,15 @@ class List(MutableSequence[ListItemT]):
         item = self._newItem()
         self.insert(index, item)
         return item
+
+    def _relabelItems(self) -> None:
+
+        for i, item in enumerate(self._contents, start=1):
+            item.setContainer(str(i), self)
+
+    def containsField(self, field: Containable) -> bool:
+
+        return field in self._contents
 
     def setParent(self, parent: Optional[Self]):
         """
@@ -372,9 +404,9 @@ class List(MutableSequence[ListItemT]):
         # Count from 1, as it's more human friendly.
 
         for i, value in enumerate(self, start=1):
-            for subAttrName, dump in value.dump():
-                name = ".".join(s for s in (str(i), subAttrName) if s)
-                ret.append((name, dump))
+            for sub_field_label, dump in value.dump():
+                label = ".".join(s for s in (str(i), sub_field_label) if s)
+                ret.append((label, dump))
 
         return ret
 
@@ -388,16 +420,16 @@ class List(MutableSequence[ListItemT]):
 
         subitems: dict[str, list[tuple[str, str]]] = {}
 
-        for name, dump in data:
-            if "." in name:
-                item_name, subname = name.split(".", 1)
+        for label, dump in data:
+            if "." in label:
+                item_label, sublabel = label.split(".", 1)
             else:
-                item_name, subname = name, ""
+                item_label, sublabel = label, ""
 
-            if not item_name.isdigit():
+            if not item_label.isdigit():
                 continue
 
-            subitems.setdefault(item_name, []).append((subname, dump))
+            subitems.setdefault(item_label, []).append((sublabel, dump))
 
         for k in sorted(subitems.keys(), key=int):
             item = self._newItem()

@@ -30,6 +30,7 @@ class TestKey:
         assert isinstance(key, protocols.ItemTemplate)
         assert isinstance(key, protocols.Dumpable)
         assert isinstance(key, protocols.Restorable)
+        assert isinstance(key, protocols.Containable)
 
     def test_default(self):
 
@@ -251,6 +252,18 @@ class TestKey:
         parent_key.clear()
         stub.assert_called_once_with("default a")
 
+    def test_field_label(self):
+        class TestBundle(Bundle):
+            key1 = Key("test")
+            key2 = Key("test")
+
+        bundle = TestBundle()
+        assert bundle.key1.fieldLabel() == "key1"
+        assert bundle.key2.fieldLabel() == "key2"
+
+        key = Key("test")
+        assert key.fieldLabel() == ""
+
     def test_dump(self):
 
         key: Key[str] = Key(default="default")
@@ -290,7 +303,7 @@ class TestKey:
             ]
         )
 
-        # Restoring a key with an attribute name is invalid, so the value should
+        # Restoring a key with a field label is invalid, so the value should
         # not be updated.
 
         assert key.get() == 0

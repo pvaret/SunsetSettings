@@ -1,7 +1,7 @@
+import dataclasses
 import inspect
 import weakref
 
-from dataclasses import dataclass, field
 from typing import (
     Any,
     Callable,
@@ -17,6 +17,8 @@ from typing_extensions import Self
 
 from .non_hashable_set import WeakNonHashableSet
 from .protocols import (
+    Containable,
+    ContainableImpl,
     Dumpable,
     Inheriter,
     ItemTemplate,
@@ -29,7 +31,7 @@ from .registry import CallbackRegistry
 BundleT = TypeVar("BundleT", bound="Bundle")
 
 
-class Bundle:
+class Bundle(ContainableImpl):
     """
     A collection of related Keys.
 
@@ -97,12 +99,16 @@ class Bundle:
                         raise TypeError(
                             f"Field '{name}' in the definition of"
                             f" '{cls.__name__}' overrides attribute of the same"
-                            f" name declared in parent class "
-                            f"'{cls_parent.__name__}'; consider"
+                            f" name declared in parent class"
+                            f" '{cls_parent.__name__}'; consider"
                             f" renaming this field to '{name}_' for instance"
                         )
 
-                setattr(cls, name, field(default_factory=attr.newInstance))
+                setattr(
+                    cls,
+                    name,
+                    dataclasses.field(default_factory=attr.newInstance),
+                )
 
                 # Dataclass instantiation raises an error if a field does not
                 # have an explicit type annotation. But our Key, List and
@@ -122,20 +128,29 @@ class Bundle:
 
         # Create a new instance of this class wrapped as a dataclass.
 
-        wrapped = dataclass()(cls)
+        wrapped = dataclasses.dataclass()(cls)
         return super().__new__(wrapped)
 
     def __post_init__(self: Self) -> None:
+
+        super().__init__()
 
         self._parent = None
         self._children = WeakNonHashableSet[Self]()
         self._update_notification_callbacks = CallbackRegistry()
         self._update_notification_enabled = True
 
-        for attr in vars(self).values():
+        for label, field in vars(self).items():
 
-            if isinstance(attr, UpdateNotifier):
-                attr.onUpdateCall(self._notifyUpdate)
+            if isinstance(field, UpdateNotifier):
+                field.onUpdateCall(self._notifyUpdate)
+
+            if isinstance(field, Containable):
+                field.setContainer(label, self)
+
+    def containsField(self, field: Containable) -> bool:
+
+        return any(field is attr for attr in vars(self).values())
 
     def setParent(self: Self, parent: Optional[Self]) -> None:
         """
@@ -178,17 +193,17 @@ class Bundle:
             self._parent = weakref.ref(parent)
             parent._children.add(self)
 
-        for attrName, attr in vars(self).items():
+        for field_label, field in vars(self).items():
 
-            if not isinstance(attr, Inheriter):
+            if not isinstance(field, Inheriter):
                 continue
 
             if parent is None:
-                attr.setParent(None)  # type: ignore
+                field.setParent(None)  # type: ignore
                 continue
 
-            parentAttr = getattr(parent, attrName, None)
-            if parentAttr is None:
+            parent_field = getattr(parent, field_label, None)
+            if parent_field is None:
 
                 # This is a safety check, but it shouldn't happen. By
                 # construction self should be of the same type as parent, so
@@ -196,9 +211,9 @@ class Bundle:
 
                 continue
 
-            assert isinstance(parentAttr, Inheriter)
-            assert type(attr) is type(parentAttr)  # type: ignore
-            attr.setParent(parentAttr)  # type: ignore
+            assert isinstance(parent_field, Inheriter)
+            assert type(field) is type(parent_field)  # type: ignore
+            field.setParent(parent_field)  # type: ignore
 
     def parent(self: Self) -> Optional[Self]:
         """
@@ -249,16 +264,16 @@ class Bundle:
 
         ret: list[tuple[str, str]] = []
 
-        for attrName, attr in sorted(vars(self).items()):
-            if not isinstance(attr, Dumpable):
+        for field_label, field in sorted(vars(self).items()):
+            if not isinstance(field, Dumpable):
                 continue
 
-            if attrName.startswith("_"):
+            if field_label.startswith("_"):
                 continue
 
-            for subAttrName, dump in attr.dump():
-                name = ".".join(s for s in (attrName, subAttrName) if s)
-                ret.append((name, dump))
+            for sub_field_label, dump in field.dump():
+                label = ".".join(s for s in (field_label, sub_field_label) if s)
+                ret.append((label, dump))
 
         return ret
 
@@ -272,25 +287,25 @@ class Bundle:
 
         subitems: dict[str, list[tuple[str, str]]] = {}
 
-        for name, dump in data:
-            if "." in name:
-                item_name, subname = name.split(".", 1)
+        for label, dump in data:
+            if "." in label:
+                item_label, sublabel = label.split(".", 1)
             else:
-                item_name, subname = name, ""
+                item_label, sublabel = label, ""
 
-            subitems.setdefault(item_name, []).append((subname, dump))
+            subitems.setdefault(item_label, []).append((sublabel, dump))
 
-        for item_name in subitems:
+        for item_label in subitems:
 
             try:
-                item = getattr(self, item_name)
+                item = getattr(self, item_label)
             except AttributeError:
                 continue
 
             if not isinstance(item, Restorable):
                 continue
 
-            item.restore(subitems[item_name])
+            item.restore(subitems[item_label])
 
         self._update_notification_enabled = notification_enabled
         self._notifyUpdate(self)

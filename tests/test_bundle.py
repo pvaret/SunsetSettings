@@ -25,6 +25,8 @@ class TestBundle:
         assert isinstance(bundle, protocols.ItemTemplate)
         assert isinstance(bundle, protocols.Dumpable)
         assert isinstance(bundle, protocols.Restorable)
+        assert isinstance(bundle, protocols.Container)
+        assert isinstance(bundle, protocols.Containable)
 
     def test_creation(self):
 
@@ -34,7 +36,7 @@ class TestBundle:
         assert bundle.inner_bundle.b.get() == 42
         assert bundle.list[0].c.get() == "default c"
 
-    def test_uninstantiated_attribute_fails(self):
+    def test_uninstantiated_field_fails(self):
         class InnerBundle(Bundle):
             pass
 
@@ -166,6 +168,13 @@ class TestBundle:
         assert [item.c.get() for item in child_bundle.list.iter()] == [
             "test child"
         ]
+
+    def test_field_label(self):
+
+        bundle = ExampleBundle()
+
+        assert bundle.fieldLabel() == ""
+        assert bundle.inner_bundle.fieldLabel() == "inner_bundle"
 
     def test_dump(self):
 
