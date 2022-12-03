@@ -115,10 +115,10 @@ class List(MutableSequence[ListItemT], ContainableImpl):
     def insert(self, index: SupportsIndex, value: ListItemT) -> None:
 
         self._contents.insert(index, value)
-        self._notifyUpdate(self)
+        self._triggerUpdateNotification(self)
 
         self._relabelItems()
-        value.onUpdateCall(self._notifyUpdate)
+        value.onUpdateCall(self._triggerUpdateNotification)
 
     @overload
     def __getitem__(self, index: SupportsIndex) -> ListItemT:
@@ -159,31 +159,31 @@ class List(MutableSequence[ListItemT], ContainableImpl):
             self._contents[index] = value
 
             for item in value_copy:
-                item.onUpdateCall(self._notifyUpdate)
+                item.onUpdateCall(self._triggerUpdateNotification)
 
         else:
             assert isinstance(index, SupportsIndex)
             assert not isinstance(value, Iterable)
 
             self._contents[index] = value
-            value.onUpdateCall(self._notifyUpdate)
+            value.onUpdateCall(self._triggerUpdateNotification)
 
         self._relabelItems()
-        self._notifyUpdate(self)
+        self._triggerUpdateNotification(self)
 
     def __delitem__(self, index: Union[SupportsIndex, slice]) -> None:
 
         del self._contents[index]
         self._relabelItems()
-        self._notifyUpdate(self)
+        self._triggerUpdateNotification(self)
 
     def extend(self, values: Iterable[ListItemT]) -> None:
 
         self._contents.extend(values)
         for value in values:
-            value.onUpdateCall(self._notifyUpdate)
+            value.onUpdateCall(self._triggerUpdateNotification)
         self._relabelItems()
-        self._notifyUpdate(self)
+        self._triggerUpdateNotification(self)
 
     def append(self, value: ListItemT) -> None:
 
@@ -198,7 +198,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
 
         self._contents.clear()
         self._relabelItems()
-        self._notifyUpdate(self)
+        self._triggerUpdateNotification(self)
 
     def __len__(self) -> int:
 
@@ -442,9 +442,9 @@ class List(MutableSequence[ListItemT], ContainableImpl):
             self.append(item)
 
         self._update_notification_enabled = notification_enabled
-        self._notifyUpdate(self)
+        self._triggerUpdateNotification(self)
 
-    def _notifyUpdate(self, value: Union[ListItemT, Self]) -> None:
+    def _triggerUpdateNotification(self, value: Union[ListItemT, Self]) -> None:
 
         if self._update_notification_enabled:
 

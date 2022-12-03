@@ -145,7 +145,7 @@ class Bundle(ContainableImpl):
             if isinstance(field, Field):
                 self._fields[label] = field
                 field.setContainer(label, self)
-                field.onUpdateCall(self._notifyUpdate)
+                field.onUpdateCall(self._triggerUpdateNotification)
 
     def containsFieldWithLabel(self, label: str, field: Containable) -> bool:
 
@@ -294,9 +294,9 @@ class Bundle(ContainableImpl):
                 item.restore(subitems[item_label])
 
         self._update_notification_enabled = notification_enabled
-        self._notifyUpdate(self)
+        self._triggerUpdateNotification(self)
 
-    def _notifyUpdate(self, value: UpdateNotifier) -> None:
+    def _triggerUpdateNotification(self, value: UpdateNotifier) -> None:
 
         if self._update_notification_enabled:
             self._update_notification_callbacks.callAll(self)
