@@ -1,7 +1,8 @@
 import weakref
 
+from collections.abc import MutableSet
 from types import MethodType
-from typing import Callable, Iterator, MutableSet, TypeVar
+from typing import Any, Callable, Iterator, TypeVar
 
 from .non_hashable_set import NonHashableSet
 
@@ -37,11 +38,9 @@ class CallbackRegistry(MutableSet[Callable[[_T], None]]):
 
         self._content.add(r)
 
-    def __contains__(self, callback: Callable[[_T], None]) -> bool:
+    def __contains__(self, value: Any) -> bool:
 
-        return any(
-            self._isSameCallable(candidate, callback) for candidate in self
-        )
+        return any(self._isSameCallable(candidate, value) for candidate in self)
 
     def __iter__(self) -> Iterator[Callable[[_T], None]]:
 

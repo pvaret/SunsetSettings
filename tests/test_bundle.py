@@ -58,7 +58,7 @@ class TestBundle:
         assert getattr(Bundle, "dump", None) is not None
 
         class FaultyBundle(Bundle):
-            dump = Key(default="test")  # type: ignore -- that's the point
+            dump = Key(default="test")  # type: ignore[assignment]
 
         with pytest.raises(TypeError):
             FaultyBundle()

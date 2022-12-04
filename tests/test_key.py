@@ -36,7 +36,7 @@ class TestKey:
         assert not Key(default=False).get()
         assert Key(default=12.345e-67).get() == 12.345e-67
         with pytest.raises(TypeError):
-            Key(default=(1, "test"))  # type: ignore - it's the point.
+            Key(default=object())  # type: ignore # It's the point!
 
     def test_set(self):
 

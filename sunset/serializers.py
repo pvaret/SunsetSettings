@@ -64,4 +64,6 @@ def deserialize(
         return cast(SerializableT, _type(string))
 
     assert issubclass(_type, Serializable)
-    return _type.fromStr(string)
+
+    # The cast is unnecessary, but works around a mypy bug.
+    return cast(SerializableT, _type.fromStr(string))

@@ -194,7 +194,10 @@ class List(MutableSequence[ListItemT], ContainableImpl):
     def _newItem(self) -> ListItemT:
 
         item = self._template.newInstance()
-        return item
+
+        # WORKAROUND: This lets mypy properly typecheck the return type.
+
+        return cast(ListItemT, item)
 
     def appendOne(self) -> ListItemT:
         """

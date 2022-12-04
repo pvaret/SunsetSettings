@@ -363,7 +363,7 @@ class Settings(Bundle):
         Internal.
         """
 
-        hierarchy = self.hierarchy()
+        hierarchy: Sequence[str] = self.hierarchy()
         if not hierarchy:
 
             # This is an anonymous structure, don't dump it.
