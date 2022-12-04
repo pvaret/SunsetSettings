@@ -452,11 +452,13 @@ class List(MutableSequence[ListItemT], ContainableImpl):
             self.append(item)
 
         self._update_notification_enabled = notification_enabled
-        self.triggerUpdateNotification(self)
 
     def triggerUpdateNotification(
         self, field: Optional[UpdateNotifier]
     ) -> None:
+        """
+        Internal.
+        """
 
         if not self._update_notification_enabled:
             return

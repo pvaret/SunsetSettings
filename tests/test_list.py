@@ -160,9 +160,9 @@ class TestList:
         assert bundle_list[0].test.get() == "test 1"
         assert bundle_list[1].test.get() == "test 2"
 
-        # Ensure that a restore only triggers one update notification.
+        # Ensure that a restore does not trigger update notifications.
 
-        callback.assert_called_once_with(bundle_list)
+        callback.assert_not_called()
 
     def test_restore_keys(self, mocker: MockerFixture):
 
@@ -181,9 +181,9 @@ class TestList:
         assert key_list[0].get() == "test 1"
         assert key_list[1].get() == "test 2"
 
-        # Ensure that a restore only triggers one update notification.
+        # Ensure that a restore does not trigger update notifications.
 
-        callback.assert_called_once_with(key_list)
+        callback.assert_not_called()
 
     def test_restore_order(self):
 
