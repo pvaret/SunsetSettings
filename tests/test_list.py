@@ -302,49 +302,49 @@ class TestList:
         bundle_list.append(bundle1)
         callback.reset_mock()
         bundle1.test.set("test")
-        callback.assert_called_once_with(bundle_list)
+        callback.assert_called_once_with(bundle1.test)
 
         bundle2 = ExampleBundle()
         bundle_list.insert(0, bundle2)
         callback.reset_mock()
         bundle2.test.set("test")
-        callback.assert_called_once_with(bundle_list)
+        callback.assert_called_once_with(bundle2.test)
 
         bundle3 = ExampleBundle()
         bundle_list[0] = bundle3
         callback.reset_mock()
         bundle3.test.set("test")
-        callback.assert_called_once_with(bundle_list)
+        callback.assert_called_once_with(bundle3.test)
 
         bundle4 = ExampleBundle()
         bundle5 = ExampleBundle()
         bundle_list[1:2] = [bundle4, bundle5]
         callback.reset_mock()
         bundle4.test.set("test")
-        callback.assert_called_once_with(bundle_list)
+        callback.assert_called_once_with(bundle4.test)
         callback.reset_mock()
         bundle5.test.set("test")
-        callback.assert_called_once_with(bundle_list)
+        callback.assert_called_once_with(bundle5.test)
 
         bundle6 = ExampleBundle()
         bundle7 = ExampleBundle()
         bundle_list += [bundle6, bundle7]
         callback.reset_mock()
         bundle6.test.set("test")
-        callback.assert_called_once_with(bundle_list)
+        callback.assert_called_once_with(bundle6.test)
         callback.reset_mock()
         bundle7.test.set("test")
-        callback.assert_called_once_with(bundle_list)
+        callback.assert_called_once_with(bundle7.test)
 
         bundle8 = ExampleBundle()
         bundle9 = ExampleBundle()
         bundle_list.extend([bundle8, bundle9])
         callback.reset_mock()
         bundle8.test.set("test")
-        callback.assert_called_once_with(bundle_list)
+        callback.assert_called_once_with(bundle8.test)
         callback.reset_mock()
         bundle9.test.set("test")
-        callback.assert_called_once_with(bundle_list)
+        callback.assert_called_once_with(bundle9.test)
 
     def test_update_callback_not_called_for_removed_items(
         self, mocker: MockerFixture

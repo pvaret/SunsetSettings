@@ -307,7 +307,7 @@ inner_bundle.d = false
             )
         )
 
-        callback.assert_called_once_with(settings)
+        callback.assert_not_called()
 
         assert settings.a.get() == "a"
         assert len(settings.bundle_list) == 1
@@ -599,15 +599,15 @@ bundle_list.4.c = 4
         settings.onUpdateCall(callback)
 
         settings.a.set("test 1")
-        callback.assert_called_once_with(settings)
+        callback.assert_called_once_with(settings.a)
         callback.reset_mock()
 
         section = settings.newSection(name="section")
-        callback.assert_called_once_with(settings)
+        callback.assert_called_once_with(section)
         callback.reset_mock()
 
         section.a.set("test 2")
-        callback.assert_called_once_with(settings)
+        callback.assert_called_once_with(section.a)
         callback.reset_mock()
 
         anonymous = settings.newSection()
@@ -627,11 +627,11 @@ bundle_list.4.c = 4
         callback.reset_mock()
 
         anonymous.setSectionName("no longer anonymous")
-        callback.assert_called_once_with(settings)
+        callback.assert_called_once_with(anonymous)
         callback.reset_mock()
 
         anonymoussection.a.set("test 5")
-        callback.assert_called_once_with(settings)
+        callback.assert_called_once_with(anonymoussection.a)
         callback.reset_mock()
 
     def test_name_unicity(self):

@@ -61,7 +61,7 @@ class Bundle(ContainableImpl):
     _parent: Optional[weakref.ref[Self]]
     _children: MutableSet[Self]
     _fields: dict[str, Field]
-    _update_notification_callbacks: CallbackRegistry[Self]
+    _update_notification_callbacks: CallbackRegistry[UpdateNotifier]
     _update_notification_enabled: bool
 
     def __new__(cls: Type[Self]) -> Self:
@@ -145,7 +145,6 @@ class Bundle(ContainableImpl):
             if isinstance(field, Field):
                 self._fields[label] = field
                 field.setContainer(label, self)
-                field.onUpdateCall(self._triggerUpdateNotification)
 
     def containsFieldWithLabel(self, label: str, field: Containable) -> bool:
 
@@ -231,16 +230,19 @@ class Bundle(ContainableImpl):
 
         yield from self._children
 
-    def onUpdateCall(self, callback: Callable[[Self], None]) -> None:
+    def onUpdateCall(self, callback: Callable[[UpdateNotifier], None]) -> None:
         """
-        Adds a callback to be called whenever this Bundle or any of its fields
-        is updated.
+        Adds a callback to be called whenever this Bundle is updated. A Bundle
+        is considered updated when any of its fields is updated. As Bundles can
+        contain other Bundles
 
-        The callback will be called with this Bundle as its argument.
+        The callback will be called with as its argument whichever field was
+        just updated.
 
         Args:
-            callback: A callable that takes one argument of the same type as
-                this Bundle, and that returns None.
+            callback: A callable that takes one argument whose type can be
+                :class:`~sunset.List`, :class:`~sunset.Bundle` or
+                :class:`~sunset.Key`.
 
         Returns:
             None.
@@ -294,12 +296,21 @@ class Bundle(ContainableImpl):
                 item.restore(subitems[item_label])
 
         self._update_notification_enabled = notification_enabled
-        self._triggerUpdateNotification(self)
 
-    def _triggerUpdateNotification(self, value: UpdateNotifier) -> None:
+    def triggerUpdateNotification(
+        self, field: Optional[UpdateNotifier]
+    ) -> None:
 
-        if self._update_notification_enabled:
-            self._update_notification_callbacks.callAll(self)
+        if not self._update_notification_enabled:
+            return
+
+        if field is None:
+            field = self
+
+        self._update_notification_callbacks.callAll(field)
+
+        if (container := self.container()) is not None and not self.isPrivate():
+            container.triggerUpdateNotification(field)
 
     def newInstance(self: Self) -> Self:
         """

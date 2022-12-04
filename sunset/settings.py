@@ -148,7 +148,6 @@ class Settings(Bundle):
 
         new = self.newInstance()
         new.setParent(self)
-        new.onUpdateCall(self._triggerUpdateNotification)
 
         if name:
 
@@ -273,7 +272,7 @@ class Settings(Bundle):
         self._section_name = name
 
         if self.sectionName() != previous_name:
-            self._triggerUpdateNotification(self)
+            self.triggerUpdateNotification(self)
 
         return self.sectionName()
 
@@ -323,14 +322,30 @@ class Settings(Bundle):
             self.sectionName()
         ]
 
-    def _triggerUpdateNotification(self, value: UpdateNotifier) -> None:
+    def triggerUpdateNotification(
+        self, field: Optional[UpdateNotifier]
+    ) -> None:
 
-        # Do not notify for updates that come from anonymous Settings.
-
-        if isinstance(value, Settings) and value.sectionName() == "":
+        if not self._update_notification_enabled:
             return
 
-        super()._triggerUpdateNotification(value)
+        if field is None:
+            field = self
+
+        super().triggerUpdateNotification(field)
+
+        # Note that we always propagate notifications when the concerned field
+        # is self. This allows section name changes to be propagated even if the
+        # new name is no longer public -- the parent sections may be interested
+        # about that name change!
+
+        if (parent := self.parent()) is not None:
+            if not self.isPrivate() or field is self:
+                parent.triggerUpdateNotification(field)
+
+    def isPrivate(self) -> bool:
+
+        return self.sectionName() == ""
 
     def dumpAll(
         self,
@@ -406,7 +421,6 @@ class Settings(Bundle):
             section.restoreAll(own_sections_data)
 
         self._update_notification_enabled = notification_enabled
-        self._triggerUpdateNotification(self)
 
     def save(self, file: TextIO, blanklines: bool = False) -> None:
         """

@@ -1,7 +1,6 @@
 import weakref
 
 from enum import Enum, auto
-from itertools import tee
 from typing import (
     Any,
     Callable,
@@ -21,7 +20,7 @@ from typing_extensions import Self
 from .bundle import Bundle
 from .key import Key
 from .non_hashable_set import WeakNonHashableSet
-from .protocols import Containable, ContainableImpl
+from .protocols import Containable, ContainableImpl, UpdateNotifier
 from .registry import CallbackRegistry
 
 ListItemT = TypeVar(
@@ -93,7 +92,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
     _parent: Optional[weakref.ref[Self]]
     _children: WeakNonHashableSet[Self]
     _iter_order: IterOrder
-    _update_notification_callbacks: CallbackRegistry[Self]
+    _update_notification_callbacks: CallbackRegistry[UpdateNotifier]
     _update_notification_enabled: bool
     _template: ListItemT
 
@@ -115,10 +114,8 @@ class List(MutableSequence[ListItemT], ContainableImpl):
     def insert(self, index: SupportsIndex, value: ListItemT) -> None:
 
         self._contents.insert(index, value)
-        self._triggerUpdateNotification(self)
-
         self._relabelItems()
-        value.onUpdateCall(self._triggerUpdateNotification)
+        self.triggerUpdateNotification(self)
 
     @overload
     def __getitem__(self, index: SupportsIndex) -> ListItemT:
@@ -150,40 +147,27 @@ class List(MutableSequence[ListItemT], ContainableImpl):
 
         if isinstance(index, slice):
             assert isinstance(value, Iterable)
-
-            # Take a copy of the iterable, because it's not a given that it will
-            # be iterable twice.
-
-            value, value_copy = tee(value)
-
             self._contents[index] = value
-
-            for item in value_copy:
-                item.onUpdateCall(self._triggerUpdateNotification)
 
         else:
             assert isinstance(index, SupportsIndex)
             assert not isinstance(value, Iterable)
-
             self._contents[index] = value
-            value.onUpdateCall(self._triggerUpdateNotification)
 
         self._relabelItems()
-        self._triggerUpdateNotification(self)
+        self.triggerUpdateNotification(self)
 
     def __delitem__(self, index: Union[SupportsIndex, slice]) -> None:
 
         del self._contents[index]
         self._relabelItems()
-        self._triggerUpdateNotification(self)
+        self.triggerUpdateNotification(self)
 
     def extend(self, values: Iterable[ListItemT]) -> None:
 
         self._contents.extend(values)
-        for value in values:
-            value.onUpdateCall(self._triggerUpdateNotification)
         self._relabelItems()
-        self._triggerUpdateNotification(self)
+        self.triggerUpdateNotification(self)
 
     def append(self, value: ListItemT) -> None:
 
@@ -198,7 +182,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
 
         self._contents.clear()
         self._relabelItems()
-        self._triggerUpdateNotification(self)
+        self.triggerUpdateNotification(self)
 
     def __len__(self) -> int:
 
@@ -378,16 +362,21 @@ class List(MutableSequence[ListItemT], ContainableImpl):
 
         yield from self._children
 
-    def onUpdateCall(self, callback: Callable[[Self], None]) -> None:
+    def onUpdateCall(self, callback: Callable[[UpdateNotifier], None]) -> None:
         """
         Adds a callback to be called whenever this List, *or* any item contained
         in this List, is updated.
 
-        The callback will be called with this List instance as its argument.
+        The callback will be called with whichever entity was updated as its
+        argument: this List, or one of its items or sub-items.
+
+        Adding new items to or deleting items from a List is considered an
+        update of that List, not of the elements in question.
 
         Args:
-            callback: A callable that takes one argument of the same type as
-                this List, and that returns None.
+            callback: A callable that takes one argument whose type can be
+                :class:`~sunset.List`, :class:`~sunset.Bundle` or
+                :class:`~sunset.Key`.
 
         Returns:
             None.
@@ -442,17 +431,22 @@ class List(MutableSequence[ListItemT], ContainableImpl):
             self.append(item)
 
         self._update_notification_enabled = notification_enabled
-        self._triggerUpdateNotification(self)
+        self.triggerUpdateNotification(self)
 
-    def _triggerUpdateNotification(self, value: Union[ListItemT, Self]) -> None:
+    def triggerUpdateNotification(
+        self, field: Optional[UpdateNotifier]
+    ) -> None:
 
-        if self._update_notification_enabled:
+        if not self._update_notification_enabled:
+            return
 
-            # Note that if the sender is a List item, we only propagate the
-            # notification if that item is still in this List.
+        if field is None:
+            field = self
 
-            if isinstance(value, List) or value in self:
-                self._update_notification_callbacks.callAll(self)
+        self._update_notification_callbacks.callAll(field)
+
+        if (container := self.container()) is not None and not self.isPrivate():
+            container.triggerUpdateNotification(field)
 
     def newInstance(self) -> Self:
         """

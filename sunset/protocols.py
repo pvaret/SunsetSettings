@@ -64,7 +64,9 @@ class Dumpable(Protocol):
 
 @runtime_checkable
 class UpdateNotifier(Protocol):
-    def onUpdateCall(self, callback: Callable[[Self], None]) -> None:
+    def onUpdateCall(
+        self, callback: Callable[["UpdateNotifier"], None]
+    ) -> None:
         ...
 
 
@@ -75,8 +77,13 @@ class ItemTemplate(Protocol):
 
 
 @runtime_checkable
-class Container(Protocol):
+class Container(UpdateNotifier, Protocol):
     def containsFieldWithLabel(self, label: str, field: "Containable") -> bool:
+        ...
+
+    def triggerUpdateNotification(
+        self, field: "Optional[UpdateNotifier]"
+    ) -> None:
         ...
 
 
@@ -89,6 +96,9 @@ class Containable(Protocol):
         ...
 
     def fieldLabel(self) -> str:
+        ...
+
+    def isPrivate(self) -> bool:
         ...
 
 
@@ -149,6 +159,13 @@ class ContainableImpl:
             self._field_label = ""
 
         return self._field_label
+
+    def isPrivate(self) -> bool:
+        """
+        Internal.
+        """
+
+        return (label := self.fieldLabel()) == "" or label.startswith("_")
 
 
 assert isinstance(ContainableImpl, Containable)

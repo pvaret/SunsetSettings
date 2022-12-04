@@ -228,9 +228,9 @@ class TestBundle:
         assert bundle.list[0].c.get() == "test c 1"
         assert bundle.list[1].c.get() == "test c 2"
 
-        # Ensure that a restore only triggers one update notification.
+        # Ensure that a restore does not trigger an update notification.
 
-        callback.assert_called_once_with(bundle)
+        callback.assert_not_called()
 
     def test_persistence(self):
 
@@ -261,19 +261,19 @@ class TestBundle:
         child.setParent(bundle)
 
         bundle.a.set("test 1")
-        callback.assert_called_once_with(bundle)
+        callback.assert_called_once_with(bundle.a)
         callback.reset_mock()
 
         bundle.inner_bundle.b.set(123)
-        callback.assert_called_once_with(bundle)
+        callback.assert_called_once_with(bundle.inner_bundle.b)
         callback.reset_mock()
 
         bundle.list.appendOne()
-        callback.assert_called_once_with(bundle)
+        callback.assert_called_once_with(bundle.list)
         callback.reset_mock()
 
         bundle.list[0].c.set("test 2")
-        callback.assert_called_once_with(bundle)
+        callback.assert_called_once_with(bundle.list[0].c)
         callback.reset_mock()
 
         child.a.set("test 3")

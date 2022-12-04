@@ -142,7 +142,7 @@ class Key(Generic[SerializableT], ContainableImpl):
                 child._notifyParentValueChanged()
 
         if not previously_set or prev_value != self.get():
-            self._triggerUpdateNotification()
+            self.triggerUpdateNotification()
 
     def clear(self) -> None:
         """
@@ -163,7 +163,7 @@ class Key(Generic[SerializableT], ContainableImpl):
             for child in self.children():
                 child._notifyParentValueChanged()
 
-        self._triggerUpdateNotification()
+        self.triggerUpdateNotification()
 
     def isSet(self) -> bool:
         """
@@ -352,9 +352,15 @@ class Key(Generic[SerializableT], ContainableImpl):
 
         self._value_change_callbacks.callAll(self.get())
 
-    def _triggerUpdateNotification(self):
+    def triggerUpdateNotification(self):
+        """
+        Internal.
+        """
 
         self._update_notification_callbacks.callAll(self)
+
+        if (container := self.container()) is not None and not self.isPrivate():
+            container.triggerUpdateNotification(self)
 
     def newInstance(self) -> Self:
         """
