@@ -12,10 +12,9 @@ from typing import (
     SupportsIndex,
     TypeVar,
     Union,
+    cast,
     overload,
 )
-
-from typing_extensions import Self
 
 from .bundle import Bundle
 from .key import Key
@@ -36,6 +35,10 @@ class IterOrder(Enum):
     NO_PARENT = auto()
     PARENT_FIRST = auto()
     PARENT_LAST = auto()
+
+
+# TODO: Replace with typing.Self when mypy finally supports that.
+Self = TypeVar("Self", bound="List[Any]")
 
 
 class List(MutableSequence[ListItemT], ContainableImpl):
@@ -89,8 +92,8 @@ class List(MutableSequence[ListItemT], ContainableImpl):
     PARENT_LAST = IterOrder.PARENT_LAST
 
     _contents: list[ListItemT]
-    _parent: Optional[weakref.ref[Self]]
-    _children: WeakNonHashableSet[Self]
+    _parent: Optional[weakref.ref["List[ListItemT]"]]
+    _children: WeakNonHashableSet["List[ListItemT]"]
     _iter_order: IterOrder
     _update_notification_callbacks: CallbackRegistry[Any]
     _update_notification_enabled: bool
@@ -173,7 +176,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
 
         self.extend((value,))
 
-    def __iadd__(self, values: Iterable[ListItemT]) -> Self:
+    def __iadd__(self: Self, values: Iterable[ListItemT]) -> Self:
 
         self.extend(values)
         return self
@@ -341,7 +344,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         if parent is not None and order == IterOrder.PARENT_LAST:
             yield from parent.iter(order)
 
-    def parent(self) -> Optional[Self]:
+    def parent(self: Self) -> Optional[Self]:
         """
         Returns the parent of this List, if any.
 
@@ -349,9 +352,13 @@ class List(MutableSequence[ListItemT], ContainableImpl):
             A List instance of the same type as this one, or None.
         """
 
-        return self._parent() if self._parent is not None else None
+        # Make the type of self._parent more specific for the purpose of type
+        # checking.
 
-    def children(self) -> Iterator[Self]:
+        _parent = cast(Optional[weakref.ref[Self]], self._parent)
+        return _parent() if _parent is not None else None
+
+    def children(self: Self) -> Iterator[Self]:
         """
         Returns an iterator over the List instances that have this List
         as their parent.
@@ -360,7 +367,8 @@ class List(MutableSequence[ListItemT], ContainableImpl):
             An iterator over List instances of the same type as this one.
         """
 
-        yield from self._children
+        for child in self._children:
+            yield cast(Self, child)
 
     def onUpdateCall(self, callback: Callable[[Any], None]) -> None:
         """
@@ -448,7 +456,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         if (container := self.container()) is not None and not self.isPrivate():
             container.triggerUpdateNotification(field)
 
-    def newInstance(self) -> Self:
+    def newInstance(self: Self) -> Self:
         """
         Internal. Returns a new instance of this List capable of holding the
         same type.

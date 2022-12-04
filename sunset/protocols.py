@@ -8,10 +8,12 @@ from typing import (
     Protocol,
     Sequence,
     Type,
+    TypeVar,
     runtime_checkable,
 )
 
-from typing_extensions import Self
+
+Self = TypeVar("Self")
 
 
 @runtime_checkable

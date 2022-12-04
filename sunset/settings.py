@@ -1,6 +1,11 @@
-from typing import Iterator, MutableSet, Optional, Sequence, TextIO
-
-from typing_extensions import Self
+from typing import (
+    Iterator,
+    MutableSet,
+    Optional,
+    Sequence,
+    TextIO,
+    TypeVar,
+)
 
 from .bundle import Bundle
 from .exporter import normalize, loadFromFile, saveToFile
@@ -8,6 +13,10 @@ from .non_hashable_set import NonHashableSet
 from .protocols import UpdateNotifier
 
 _MAIN = "main"
+
+
+# TODO: Replace with typing.Self when mypy finally supports that.
+Self = TypeVar("Self", bound="Settings")
 
 
 class Settings(Bundle):
@@ -107,7 +116,7 @@ class Settings(Bundle):
     MAIN: str = _MAIN
 
     _section_name: str
-    _children: MutableSet[Self]
+    _children: MutableSet[Bundle]
 
     def __post_init__(self) -> None:
 

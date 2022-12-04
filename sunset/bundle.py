@@ -10,9 +10,9 @@ from typing import (
     Optional,
     Sequence,
     Type,
+    TypeVar,
+    cast,
 )
-
-from typing_extensions import Self
 
 from .non_hashable_set import WeakNonHashableSet
 from .protocols import (
@@ -23,6 +23,10 @@ from .protocols import (
     UpdateNotifier,
 )
 from .registry import CallbackRegistry
+
+
+# TODO: Replace with typing.Self when mypy finally supports that.
+Self = TypeVar("Self", bound="Bundle")
 
 
 class Bundle(ContainableImpl):
@@ -54,8 +58,8 @@ class Bundle(ContainableImpl):
     'Calibri'
     """
 
-    _parent: Optional[weakref.ref[Self]]
-    _children: MutableSet[Self]
+    _parent: Optional[weakref.ref["Bundle"]]
+    _children: MutableSet["Bundle"]
     _fields: dict[str, Field]
     _update_notification_callbacks: CallbackRegistry[UpdateNotifier]
     _update_notification_enabled: bool
@@ -126,12 +130,12 @@ class Bundle(ContainableImpl):
         wrapped = dataclasses.dataclass()(cls)
         return super().__new__(wrapped)
 
-    def __post_init__(self: Self) -> None:
+    def __post_init__(self) -> None:
 
         super().__init__()
 
         self._parent = None
-        self._children = WeakNonHashableSet[Self]()
+        self._children = WeakNonHashableSet[Bundle]()
         self._fields = {}
         self._update_notification_callbacks = CallbackRegistry()
         self._update_notification_enabled = True
@@ -213,7 +217,11 @@ class Bundle(ContainableImpl):
             A Bundle instance of the same type as this one, or None.
         """
 
-        return self._parent() if self._parent is not None else None
+        # Make the type of self._parent more specific for the purpose of type
+        # checking.
+
+        _parent = cast(Optional[weakref.ref[Self]], self._parent)
+        return _parent() if _parent is not None else None
 
     def children(self: Self) -> Iterator[Self]:
         """
@@ -224,7 +232,8 @@ class Bundle(ContainableImpl):
             An iterator over Bundle instances of the same type as this one.
         """
 
-        yield from self._children
+        for child in self._children:
+            yield cast(Self, child)
 
     def onUpdateCall(self, callback: Callable[[Any], None]) -> None:
         """

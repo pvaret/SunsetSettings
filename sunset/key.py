@@ -1,21 +1,25 @@
 import weakref
 
 from typing import (
+    Any,
     Callable,
     Generic,
     Iterator,
     Optional,
     Sequence,
     Type,
+    TypeVar,
     cast,
 )
-
-from typing_extensions import Self
 
 from .exporter import maybeEscape
 from .protocols import ContainableImpl
 from .registry import CallbackRegistry
 from .serializers import SerializableT, deserialize, serialize
+
+
+# TODO: Replace with typing.Self when mypy finally supports that.
+Self = TypeVar("Self", bound="Key[Any]")
 
 
 class Key(Generic[SerializableT], ContainableImpl):
@@ -64,9 +68,9 @@ class Key(Generic[SerializableT], ContainableImpl):
     _default: SerializableT
     _value: Optional[SerializableT]
     _value_change_callbacks: CallbackRegistry[SerializableT]
-    _update_notification_callbacks: CallbackRegistry[Self]
-    _parent: Optional[weakref.ref[Self]]
-    _children: weakref.WeakSet[Self]
+    _update_notification_callbacks: CallbackRegistry["Key[SerializableT]"]
+    _parent: Optional[weakref.ref["Key[SerializableT]"]]
+    _children: weakref.WeakSet["Key[SerializableT]"]
     _type: Type[SerializableT]
 
     def __init__(self, default: SerializableT):
@@ -207,7 +211,9 @@ class Key(Generic[SerializableT], ContainableImpl):
 
         self._value_change_callbacks.add(callback)
 
-    def onUpdateCall(self, callback: Callable[[Self], None]) -> None:
+    def onUpdateCall(
+        self, callback: Callable[["Key[SerializableT]"], None]
+    ) -> None:
         """
         Adds a callback to be called whenever this Key is updated, even if the
         value returned by :meth:`get()` does not end up changing.
@@ -291,7 +297,11 @@ class Key(Generic[SerializableT], ContainableImpl):
             A Key instance of the same type as this one, or None.
         """
 
-        return self._parent() if self._parent is not None else None
+        # Make the type of self._parent more specific for the purpose of type
+        # checking.
+
+        _parent = cast(Optional[weakref.ref[Self]], self._parent)
+        return _parent() if _parent is not None else None
 
     def children(self: Self) -> Iterator[Self]:
         """
@@ -301,7 +311,8 @@ class Key(Generic[SerializableT], ContainableImpl):
             An iterator over Keys of the same type as this one.
         """
 
-        yield from self._children
+        for child in self._children:
+            yield cast(Self, child)
 
     def dump(self) -> Sequence[tuple[str, str]]:
         """
@@ -362,7 +373,7 @@ class Key(Generic[SerializableT], ContainableImpl):
         if (container := self.container()) is not None and not self.isPrivate():
             container.triggerUpdateNotification(self)
 
-    def newInstance(self) -> Self:
+    def newInstance(self: Self) -> Self:
         """
         Internal. Returns a new instance of this Key with the same default
         value.

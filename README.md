@@ -110,7 +110,6 @@ Pony count updated: 6
 
 - Python 3.9 or later.
 - If installing from sources:
-    - The `typing_extensions` module.
     - The `flit` build tool.
 
 ## Installation
