@@ -15,8 +15,6 @@ API Reference
 
     .. automethod:: sections
 
-    .. automethod:: siblings
-
     .. automethod:: sectionName
 
     .. automethod:: setSectionName
@@ -37,33 +35,15 @@ API Reference
 
     .. automethod:: onUpdateCall
 
-    .. automethod:: parent
-
-    .. automethod:: children
-
-    .. automethod:: setParent
-
 .. autoclass:: sunset.Bundle
 
     .. automethod:: onUpdateCall
-
-    .. automethod:: parent
-
-    .. automethod:: children
-
-    .. automethod:: setParent
 
 .. autoclass:: sunset.List
 
     .. automethod:: iter
 
     .. automethod:: onUpdateCall
-
-    .. automethod:: parent
-
-    .. automethod:: children
-
-    .. automethod:: setParent
 
 .. autoclass:: sunset.protocols.Serializable
 
