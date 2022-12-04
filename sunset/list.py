@@ -92,7 +92,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
     _parent: Optional[weakref.ref[Self]]
     _children: WeakNonHashableSet[Self]
     _iter_order: IterOrder
-    _update_notification_callbacks: CallbackRegistry[UpdateNotifier]
+    _update_notification_callbacks: CallbackRegistry[Any]
     _update_notification_enabled: bool
     _template: ListItemT
 
@@ -362,7 +362,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
 
         yield from self._children
 
-    def onUpdateCall(self, callback: Callable[[UpdateNotifier], None]) -> None:
+    def onUpdateCall(self, callback: Callable[[Any], None]) -> None:
         """
         Adds a callback to be called whenever this List, *or* any item contained
         in this List, is updated.
@@ -374,7 +374,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         update of that List, not of the elements in question.
 
         Args:
-            callback: A callable that takes one argument whose type can be
+            callback: A callable that will be called with one argument of type
                 :class:`~sunset.List`, :class:`~sunset.Bundle` or
                 :class:`~sunset.Key`.
 

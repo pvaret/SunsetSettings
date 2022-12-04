@@ -1,6 +1,7 @@
 import weakref
 
 from typing import (
+    Any,
     Callable,
     Iterator,
     Optional,
@@ -64,9 +65,7 @@ class Dumpable(Protocol):
 
 @runtime_checkable
 class UpdateNotifier(Protocol):
-    def onUpdateCall(
-        self, callback: Callable[["UpdateNotifier"], None]
-    ) -> None:
+    def onUpdateCall(self, callback: Callable[[Any], None]) -> None:
         ...
 
 

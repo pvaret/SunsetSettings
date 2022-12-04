@@ -226,7 +226,7 @@ class Bundle(ContainableImpl):
 
         yield from self._children
 
-    def onUpdateCall(self, callback: Callable[[UpdateNotifier], None]) -> None:
+    def onUpdateCall(self, callback: Callable[[Any], None]) -> None:
         """
         Adds a callback to be called whenever this Bundle is updated. A Bundle
         is considered updated when any of its fields is updated. As Bundles can
@@ -236,7 +236,7 @@ class Bundle(ContainableImpl):
         just updated.
 
         Args:
-            callback: A callable that takes one argument whose type can be
+            callback: A callable that will be called with one argument of type
                 :class:`~sunset.List`, :class:`~sunset.Bundle` or
                 :class:`~sunset.Key`.
 

@@ -222,8 +222,8 @@ class Key(Generic[SerializableT], ContainableImpl):
         that was updated.
 
         Args:
-            callback: A callable that takes one argument of the same type as
-                this Key, and that returns None.
+            callback: A callable that will be called with one argument of type
+                :class:`~sunset.Key`.
 
         Returns:
             None.
