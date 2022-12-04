@@ -228,7 +228,17 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         self.insert(index, item)
         return item
 
+    def fieldPath(self) -> str:
+        """
+        Internal.
+        """
+
+        return super().fieldPath() + "."
+
     def containsFieldWithLabel(self, label: str, field: Containable) -> bool:
+        """
+        Internal.
+        """
 
         index = self._indexForLabel(label)
         if index is None:

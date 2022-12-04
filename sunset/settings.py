@@ -352,6 +352,15 @@ class Settings(Bundle):
             if not self.isPrivate() or field is self:
                 parent.triggerUpdateNotification(field)
 
+    def fieldPath(self) -> str:
+        """
+        Internal.
+        """
+
+        path = "" if (parent := self.parent()) is None else parent.fieldPath()
+
+        return path + ("?" if self.isPrivate() else self.sectionName()) + "/"
+
     def isPrivate(self) -> bool:
 
         return self.sectionName() == ""

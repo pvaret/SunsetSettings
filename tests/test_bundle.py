@@ -172,6 +172,19 @@ class TestBundle:
         assert bundle.fieldLabel() == ""
         assert bundle.inner_bundle.fieldLabel() == "inner_bundle"
 
+    def test_field_path(self):
+
+        bundle = ExampleBundle()
+        assert bundle.fieldPath() == "."
+        assert bundle.a.fieldPath() == ".a"
+        assert bundle.inner_bundle.fieldPath() == ".inner_bundle."
+        assert bundle.inner_bundle.b.fieldPath() == ".inner_bundle.b"
+        assert bundle.inner_bundle.b.fieldPath() == ".inner_bundle.b"
+        assert bundle.list.fieldPath() == ".list."
+        bundle.list.appendOne()
+        assert bundle.list[0].fieldPath() == ".list.1."
+        assert bundle.list[0].c.fieldPath() == ".list.1.c"
+
     def test_dump(self):
 
         bundle = ExampleBundle()

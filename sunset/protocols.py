@@ -78,28 +78,33 @@ class ItemTemplate(Protocol):
 
 
 @runtime_checkable
-class Container(UpdateNotifier, Protocol):
+class Containable(Protocol):
+    def setContainer(
+        self, label: str, container: Optional["Container"]
+    ) -> None:
+        ...
+
+    def container(self) -> Optional["Container"]:
+        ...
+
+    def fieldLabel(self) -> str:
+        ...
+
+    def fieldPath(self) -> str:
+        ...
+
+    def isPrivate(self) -> bool:
+        ...
+
+
+@runtime_checkable
+class Container(Containable, UpdateNotifier, Protocol):
     def containsFieldWithLabel(self, label: str, field: "Containable") -> bool:
         ...
 
     def triggerUpdateNotification(
         self, field: "Optional[UpdateNotifier]"
     ) -> None:
-        ...
-
-
-@runtime_checkable
-class Containable(Protocol):
-    def setContainer(self, label: str, container: Optional[Container]) -> None:
-        ...
-
-    def container(self) -> Optional[Container]:
-        ...
-
-    def fieldLabel(self) -> str:
-        ...
-
-    def isPrivate(self) -> bool:
         ...
 
 
@@ -160,6 +165,19 @@ class ContainableImpl:
             self._field_label = ""
 
         return self._field_label
+
+    def fieldPath(self) -> str:
+        """
+        Internal.
+        """
+
+        path = (
+            ""
+            if (container := self.container()) is None
+            else container.fieldPath()
+        )
+
+        return path + self.fieldLabel()
 
     def isPrivate(self) -> bool:
         """

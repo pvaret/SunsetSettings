@@ -516,6 +516,24 @@ class TestList:
         key_list.clear()
         assert all(key.fieldLabel() == "" for key in keys)
 
+    def test_field_path(self):
+
+        test_list1 = List(Key(""))
+        assert test_list1.fieldPath() == "."
+        test_list1.appendOne()
+        test_list1.appendOne()
+        assert test_list1[0].fieldPath() == ".1"
+        assert test_list1[1].fieldPath() == ".2"
+
+        test_list2 = List(ExampleBundle())
+        assert test_list2.fieldPath() == "."
+        test_list2.appendOne()
+        test_list2.appendOne()
+        assert test_list2[0].fieldPath() == ".1."
+        assert test_list2[1].fieldPath() == ".2."
+        assert test_list2[0].test.fieldPath() == ".1.test"
+        assert test_list2[1].test.fieldPath() == ".2.test"
+
     def test_repr(self):
 
         parent = List(Key(default=0))

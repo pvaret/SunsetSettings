@@ -260,6 +260,18 @@ class TestKey:
         key = Key("test")
         assert key.fieldLabel() == ""
 
+    def test_field_path(self):
+
+        assert Key("").fieldPath() == ""
+
+        class TestBundle(Bundle):
+            key1 = Key("test")
+            key2 = Key("test")
+
+        bundle = TestBundle()
+        assert bundle.key1.fieldPath() == ".key1"
+        assert bundle.key2.fieldPath() == ".key2"
+
     def test_dump(self):
 
         key: Key[str] = Key(default="default")

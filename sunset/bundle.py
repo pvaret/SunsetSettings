@@ -146,7 +146,17 @@ class Bundle(ContainableImpl):
                 self._fields[label] = field
                 field.setContainer(label, self)
 
+    def fieldPath(self) -> str:
+        """
+        Internal.
+        """
+
+        return super().fieldPath() + "."
+
     def containsFieldWithLabel(self, label: str, field: Containable) -> bool:
+        """
+        Internal.
+        """
 
         return self._fields.get(label) is field
 

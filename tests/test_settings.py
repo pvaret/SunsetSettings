@@ -30,19 +30,23 @@ class ExampleSettings(Settings):
 class TestSettings:
     def test_new_section(self):
 
-        s = ExampleSettings()
-        assert s.hierarchy() == ["main"]
+        settings = ExampleSettings()
+        assert settings.hierarchy() == ["main"]
 
-        s1 = s.newSection(name="One level down")
-        assert s1.hierarchy() == ["main", "oneleveldown"]
+        section1 = settings.newSection(name="One level down")
+        assert section1.hierarchy() == ["main", "oneleveldown"]
 
-        s2 = s.newSection(name="One level down too")
-        assert s2.hierarchy() == ["main", "oneleveldowntoo"]
+        section2 = settings.newSection(name="One level down too")
+        assert section2.hierarchy() == ["main", "oneleveldowntoo"]
 
-        ss1 = s1.newSection(name="Two levels down")
-        assert ss1.hierarchy() == ["main", "oneleveldown", "twolevelsdown"]
+        subsection1 = section1.newSection(name="Two levels down")
+        assert subsection1.hierarchy() == [
+            "main",
+            "oneleveldown",
+            "twolevelsdown",
+        ]
 
-        anonymous = s.newSection()
+        anonymous = settings.newSection()
         assert anonymous.hierarchy() == []
 
         anonymous2 = anonymous.newSection(
@@ -52,17 +56,82 @@ class TestSettings:
 
     def test_new_named_section(self):
 
-        s = ExampleSettings()
+        settings = ExampleSettings()
 
-        assert len(list(s.sections())) == 0
+        assert len(list(settings.sections())) == 0
 
-        section = s.newSection(name="same name")
-        assert len(list(s.sections())) == 1
+        section = settings.newSection(name="same name")
+        assert len(list(settings.sections())) == 1
 
-        othersection = s.getOrCreateSection(name="same name")
-        assert len(list(s.sections())) == 1
+        othersection = settings.getOrCreateSection(name="same name")
+        assert len(list(settings.sections())) == 1
 
         assert othersection is section
+
+    def test_field_path(self):
+
+        settings = ExampleSettings()
+
+        assert settings.fieldPath() == "main/"
+        assert settings.a.fieldPath() == "main/a"
+        assert settings.inner_bundle.fieldPath() == "main/inner_bundle."
+        assert settings.inner_bundle.c.fieldPath() == "main/inner_bundle.c"
+        settings.bundle_list.appendOne()
+        settings.bundle_list.appendOne()
+        assert settings.bundle_list.fieldPath() == "main/bundle_list."
+        assert settings.bundle_list[1].fieldPath() == "main/bundle_list.2."
+        assert settings.bundle_list[1].d.fieldPath() == "main/bundle_list.2.d"
+        settings.key_list.appendOne()
+        settings.key_list.appendOne()
+        assert settings.key_list.fieldPath() == "main/key_list."
+        assert settings.key_list[1].fieldPath() == "main/key_list.2"
+
+        section = settings.newSection("section")
+        assert section.fieldPath() == "main/section/"
+        assert section.a.fieldPath() == "main/section/a"
+        assert section.inner_bundle.fieldPath() == "main/section/inner_bundle."
+        assert (
+            section.inner_bundle.c.fieldPath() == "main/section/inner_bundle.c"
+        )
+        section.bundle_list.appendOne()
+        section.bundle_list.appendOne()
+        assert section.bundle_list.fieldPath() == "main/section/bundle_list."
+        assert (
+            section.bundle_list[1].fieldPath() == "main/section/bundle_list.2."
+        )
+        assert (
+            section.bundle_list[1].d.fieldPath()
+            == "main/section/bundle_list.2.d"
+        )
+        section.key_list.appendOne()
+        section.key_list.appendOne()
+        assert section.key_list.fieldPath() == "main/section/key_list."
+        assert section.key_list[1].fieldPath() == "main/section/key_list.2"
+
+        anonymous = settings.newSection()
+        assert anonymous.fieldPath() == "main/?/"
+        assert anonymous.a.fieldPath() == "main/?/a"
+        assert anonymous.inner_bundle.fieldPath() == "main/?/inner_bundle."
+        assert anonymous.inner_bundle.c.fieldPath() == "main/?/inner_bundle.c"
+        anonymous.bundle_list.appendOne()
+        anonymous.bundle_list.appendOne()
+        assert anonymous.bundle_list.fieldPath() == "main/?/bundle_list."
+        assert anonymous.bundle_list[1].fieldPath() == "main/?/bundle_list.2."
+        assert (
+            anonymous.bundle_list[1].d.fieldPath() == "main/?/bundle_list.2.d"
+        )
+        anonymous.key_list.appendOne()
+        anonymous.key_list.appendOne()
+        assert anonymous.key_list.fieldPath() == "main/?/key_list."
+        assert anonymous.key_list[1].fieldPath() == "main/?/key_list.2"
+
+        settings.setSectionName("renamed")
+        assert settings.fieldPath() == "renamed/"
+        assert settings.a.fieldPath() == "renamed/a"
+
+        settings.setSectionName("")
+        assert settings.fieldPath() == "main/"
+        assert settings.a.fieldPath() == "main/a"
 
     def test_dumpall(self):
 
@@ -97,13 +166,13 @@ class TestSettings:
         settings.a.set("a")
         settings.bundle_list.appendOne().c.set(100)
 
-        s1 = settings.newSection(name="Level 1")
-        s1.a.set("sub a")
-        s1.b.set("sub b")
-        s1.bundle_list.appendOne().c.set(1000)
+        section1 = settings.newSection(name="Level 1")
+        section1.a.set("sub a")
+        section1.b.set("sub b")
+        section1.bundle_list.appendOne().c.set(1000)
 
-        s2 = settings.newSection(name="Other level 1")
-        s2.inner_bundle.d.set(False)
+        section2 = settings.newSection(name="Other level 1")
+        section2.inner_bundle.d.set(False)
 
         anonymous = settings.newSection()
         anonymous.a.set("anonymous")
@@ -111,8 +180,8 @@ class TestSettings:
         subanonymous = anonymous.newSection(name="Should be ignored too")
         subanonymous.b.set("anonymous 2")
 
-        ss1 = s1.newSection(name="Level 2")
-        ss1.inner_bundle.c.set(200)
+        subsection1 = section1.newSection(name="Level 2")
+        subsection1.inner_bundle.c.set(200)
 
         assert settings.dumpAll() == [
             (
@@ -236,15 +305,15 @@ class TestSettings:
         settings.a.set("a")
         settings.bundle_list.appendOne().c.set(100)
 
-        s1 = settings.newSection(name="Level 1")
-        s1.a.set("sub a")
-        s1.b.set("sub b")
-        s1.bundle_list.appendOne().c.set(1000)
-        s1.key_list.appendOne().set("one")
-        s1.key_list.appendOne().set("two")
+        section1 = settings.newSection(name="Level 1")
+        section1.a.set("sub a")
+        section1.b.set("sub b")
+        section1.bundle_list.appendOne().c.set(1000)
+        section1.key_list.appendOne().set("one")
+        section1.key_list.appendOne().set("two")
 
-        s2 = settings.newSection(name="Other level 1")
-        s2.inner_bundle.d.set(False)
+        section2 = settings.newSection(name="Other level 1")
+        section2.inner_bundle.d.set(False)
 
         anonymous = settings.newSection()
         anonymous.a.set("anonymous")
@@ -252,8 +321,8 @@ class TestSettings:
         subanonymous = anonymous.newSection(name="Should be ignored too")
         subanonymous.b.set("anonymous 2")
 
-        ss1 = s1.newSection(name="Level 2")
-        ss1.inner_bundle.c.set(200)
+        subsection1 = section1.newSection(name="Level 2")
+        subsection1.inner_bundle.c.set(200)
 
         file = io.StringIO()
         settings.save(file, blanklines=True)
