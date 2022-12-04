@@ -10,7 +10,6 @@ from typing import (
     Optional,
     Sequence,
     Type,
-    TypeVar,
 )
 
 from typing_extensions import Self
@@ -24,9 +23,6 @@ from .protocols import (
     UpdateNotifier,
 )
 from .registry import CallbackRegistry
-
-
-BundleT = TypeVar("BundleT", bound="Bundle")
 
 
 class Bundle(ContainableImpl):
