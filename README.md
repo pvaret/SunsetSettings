@@ -22,7 +22,7 @@ checkers will tell you.
 >>> # Types can be inferred from the provided default value:
 >>> number_of_ponies = Key(default=0)
 >>> number_of_ponies
-<Key[int]:0>
+<Key[int]:(0)>
 >>> number_of_ponies.set(6)  # Works!
 >>> number_of_ponies.set("six")  # Type error!
 >>> number_of_ponies.get()  # Value is unchanged.

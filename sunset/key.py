@@ -13,7 +13,7 @@ from typing import (
     cast,
 )
 
-from .exporter import maybeEscape
+from .exporter import maybe_escape
 from .protocols import ContainableImpl
 from .registry import CallbackRegistry
 from .serializers import SerializableT, deserialize, serialize
@@ -392,6 +392,8 @@ class Key(Generic[SerializableT], ContainableImpl):
 
     def __repr__(self) -> str:
 
-        return (
-            f"<Key[{self._type.__name__}]:{maybeEscape(serialize(self.get()))}>"
-        )
+        type_name = self._type.__name__
+        value = maybe_escape(serialize(self.get()))
+        if not self.isSet():
+            value = f"({value})"
+        return f"<Key[{type_name}]:{value}>"

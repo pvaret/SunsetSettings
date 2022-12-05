@@ -10,7 +10,7 @@ def normalize(input: str) -> str:
     return ret.lower()
 
 
-def maybeEscape(value: str) -> str:
+def maybe_escape(value: str) -> str:
 
     if (
         len(value) == 0

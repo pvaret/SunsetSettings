@@ -5,15 +5,15 @@ from sunset import exporter
 
 def test_escape():
 
-    assert exporter.maybeEscape("") == '""'
-    assert exporter.maybeEscape("123") == "123"
-    assert exporter.maybeEscape("test test") == "test test"
-    assert exporter.maybeEscape("   ") == '"   "'
-    assert exporter.maybeEscape(" a") == '" a"'
-    assert exporter.maybeEscape("a ") == '"a "'
-    assert exporter.maybeEscape('"') == r'"\""'
-    assert exporter.maybeEscape("test\ntest") == r'"test\ntest"'
-    assert exporter.maybeEscape(r"test\test") == r'"test\\test"'
+    assert exporter.maybe_escape("") == '""'
+    assert exporter.maybe_escape("123") == "123"
+    assert exporter.maybe_escape("test test") == "test test"
+    assert exporter.maybe_escape("   ") == '"   "'
+    assert exporter.maybe_escape(" a") == '" a"'
+    assert exporter.maybe_escape("a ") == '"a "'
+    assert exporter.maybe_escape('"') == r'"\""'
+    assert exporter.maybe_escape("test\ntest") == r'"test\ntest"'
+    assert exporter.maybe_escape(r"test\test") == r'"test\\test"'
 
 
 def test_unescape():
@@ -46,7 +46,7 @@ def test_escape_reversible():
         "test\ntest",
         r"test\test",
     ):
-        assert exporter.unescape(exporter.maybeEscape(string)) == string
+        assert exporter.unescape(exporter.maybe_escape(string)) == string
 
 
 def test_save():

@@ -195,11 +195,19 @@ class TestKey:
 
         key1 = Key(default="test")
         key2 = Key(default=12)
-        key3 = Key(default=" test\ntest")
+        key3 = Key(default="  test\ntest  ")
+
+        assert repr(key1) == "<Key[str]:(test)>"
+        assert repr(key2) == "<Key[int]:(12)>"
+        assert repr(key3) == '<Key[str]:("  test\\ntest  ")>'
+
+        key1.set("test")
+        key2.set(12)
+        key3.set("  test\ntest  ")
 
         assert repr(key1) == "<Key[str]:test>"
         assert repr(key2) == "<Key[int]:12>"
-        assert repr(key3) == '<Key[str]:" test\\ntest">'
+        assert repr(key3) == '<Key[str]:"  test\\ntest  ">'
 
     def test_reparenting(self):
 
