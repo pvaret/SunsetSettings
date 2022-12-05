@@ -245,7 +245,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         Internal.
         """
 
-        return super().fieldPath() + "."
+        return super().fieldPath() + self._PATH_SEPARATOR
 
     def containsFieldWithLabel(self, label: str, field: Containable) -> bool:
         """
@@ -271,7 +271,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         return str(int(index) + 1)
 
     @staticmethod
-    def _indexForLabel(label: str) -> Optional[SupportsIndex]:
+    def _indexForLabel(label: str) -> Optional[int]:
         if not label.isdigit():
             return None
         return int(label) - 1
@@ -478,6 +478,40 @@ class List(MutableSequence[ListItemT], ContainableImpl):
             if length := len(self):
                 if not self[-1].isSet():
                     yield self.fieldPath() + self._SIZE_MARKER, str(length)
+
+    def restoreField(self, path: str, value: str) -> None:
+        """
+        Internal.
+        """
+
+        if self._PATH_SEPARATOR not in path:
+            return
+
+        field_label, path = path.split(self._PATH_SEPARATOR, 1)
+        if self.fieldLabel() != field_label:
+            return
+
+        _update_notification_enabled = self._update_notification_enabled
+        self._update_notification_enabled = False
+
+        if path == self._SIZE_MARKER and value.isdigit():
+            self._ensureMinimumLength(int(value))
+
+        else:
+            field_label, *_ = path.split(self._PATH_SEPARATOR, 1)
+            index = self._indexForLabel(field_label)
+            if index is not None and index >= 0:
+                self._ensureMinimumLength(index + 1)
+                self[index].restoreField(path, value)
+
+        self._update_notification_enabled = _update_notification_enabled
+
+    def _ensureMinimumLength(self, length: int) -> None:
+
+        missing_count = length - len(self)
+
+        if missing_count > 0:
+            self.extend((self._newItem() for _ in range(missing_count)))
 
     def triggerUpdateNotification(
         self, field: Optional[UpdateNotifier]

@@ -152,7 +152,7 @@ class Bundle(ContainableImpl):
         Internal.
         """
 
-        return super().fieldPath() + "."
+        return super().fieldPath() + self._PATH_SEPARATOR
 
     def containsFieldWithLabel(self, label: str, field: Containable) -> bool:
         """
@@ -331,6 +331,22 @@ class Bundle(ContainableImpl):
         if not self.isPrivate():
             for _, field in sorted(self._fields.items()):
                 yield from field.dumpFields()
+
+    def restoreField(self, path: str, value: str) -> None:
+        """
+        Internal.
+        """
+
+        if self._PATH_SEPARATOR not in path:
+            return
+
+        field_label, path = path.split(self._PATH_SEPARATOR, 1)
+        if self.fieldLabel() != field_label:
+            return
+
+        field_label, *_ = path.split(self._PATH_SEPARATOR, 1)
+        if (field := self._fields.get(field_label)) is not None:
+            field.restoreField(path, value)
 
     def triggerUpdateNotification(
         self, field: Optional[UpdateNotifier]

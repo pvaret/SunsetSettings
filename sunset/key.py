@@ -70,6 +70,7 @@ class Key(Generic[SerializableT], ContainableImpl):
     _value: Optional[SerializableT]
     _value_change_callbacks: CallbackRegistry[SerializableT]
     _update_notification_callbacks: CallbackRegistry["Key[SerializableT]"]
+    _update_notification_enabled: bool
     _parent: Optional[weakref.ref["Key[SerializableT]"]]
     _children: weakref.WeakSet["Key[SerializableT]"]
     _type: Type[SerializableT]
@@ -90,6 +91,7 @@ class Key(Generic[SerializableT], ContainableImpl):
 
         self._value_change_callbacks = CallbackRegistry()
         self._update_notification_callbacks = CallbackRegistry()
+        self._update_notification_enabled = True
 
         self._parent = None
         self._children = weakref.WeakSet()
@@ -362,6 +364,16 @@ class Key(Generic[SerializableT], ContainableImpl):
         if self.isSet() and not self.isPrivate():
             yield self.fieldPath(), serialize(self.get())
 
+    def restoreField(self, path: str, value: str) -> None:
+
+        self._update_notification_enabled = False
+
+        if path == self.fieldLabel():
+            if (val := deserialize(self._type, value)) is not None:
+                self.set(val)
+
+        self._update_notification_enabled = True
+
     def _notifyParentValueChanged(self):
 
         if self.isSet():
@@ -373,6 +385,9 @@ class Key(Generic[SerializableT], ContainableImpl):
         """
         Internal.
         """
+
+        if not self._update_notification_enabled:
+            return
 
         self._update_notification_callbacks.callAll(self)
 

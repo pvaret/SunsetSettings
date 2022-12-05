@@ -247,6 +247,90 @@ class TestList:
             (".key_list.1", "test public"),
         ]
 
+    def test_restore_field(self, mocker: MockerFixture):
+
+        callback = mocker.stub()
+
+        # Test restoring one value. Also, restoring a field should not trigger a
+        # callback.
+
+        test_list1 = List(Key("default"))
+        test_list1.onUpdateCall(callback)
+        test_list1.restoreField(".1", "test")
+        assert len(test_list1) == 1
+        assert test_list1[0].get() == "test"
+        callback.assert_not_called()
+
+        # Test overwriting a restored value.
+
+        test_list1.restoreField(".1", "other test")
+        assert len(test_list1) == 1
+        assert test_list1[0].get() == "other test"
+        callback.assert_not_called()
+
+        # Test restoring a value that requires extending the List.
+
+        test_list1.restoreField(".5", "extension test")
+        assert len(test_list1) == 5
+        assert test_list1[4].get() == "extension test"
+        callback.assert_not_called()
+
+        # Test different kinds of invalid restore paths.
+
+        test_list2 = List(Key("default"))
+        test_list2.onUpdateCall(callback)
+
+        test_list2.restoreField("", "test")
+        assert len(test_list2) == 0
+        callback.assert_not_called()
+
+        test_list2.restoreField("invalid", "test")
+        assert len(test_list2) == 0
+        callback.assert_not_called()
+
+        test_list2.restoreField("invalid.1", "test")
+        assert len(test_list2) == 0
+        callback.assert_not_called()
+
+        test_list2.restoreField("1.invalid", "test")
+        assert len(test_list2) == 0
+        callback.assert_not_called()
+
+        test_list2.restoreField(".", "test")
+        assert len(test_list2) == 0
+        callback.assert_not_called()
+
+        test_list2.restoreField(".0", "test")
+        assert len(test_list2) == 0
+        callback.assert_not_called()
+
+        # Test indirect restore path.
+
+        class TestBundle(Bundle):
+            str_list = List(Key("default"))
+
+        bundle = TestBundle()
+        bundle.str_list.onUpdateCall(callback)
+        bundle.str_list.restoreField("str_list.1", "test")
+        assert len(bundle.str_list) == 1
+        assert bundle.str_list[0].get() == "test"
+        callback.assert_not_called()
+
+        # Test an invalid restore value.
+
+        test_list3 = List(Key("default"))
+        test_list3.onUpdateCall(callback)
+        test_list3.restoreField(".size", "invalid")
+        assert len(test_list3) == 0
+        callback.assert_not_called()
+
+        # Test restoring the List's size if ambiguous.
+
+        test_list3.restoreField(".size", "5")
+        assert len(test_list3) == 5
+        assert test_list3[-1].get() == "default"
+        callback.assert_not_called()
+
     def test_persistence(self):
 
         # A List does not keep a reference to its parent or children.

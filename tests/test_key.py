@@ -338,6 +338,76 @@ class TestKey:
         bundle._private.set(111)  # type: ignore
         assert list(bundle._private.dumpFields()) == []  # type: ignore
 
+    def test_restore_field(self, mocker: MockerFixture):
+
+        key: Key[int] = Key(0)
+        callback = mocker.stub()
+        key.onUpdateCall(callback)
+
+        # The value should be set if the given label matches that of the Key. In
+        # this case, "". In all other cases the value should not be set. As
+        # well, restoring a field should not trigger a callback.
+
+        assert not key.isSet()
+        key.restoreField("", "1")
+        assert key.isSet()
+        assert key.get() == 1
+        callback.assert_not_called()
+
+        key.clear()
+        callback.reset_mock()
+        key.restoreField("invalid", "1")
+        assert not key.isSet()
+        callback.assert_not_called()
+        key.restoreField(".invalid", "1")
+        assert not key.isSet()
+        callback.assert_not_called()
+        key.restoreField("invalid.", "1")
+        assert not key.isSet()
+        callback.assert_not_called()
+        key.restoreField(".", "1")
+        assert not key.isSet()
+        callback.assert_not_called()
+
+        # If multiple values are set, the last one sticks.
+
+        key.clear()
+        callback.reset_mock()
+        key.restoreField("", "1")
+        key.restoreField("", "2")
+        assert key.get() == 2
+        callback.assert_not_called()
+
+        # Invalid values do not update the Key.
+
+        key.clear()
+        callback.reset_mock()
+        key.restoreField("", "?")
+        assert not key.isSet()
+        callback.assert_not_called()
+        key.restoreField("", "")
+        assert not key.isSet()
+        callback.assert_not_called()
+
+        class TestBundle(Bundle):
+            str_key = Key("")
+
+        # Same as the above when the Key has a non-empty label.
+
+        bundle = TestBundle()
+        bundle.str_key.restoreField("", "test")
+        assert not bundle.str_key.isSet()
+        bundle.str_key.restoreField("test", "test")
+        assert not bundle.str_key.isSet()
+        bundle.str_key.restoreField(".str_key", "test")
+        assert not bundle.str_key.isSet()
+        bundle.str_key.restoreField("str_key.", "test")
+        assert not bundle.str_key.isSet()
+
+        bundle.str_key.restoreField("str_key", "test")
+        assert bundle.str_key.isSet()
+        assert bundle.str_key.get() == "test"
+
     def test_restore_invalid(self, mocker: MockerFixture):
 
         key: Key[int] = Key(default=0)

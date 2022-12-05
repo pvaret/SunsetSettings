@@ -116,6 +116,8 @@ class Settings(Bundle):
 
     MAIN: str = _MAIN
 
+    _SECTION_SEPARATOR = "/"
+
     _section_name: str
     _children: MutableSet[Bundle]
 
@@ -360,7 +362,11 @@ class Settings(Bundle):
 
         path = "" if (parent := self.parent()) is None else parent.fieldPath()
 
-        return path + ("?" if self.isPrivate() else self.sectionName()) + "/"
+        return (
+            path
+            + ("?" if self.isPrivate() else self.sectionName())
+            + self._SECTION_SEPARATOR
+        )
 
     def isPrivate(self) -> bool:
 
@@ -451,6 +457,34 @@ class Settings(Bundle):
 
             for section in sorted(self.sections()):
                 yield from section.dumpFields()
+
+    def restoreField(self, path: str, value: str) -> None:
+        """
+        Internal.
+        """
+
+        if self._SECTION_SEPARATOR not in path:
+            return
+
+        section_name, path = path.split(self._SECTION_SEPARATOR, 1)
+        if self.sectionName() != section_name:
+            return
+
+        _update_notification_enabled = self._update_notification_enabled
+        self._update_notification_enabled = False
+
+        if self._SECTION_SEPARATOR in path:
+            subsection_name, _ = path.split(self._SECTION_SEPARATOR, 1)
+            if subsection_name:
+                section = self.getOrCreateSection(subsection_name)
+                section.restoreField(path, value)
+
+        else:
+            field_label, *_ = path.split(self._PATH_SEPARATOR, 1)
+            if (field := self._fields.get(field_label)) is not None:
+                field.restoreField(path, value)
+
+        self._update_notification_enabled = _update_notification_enabled
 
     def save(self, file: TextIO, blanklines: bool = False) -> None:
         """

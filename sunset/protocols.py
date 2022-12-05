@@ -68,6 +68,9 @@ class Dumpable(Protocol):
     def dumpFields(self) -> Iterable[tuple[str, str]]:
         ...
 
+    def restoreField(self, path: str, value: str) -> None:
+        ...
+
     def isSet(self) -> bool:
         ...
 
@@ -86,6 +89,9 @@ class ItemTemplate(Protocol):
 
 @runtime_checkable
 class Containable(Protocol):
+
+    _PATH_SEPARATOR: str
+
     def setContainer(
         self, label: str, container: Optional["Container"]
     ) -> None:
@@ -119,6 +125,8 @@ class ContainableImpl:
     """
     A ready-to-use implementation of the Containable protocol.
     """
+
+    _PATH_SEPARATOR: str = "."
 
     _field_label: str
     _container: Optional[weakref.ref[Container]]

@@ -265,6 +265,62 @@ class TestBundle:
             (".list.3.c", "test dump c 3"),
         ]
 
+    def test_restore_field(self, mocker: MockerFixture):
+
+        callback = mocker.stub()
+
+        # Test all flavors of valid paths. Also, restoring a field should not
+        # trigger a callbacak.
+
+        bundle = ExampleBundle()
+        bundle.onUpdateCall(callback)
+
+        assert bundle.a.get() == "default a"
+        bundle.restoreField(".a", "restore a")
+        assert bundle.a.get() == "restore a"
+        callback.assert_not_called()
+
+        assert len(bundle.list) == 0
+        bundle.restoreField(".list.2.c", "restore c 2")
+        bundle.restoreField(".list.1.c", "restore c 1")
+        assert len(bundle.list) == 2
+        assert bundle.list[0].c.get() == "restore c 1"
+        assert bundle.list[1].c.get() == "restore c 2"
+        callback.assert_not_called()
+
+        bundle.restoreField(".list.1.c", "other restore c 1")
+        assert len(bundle.list) == 2
+        assert bundle.list[0].c.get() == "other restore c 1"
+        assert bundle.list[1].c.get() == "restore c 2"
+        callback.assert_not_called()
+
+        assert bundle.inner_bundle.b.get() == 42
+        bundle.restoreField(".inner_bundle.b", "101")
+        assert bundle.inner_bundle.b.get() == 101
+        callback.assert_not_called()
+
+        # Test invalid paths.
+
+        other_bundle = ExampleBundle()
+        other_bundle.onUpdateCall(callback)
+
+        other_bundle.restoreField("a", "invalid path")
+        assert other_bundle.a.get() == "default a"
+        assert not other_bundle.isSet()
+
+        other_bundle.restoreField("a.", "invalid path")
+        assert other_bundle.a.get() == "default a"
+        assert not other_bundle.isSet()
+
+        other_bundle.restoreField(".", "invalid path")
+        assert not other_bundle.isSet()
+
+        other_bundle.restoreField(".invalid", "invalid path")
+        assert not other_bundle.isSet()
+
+        other_bundle.restoreField("", "invalid path")
+        assert not other_bundle.isSet()
+
     def test_persistence(self):
 
         # A Bundle does not keep a reference to its parent or children.
