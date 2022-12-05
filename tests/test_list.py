@@ -220,9 +220,19 @@ class TestList:
         bundle_list.appendOne().test.set("test 1")
         bundle_list.appendOne()
         bundle_list.appendOne().test.set("test 3")
+        bundle_list.appendOne()
         assert list(bundle_list.dumpFields()) == [
             (".1.test", "test 1"),
             (".3.test", "test 3"),
+            (".size", "4"),
+        ]
+
+        key_list = List(Key(""))
+        key_list.appendOne()
+        key_list.appendOne()
+        key_list.appendOne()
+        assert list(key_list.dumpFields()) == [
+            (".size", "3"),
         ]
 
         class TestBundle(Bundle):

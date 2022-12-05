@@ -91,6 +91,8 @@ class List(MutableSequence[ListItemT], ContainableImpl):
     PARENT_FIRST = IterOrder.PARENT_FIRST
     PARENT_LAST = IterOrder.PARENT_LAST
 
+    _SIZE_MARKER: str = "size"
+
     _contents: list[ListItemT]
     _parent: Optional[weakref.ref["List[ListItemT]"]]
     _children: WeakNonHashableSet["List[ListItemT]"]
@@ -198,6 +200,16 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         # WORKAROUND: This lets mypy properly typecheck the return type.
 
         return cast(ListItemT, item)
+
+    def isSet(self) -> bool:
+        """
+        Indicates whether this List holds any item that is set.
+
+        Returns:
+            True if any item contained in this List is set, else False.
+        """
+
+        return any(item.isSet() for item in self._contents)
 
     def appendOne(self) -> ListItemT:
         """
@@ -459,8 +471,13 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         """
 
         if not self.isPrivate():
+
             for item in self._contents:
                 yield from item.dumpFields()
+
+            if length := len(self):
+                if not self[-1].isSet():
+                    yield self.fieldPath() + self._SIZE_MARKER, str(length)
 
     def triggerUpdateNotification(
         self, field: Optional[UpdateNotifier]

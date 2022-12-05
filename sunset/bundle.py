@@ -313,6 +313,16 @@ class Bundle(ContainableImpl):
 
         self._update_notification_enabled = notification_enabled
 
+    def isSet(self) -> bool:
+        """
+        Indicates whether this Bundle holds any field that is set.
+
+        Returns:
+            True if any field set on this Bundle is set, else False.
+        """
+
+        return any(field.isSet() for field in self._fields.values())
+
     def dumpFields(self) -> Iterable[tuple[str, str]]:
         """
         Internal.

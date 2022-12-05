@@ -68,6 +68,9 @@ class Dumpable(Protocol):
     def dumpFields(self) -> Iterable[tuple[str, str]]:
         ...
 
+    def isSet(self) -> bool:
+        ...
+
 
 @runtime_checkable
 class UpdateNotifier(Protocol):
