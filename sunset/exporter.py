@@ -1,4 +1,7 @@
-from typing import Sequence, TextIO
+from typing import Iterable, Sequence, TextIO
+
+
+_SECTION_SEPARATOR = "/"
 
 
 def normalize(input: str) -> str:
@@ -73,38 +76,46 @@ def unescape(value: str):
     return ret
 
 
-def saveToFile(
+# TODO: turn into a function (like dump_to_ini maybe) that takes the data and
+# yields lines of text, and then use file.writelines.
+def save_to_file(
     file: TextIO,
-    data: Sequence[tuple[Sequence[str], Sequence[tuple[str, str]]]],
-    main: str,
+    data: Iterable[tuple[str, str]],
     *,
     blanklines: bool,
 ):
 
     need_space = False
-    main = normalize(main)
+    current_section = ""
 
-    for hierarchy, dump in data:
+    def extract_section(path: str) -> tuple[str, str]:
 
-        hierarchy = list(map(normalize, hierarchy))
-        if len(hierarchy) > 1 and hierarchy[0] == main:
-            hierarchy = hierarchy[1:]
+        if _SECTION_SEPARATOR not in path:
+            return "", ""
 
-        if need_space and blanklines:
-            file.write("\n")
+        section, path = path.rsplit(_SECTION_SEPARATOR, 1)
+        if _SECTION_SEPARATOR in section:
+            _, section = section.split(_SECTION_SEPARATOR, 1)
 
-        assert all("/" not in elt for elt in hierarchy)
+        return section, path
 
-        if dump:
+    for path, dump in data:
+
+        section, path = extract_section(path.strip())
+        if not path or not section:
+            continue
+
+        if section != current_section:
+
+            current_section = section
+
+            if need_space and blanklines:
+                file.write("\n")
             need_space = True
-            section = "/".join(hierarchy)
-            file.write(f"[{section}]\n")
 
-            for key, value in dump:
-                key = key.strip()
-                value = maybeEscape(value)
-                if key:
-                    file.write(f"{key} = {value}\n")
+            file.write(f"[{current_section}]\n")
+
+        file.write(f"{path} = {maybe_escape(dump)}\n")
 
 
 def loadFromFile(

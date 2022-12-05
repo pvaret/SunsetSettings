@@ -9,7 +9,7 @@ from typing import (
 )
 
 from .bundle import Bundle
-from .exporter import normalize, loadFromFile, saveToFile
+from .exporter import normalize, loadFromFile, save_to_file
 from .non_hashable_set import NonHashableSet
 from .protocols import UpdateNotifier
 
@@ -465,16 +465,14 @@ class Settings(Bundle):
             None.
         """
 
-        if not self.sectionName():
+        if self.isPrivate():
 
             # This is an anonymous instance, actually. There is therefore
             # nothing to save.
 
             return
 
-        saveToFile(
-            file, self.dumpAll(), self.sectionName(), blanklines=blanklines
-        )
+        save_to_file(file, self.dumpFields(), blanklines=blanklines)
 
     def load(self, file: TextIO) -> None:
         """

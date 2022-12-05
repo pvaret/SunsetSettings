@@ -51,35 +51,18 @@ def test_escape_reversible():
 
 def test_save():
 
-    MAIN = "main"
-
     input = [
-        (
-            [MAIN],
-            [
-                ("a", "1"),
-                ("b.c", "test"),
-                ("d.1.e", "test 2\ntest 2"),
-                ("d.2.e", "  "),
-            ],
-        ),
-        (
-            [MAIN, "level1"],
-            [
-                ("b.c", "sub test"),
-            ],
-        ),
-        (
-            [MAIN, "level1", "level2"],
-            [
-                ("a", "sub sub test"),
-            ],
-        ),
+        ("main/a", "1"),
+        ("main/b.c", "test"),
+        ("main/d.1.e", "test 2\ntest 2"),
+        ("main/d.2.e", "  "),
+        ("main/level1/b.c", "sub test"),
+        ("main/level1/level2/a", "sub sub test"),
     ]
 
     file = io.StringIO()
 
-    exporter.saveToFile(file, input, MAIN, blanklines=True)
+    exporter.save_to_file(file, input, blanklines=True)
     assert (
         file.getvalue()
         == """\
