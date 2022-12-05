@@ -453,6 +453,15 @@ class List(MutableSequence[ListItemT], ContainableImpl):
 
         self._update_notification_enabled = notification_enabled
 
+    def dumpFields(self) -> Iterable[tuple[str, str]]:
+        """
+        Internal.
+        """
+
+        if not self.isPrivate():
+            for item in self._contents:
+                yield from item.dumpFields()
+
     def triggerUpdateNotification(
         self, field: Optional[UpdateNotifier]
     ) -> None:

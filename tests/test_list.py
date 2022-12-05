@@ -205,6 +205,38 @@ class TestList:
         assert key_list[2].get() == "three"
         assert key_list[3].get() == "five"
 
+    def test_dump_fields(self):
+
+        key_list = List(Key(""))
+        key_list.appendOne().set("test 1")
+        key_list.appendOne()
+        key_list.appendOne().set("test 3")
+        assert list(key_list.dumpFields()) == [
+            (".1", "test 1"),
+            (".3", "test 3"),
+        ]
+
+        bundle_list = List(ExampleBundle())
+        bundle_list.appendOne().test.set("test 1")
+        bundle_list.appendOne()
+        bundle_list.appendOne().test.set("test 3")
+        assert list(bundle_list.dumpFields()) == [
+            (".1.test", "test 1"),
+            (".3.test", "test 3"),
+        ]
+
+        class TestBundle(Bundle):
+
+            key_list = List(Key(""))
+            _private = List(Key(""))
+
+        bundle = TestBundle()
+        bundle.key_list.appendOne().set("test public")
+        bundle._private.appendOne().set("test private")  # type: ignore
+        assert list(bundle.dumpFields()) == [
+            (".key_list.1", "test public"),
+        ]
+
     def test_persistence(self):
 
         # A List does not keep a reference to its parent or children.

@@ -15,6 +15,7 @@ class ExampleBundle(Bundle):
     a = Key("default a")
     inner_bundle = InnerBundle()
     list = List(Item(), order=List.PARENT_LAST)
+    _private = Key("private")
 
 
 class TestBundle:
@@ -244,6 +245,25 @@ class TestBundle:
         # Ensure that a restore does not trigger an update notification.
 
         callback.assert_not_called()
+
+    def test_dump_fields(self):
+
+        bundle = ExampleBundle()
+        assert list(bundle.dumpFields()) == []
+
+        bundle.a.set("test dump a")
+        bundle.inner_bundle.b.set(101)
+        bundle.list.appendOne().c.set("test dump c 1")
+        bundle.list.appendOne()
+        bundle.list.appendOne().c.set("test dump c 3")
+        bundle._private.set("test private")  # type: ignore
+
+        assert list(bundle.dumpFields()) == [
+            (".a", "test dump a"),
+            (".inner_bundle.b", "101"),
+            (".list.1.c", "test dump c 1"),
+            (".list.3.c", "test dump c 3"),
+        ]
 
     def test_persistence(self):
 

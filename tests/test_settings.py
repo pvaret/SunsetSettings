@@ -283,6 +283,83 @@ class TestSettings:
 
         assert level2.inner_bundle.c.get() == 200
 
+    def test_dump_fields(self):
+
+        settings = ExampleSettings()
+        assert list(settings.dumpFields()) == []
+
+        settings.b.set("new b")
+        settings.a.set("new a")
+        settings.inner_bundle.c.set(40)
+        settings.inner_bundle.d.set(True)
+        settings.bundle_list.appendOne().c.set(100)
+        settings.bundle_list.appendOne().d.set(True)
+        settings.key_list.appendOne().set("one")
+        settings.key_list.appendOne()
+        settings.key_list.appendOne().set("three")
+        assert list(settings.dumpFields()) == [
+            ("main/a", "new a"),
+            ("main/b", "new b"),
+            ("main/bundle_list.1.c", "100"),
+            ("main/bundle_list.2.d", "true"),
+            ("main/inner_bundle.c", "40"),
+            ("main/inner_bundle.d", "true"),
+            ("main/key_list.1", "one"),
+            ("main/key_list.3", "three"),
+        ]
+
+        settings = ExampleSettings()
+        settings.a.set("a")
+        settings.bundle_list.appendOne().c.set(100)
+
+        section1 = settings.newSection(name="Section 1")
+        section1.a.set("sub a")
+        section1.b.set("sub b")
+        section1.bundle_list.appendOne().c.set(1000)
+
+        section2 = settings.newSection(name="Section 2")
+        section2.inner_bundle.d.set(False)
+
+        anonymous = settings.newSection()
+        anonymous.a.set("anonymous")
+
+        subanonymous = anonymous.newSection(name="Should be ignored too")
+        subanonymous.b.set("anonymous 2")
+
+        subsection = section1.newSection(name="Subsection")
+        subsection.inner_bundle.c.set(200)
+
+        assert list(settings.dumpFields()) == [
+            ("main/a", "a"),
+            ("main/bundle_list.1.c", "100"),
+            ("main/section1/a", "sub a"),
+            ("main/section1/b", "sub b"),
+            ("main/section1/bundle_list.1.c", "1000"),
+            ("main/section1/subsection/inner_bundle.c", "200"),
+            ("main/section2/inner_bundle.d", "false"),
+        ]
+
+        settings.setSectionName("new")
+        assert list(settings.dumpFields()) == [
+            ("new/a", "a"),
+            ("new/bundle_list.1.c", "100"),
+            ("new/section1/a", "sub a"),
+            ("new/section1/b", "sub b"),
+            ("new/section1/bundle_list.1.c", "1000"),
+            ("new/section1/subsection/inner_bundle.c", "200"),
+            ("new/section2/inner_bundle.d", "false"),
+        ]
+
+        settings = ExampleSettings()
+        settings.newSection("z").a.set("test section order")
+        settings.newSection("mm").a.set("test section order")
+        settings.newSection("aaa").a.set("test section order")
+        assert list(settings.dumpFields()) == [
+            ("main/aaa/a", "test section order"),
+            ("main/mm/a", "test section order"),
+            ("main/z/a", "test section order"),
+        ]
+
     def test_persistence(self):
 
         # Settings keep a reference to their sections, but not to their parent.

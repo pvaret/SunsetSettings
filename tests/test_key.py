@@ -293,6 +293,43 @@ class TestKey:
         key.set(ExampleSerializable("value"))
         assert key.dump() == [("", "value")]
 
+    def test_dump_fields(self):
+
+        # An unattached Key should get dumped. It just doesn't have a label.
+
+        key = Key("")
+        assert list(key.dumpFields()) == []
+        key.set("test")
+        assert list(key.dumpFields()) == [("", "test")]
+
+        class TestBundle(Bundle):
+
+            str_key = Key(default="")
+            serializable_key = Key(default=ExampleSerializable("empty"))
+            _private = Key(default=0)
+
+        bundle = TestBundle()
+
+        # A public Key should get dumped.
+
+        assert list(bundle.str_key.dumpFields()) == []
+        bundle.str_key.set("test")
+        assert list(bundle.str_key.dumpFields()) == [(".str_key", "test")]
+
+        # A Key's value should be serialized in its dump.
+
+        assert list(bundle.serializable_key.dumpFields()) == []
+        bundle.serializable_key.set(ExampleSerializable("not empty"))
+        assert list(bundle.serializable_key.dumpFields()) == [
+            (".serializable_key", "not empty")
+        ]
+
+        # A Key with a private label should not get dumped.
+
+        assert list(bundle._private.dumpFields()) == []  # type: ignore
+        bundle._private.set(111)  # type: ignore
+        assert list(bundle._private.dumpFields()) == []  # type: ignore
+
     def test_restore_invalid(self, mocker: MockerFixture):
 
         key: Key[int] = Key(default=0)

@@ -4,6 +4,7 @@ from typing import (
     Any,
     Callable,
     Generic,
+    Iterable,
     Iterator,
     Optional,
     Sequence,
@@ -355,6 +356,11 @@ class Key(Generic[SerializableT], ContainableImpl):
 
             self.set(value)
             break
+
+    def dumpFields(self) -> Iterable[tuple[str, str]]:
+
+        if self.isSet() and not self.isPrivate():
+            yield self.fieldPath(), serialize(self.get())
 
     def _notifyParentValueChanged(self):
 

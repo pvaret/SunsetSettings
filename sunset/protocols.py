@@ -3,6 +3,7 @@ import weakref
 from typing import (
     Any,
     Callable,
+    Iterable,
     Iterator,
     Optional,
     Protocol,
@@ -62,6 +63,9 @@ class Dumpable(Protocol):
         ...
 
     def restore(self, data: Sequence[tuple[str, str]]) -> None:
+        ...
+
+    def dumpFields(self) -> Iterable[tuple[str, str]]:
         ...
 
 
@@ -184,7 +188,7 @@ class ContainableImpl:
         Internal.
         """
 
-        return (label := self.fieldLabel()) == "" or label.startswith("_")
+        return self.fieldLabel().startswith("_")
 
 
 assert isinstance(ContainableImpl, Containable)

@@ -1,4 +1,5 @@
 from typing import (
+    Iterable,
     Iterator,
     MutableSet,
     Optional,
@@ -440,6 +441,17 @@ class Settings(Bundle):
 
         self._update_notification_enabled = notification_enabled
 
+    def dumpFields(self) -> Iterable[tuple[str, str]]:
+        """
+        Internal.
+        """
+
+        if not self.isPrivate():
+            yield from super().dumpFields()
+
+            for section in sorted(self.sections()):
+                yield from section.dumpFields()
+
     def save(self, file: TextIO, blanklines: bool = False) -> None:
         """
         Writes the contents of this Settings instance and its subsections in
@@ -490,3 +502,9 @@ class Settings(Bundle):
 
         data = loadFromFile(file, self.sectionName())
         self.restoreAll(data)
+
+    def __lt__(self: Self, other: Self) -> bool:
+
+        # Giving sections an order lets us easily sort them when dumping.
+
+        return self.sectionName() < other.sectionName()

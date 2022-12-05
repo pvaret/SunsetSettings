@@ -5,6 +5,7 @@ import weakref
 from typing import (
     Any,
     Callable,
+    Iterable,
     Iterator,
     MutableSet,
     Optional,
@@ -312,9 +313,21 @@ class Bundle(ContainableImpl):
 
         self._update_notification_enabled = notification_enabled
 
+    def dumpFields(self) -> Iterable[tuple[str, str]]:
+        """
+        Internal.
+        """
+
+        if not self.isPrivate():
+            for _, field in sorted(self._fields.items()):
+                yield from field.dumpFields()
+
     def triggerUpdateNotification(
         self, field: Optional[UpdateNotifier]
     ) -> None:
+        """
+        Internal.
+        """
 
         if not self._update_notification_enabled:
             return
