@@ -439,7 +439,7 @@ inner_bundle.d = false
 
         assert level2.inner_bundle.c.get() == 200
 
-    def test_load_invalid_no_bundle(self):
+    def test_load_invalid_no_section(self):
 
         settings = ExampleSettings()
         settings.load(
@@ -467,7 +467,7 @@ a = last value should be used
 
         assert settings.a.get() == "last value should be used"
 
-    def test_load_invalid_repeated_bundle(self):
+    def test_load_invalid_repeated_section(self):
 
         settings = ExampleSettings()
         settings.load(
@@ -505,7 +505,7 @@ a = main bundle is implicitly created if needed
             sections[0].a.get() == "main bundle is implicitly created if needed"
         )
 
-    def test_load_invalid_extra_bundle_separators(self):
+    def test_load_invalid_extra_section_separators(self):
 
         settings = ExampleSettings()
         settings.load(
@@ -554,7 +554,7 @@ a = extra separators should be skipped
         assert len(sections) == 1
         assert sections[0].a.get() == "extra separators should be skipped"
 
-    def test_load_invalid_bad_bundle_is_skipped(self):
+    def test_load_invalid_bad_section_is_skipped(self):
 
         settings = ExampleSettings()
         settings.load(
@@ -592,7 +592,7 @@ a = merged
         assert len(sections) == 0
         assert settings.a.get() == "merged"
 
-    def test_load_invalid_empty_bundle_is_skipped(self):
+    def test_load_invalid_empty_section_is_skipped(self):
 
         settings = ExampleSettings()
         settings.load(
