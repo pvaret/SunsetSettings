@@ -9,7 +9,6 @@ from typing import (
     Iterator,
     MutableSet,
     Optional,
-    Sequence,
     Type,
     TypeVar,
     cast,
@@ -269,49 +268,6 @@ class Bundle(ContainableImpl):
         """
 
         self._update_notification_callbacks.add(callback)
-
-    def dump(self) -> Sequence[tuple[str, str]]:
-        """
-        Internal.
-        """
-
-        ret: list[tuple[str, str]] = []
-
-        for field_label, field in sorted(self._fields.items()):
-
-            if field_label.startswith("_"):
-                continue
-
-            for sub_field_label, dump in field.dump():
-                label = ".".join(s for s in (field_label, sub_field_label) if s)
-                ret.append((label, dump))
-
-        return ret
-
-    def restore(self, data: Sequence[tuple[str, str]]) -> None:
-        """
-        Internal.
-        """
-
-        notification_enabled = self._update_notification_enabled
-        self._update_notification_enabled = False
-
-        subitems: dict[str, list[tuple[str, str]]] = {}
-
-        for label, dump in data:
-            if "." in label:
-                item_label, sublabel = label.split(".", 1)
-            else:
-                item_label, sublabel = label, ""
-
-            subitems.setdefault(item_label, []).append((sublabel, dump))
-
-        for item_label in subitems:
-
-            if (item := self._fields.get(item_label)) is not None:
-                item.restore(subitems[item_label])
-
-        self._update_notification_enabled = notification_enabled
 
     def isSet(self) -> bool:
         """

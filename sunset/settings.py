@@ -3,13 +3,12 @@ from typing import (
     Iterator,
     MutableSet,
     Optional,
-    Sequence,
     TextIO,
     TypeVar,
 )
 
 from .bundle import Bundle
-from .exporter import normalize, loadFromFile, save_to_file
+from .exporter import normalize, load_from_file, save_to_file
 from .non_hashable_set import NonHashableSet
 from .protocols import UpdateNotifier
 
@@ -318,22 +317,6 @@ class Settings(Bundle):
                 section for section in parent.sections() if section is not self
             )
 
-    def hierarchy(self) -> list[str]:
-        """
-        Internal.
-        """
-
-        if not self.sectionName():
-            return []
-
-        parent = self.parent()
-        if parent is not None and not parent.hierarchy():
-            return []
-
-        return (parent.hierarchy() if parent is not None else []) + [
-            self.sectionName()
-        ]
-
     def triggerUpdateNotification(
         self, field: Optional[UpdateNotifier]
     ) -> None:
@@ -372,87 +355,19 @@ class Settings(Bundle):
 
         return self.sectionName() == ""
 
-    def dumpAll(
-        self,
-    ) -> Sequence[tuple[Sequence[str], Sequence[tuple[str, str]]]]:
-        """
-        Internal.
-        """
-
-        hierarchy: Sequence[str] = self.hierarchy()
-        if not hierarchy:
-
-            # This is an anonymous structure, don't dump it.
-
-            return []
-
-        ret: list[tuple[Sequence[str], Sequence[tuple[str, str]]]] = []
-        ret.append((hierarchy, self.dump()))
-
-        sections = list(self.sections())
-        sections.sort(key=lambda section: section.sectionName())
-        for section in sections:
-            for hierarchy, dump in section.dumpAll():
-                ret.append((hierarchy, dump))
-
-        return ret
-
-    def restoreAll(
-        self,
-        data: Sequence[tuple[Sequence[str], Sequence[tuple[str, str]]]],
-    ) -> None:
-        """
-        Internal.
-        """
-
-        notification_enabled = self._update_notification_enabled
-        self._update_notification_enabled = False
-
-        own_sections: dict[str, Settings] = {}
-        own_sections_data: list[
-            tuple[Sequence[str], Sequence[tuple[str, str]]]
-        ] = []
-
-        for hierarchy, dump in data:
-
-            hierarchy = list(map(normalize, hierarchy))
-            if not hierarchy:
-                continue
-
-            if not hierarchy[0]:
-                continue
-
-            if hierarchy[0] != self.sectionName():
-                continue
-
-            if len(hierarchy) == 1:
-
-                # This dump applies specifically to this instance.
-
-                self.restore(dump)
-
-            else:
-                section_name = normalize(hierarchy[1])
-                if not section_name:
-                    continue
-
-                if section_name not in own_sections:
-                    own_sections[section_name] = self.getOrCreateSection(
-                        section_name
-                    )
-                own_sections_data.append((hierarchy[1:], dump))
-
-        for section in own_sections.values():
-            section.restoreAll(own_sections_data)
-
-        self._update_notification_enabled = notification_enabled
-
     def dumpFields(self) -> Iterable[tuple[str, str]]:
         """
         Internal.
         """
 
         if not self.isPrivate():
+
+            # Ensure the section is dumped event if empty. Dumping an empty
+            # section is valid.
+
+            if not self.isSet():
+                yield self.fieldPath(), ""
+
             yield from super().dumpFields()
 
             for section in sorted(self.sections()):
@@ -532,8 +447,8 @@ class Settings(Bundle):
             None.
         """
 
-        data = loadFromFile(file, self.sectionName())
-        self.restoreAll(data)
+        for path, dump in load_from_file(file, self.sectionName()):
+            self.restoreField(path, dump)
 
     def __lt__(self: Self, other: Self) -> bool:
 

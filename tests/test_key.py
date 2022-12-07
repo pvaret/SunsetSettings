@@ -280,27 +280,6 @@ class TestKey:
         assert bundle.key1.fieldPath() == ".key1"
         assert bundle.key2.fieldPath() == ".key2"
 
-    def test_dump(self):
-
-        key: Key[str] = Key(default="default")
-
-        # No value has been set.
-        assert list(key.dump()) == []
-
-        key.set("test")
-        assert key.dump() == [("", "test")]
-
-    def test_dump_serialization(self):
-
-        value = ExampleSerializable.fromStr("test")
-        assert value is not None
-
-        key = Key(default=value)
-        assert key.dump() == []
-
-        key.set(ExampleSerializable("value"))
-        assert key.dump() == [("", "value")]
-
     def test_dump_fields(self):
 
         # An unattached Key should get dumped. It just doesn't have a label.
@@ -408,124 +387,29 @@ class TestKey:
         assert bundle.str_key.isSet()
         assert bundle.str_key.get() == "test"
 
-    def test_restore_invalid(self, mocker: MockerFixture):
-
-        key: Key[int] = Key(default=0)
-        callback = mocker.stub()
-        key.onUpdateCall(callback)
-
-        key.restore([])
-        assert key.get() == 0
-        callback.assert_not_called()
-
-        key = Key(default=0)
-        key.onUpdateCall(callback)
-        key.restore(
-            [
-                ("invalid", "12"),
-            ]
-        )
-
-        # Restoring a key with a field label is invalid, so the value should
-        # not be updated.
-
-        assert key.get() == 0
-        callback.assert_not_called()
-        callback.reset_mock()
-
-        key = Key(default=0)
-        key.onUpdateCall(callback)
-        key.restore(
-            [
-                ("", " invalid  "),
-            ]
-        )
-
-        # Restoring a value that does not deserialize to the target type is
-        # invalid and fails silently.
-
-        assert key.get() == 0
-        callback.assert_not_called()
-
-        key = Key(default=0)
-        key.onUpdateCall(callback)
-        key.restore(
-            [
-                ("", "56"),
-                ("", "78"),
-                ("", "invalid"),
-                ("invalid", "96"),
-            ]
-        )
-
-        # Restoring a key with multiple values is invalid. However, restoring
-        # something is better than dropping everything. Arbitrarily, we restore
-        # the last valid value.
-
-        assert key.get() == 78
-        callback.assert_called_once_with(key)
-        callback.reset_mock()
-
-    def test_restore_valid(self, mocker: MockerFixture):
-
-        callback = mocker.stub()
+    def test_restore_field_serialization(self):
 
         key_str: Key[str] = Key(default="")
-        key_str.onUpdateCall(callback)
-        key_str.restore(
-            [
-                ("", "test"),
-            ]
-        )
+        key_str.restoreField("", "test")
         assert key_str.get() == "test"
-        callback.assert_called_once_with(key_str)
-        callback.reset_mock()
 
         key_int: Key[int] = Key(default=0)
-        key_int.onUpdateCall(callback)
-        key_int.restore(
-            [
-                ("", "12"),
-            ]
-        )
+        key_int.restoreField("", "12")
         assert key_int.get() == 12
-        callback.assert_called_once_with(key_int)
-        callback.reset_mock()
 
         key_float: Key[float] = Key(default=1.2)
-        key_float.onUpdateCall(callback)
-        key_float.restore(
-            [
-                ("", "3.4"),
-            ]
-        )
+        key_float.restoreField("", "3.4")
         assert key_float.get() == 3.4
-        callback.assert_called_once_with(key_float)
-        callback.reset_mock()
 
         key_bool: Key[bool] = Key(default=False)
-        key_bool.onUpdateCall(callback)
-        key_bool.restore(
-            [
-                ("", "true"),
-            ]
-        )
+        key_bool.restoreField("", "true")
         assert key_bool.get()
-        callback.assert_called_once_with(key_bool)
-        callback.reset_mock()
 
         key_custom: Key[ExampleSerializable] = Key(
             default=ExampleSerializable("")
         )
-        key_custom.onUpdateCall(callback)
-        key_custom.restore(
-            [
-                ("", "test"),
-            ]
-        )
+        key_custom.restoreField("", "test")
         assert key_custom.get().toStr() == "test"
-        callback.assert_called_once_with(key_custom)
-        callback.reset_mock()
 
     def test_persistence(self):
 

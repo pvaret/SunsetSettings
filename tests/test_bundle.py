@@ -54,12 +54,12 @@ class TestBundle:
 
     def test_fields_cant_override_existing_attributes(self):
 
-        # "dump" is an attribute that happens to exist on the class.
+        # "__init__" is an attribute that happens to exist on the class.
 
-        assert getattr(Bundle, "dump", None) is not None
+        assert getattr(Bundle, "__init__", None) is not None
 
         class FaultyBundle(Bundle):
-            dump = Key(default="test")  # type: ignore[assignment]
+            __init__ = Key(default="test")  # type: ignore[assignment]
 
         with pytest.raises(TypeError):
             FaultyBundle()
@@ -185,66 +185,6 @@ class TestBundle:
         bundle.list.appendOne()
         assert bundle.list[0].fieldPath() == ".list.1."
         assert bundle.list[0].c.fieldPath() == ".list.1.c"
-
-    def test_dump(self):
-
-        bundle = ExampleBundle()
-        assert list(bundle.dump()) == []
-
-        bundle.a.set("test dump a")
-        bundle.inner_bundle.b.set(101)
-        bundle.list.appendOne()
-        bundle.list[-1].c.set("test dump c 1")
-        bundle.list.appendOne()
-        bundle.list[-1].c.set("test dump c 2")
-
-        assert bundle.dump() == [
-            ("a", "test dump a"),
-            ("inner_bundle.b", "101"),
-            ("list.1.c", "test dump c 1"),
-            ("list.2.c", "test dump c 2"),
-        ]
-
-    def test_dump_ignores_private_attributes(self):
-        class ExampleBundleWithPrivateAttr(Bundle):
-            _private = Key(default=0)
-            public = Key(default=0)
-
-        bundle = ExampleBundleWithPrivateAttr()
-        bundle.public.set(56)
-
-        # Ignore the private attribute access warning, it's the whole point.
-
-        bundle._private.set(42)  # type:ignore
-
-        assert bundle.dump() == [
-            ("public", "56"),
-        ]
-
-    def test_restore(self, mocker: MockerFixture):
-
-        bundle = ExampleBundle()
-        callback = mocker.stub()
-        bundle.onUpdateCall(callback)
-
-        bundle.restore(
-            [
-                ("a", "test a"),
-                ("inner_bundle.b", "999"),
-                ("list.1.c", "test c 1"),
-                ("list.2.c", "test c 2"),
-            ]
-        )
-
-        assert bundle.a.get() == "test a"
-        assert bundle.inner_bundle.b.get() == 999
-        assert len(bundle.list) == 2
-        assert bundle.list[0].c.get() == "test c 1"
-        assert bundle.list[1].c.get() == "test c 2"
-
-        # Ensure that a restore does not trigger an update notification.
-
-        callback.assert_not_called()
 
     def test_dump_fields(self):
 

@@ -1,16 +1,17 @@
-from typing import Iterable, Sequence, TextIO
+from typing import Iterable, TextIO
 
 
 _SECTION_SEPARATOR = "/"
+_PATH_SEPARATOR = "."
 
 
-def normalize(input: str) -> str:
+def normalize(input: str, to_lower: bool = True) -> str:
 
     ret = ""
     for c in input:
         if c.isalnum() or c in ("-", "_"):
             ret += c
-    return ret.lower()
+    return ret.lower() if to_lower else ret
 
 
 def maybe_escape(value: str) -> str:
@@ -76,6 +77,35 @@ def unescape(value: str):
     return ret
 
 
+def cleanup_string(string: str, /, sep: str, to_lower: bool) -> str:
+
+    replacements = (
+        (f" {sep}", f"{sep}"),
+        (f"{sep} ", f"{sep}"),
+        (f"{sep}{sep}", f"{sep}"),
+    )
+
+    for from_, to in replacements:
+        while from_ in string:
+            string = string.replace(from_, to)
+
+    string = sep.join(
+        normalize(fragment.strip(), to_lower) for fragment in string.split(sep)
+    )
+
+    return string.strip(sep)
+
+
+def cleanup_section(section: str) -> str:
+
+    return cleanup_string(section, sep=_SECTION_SEPARATOR, to_lower=True)
+
+
+def cleanup_path(path: str) -> str:
+
+    return cleanup_string(path, sep=_PATH_SEPARATOR, to_lower=False)
+
+
 # TODO: turn into a function (like dump_to_ini maybe) that takes the data and
 # yields lines of text, and then use file.writelines.
 def save_to_file(
@@ -102,7 +132,7 @@ def save_to_file(
     for path, dump in data:
 
         section, path = extract_section(path.strip())
-        if not path or not section:
+        if not section:
             continue
 
         if section != current_section:
@@ -115,18 +145,15 @@ def save_to_file(
 
             file.write(f"[{current_section}]\n")
 
-        file.write(f"{path} = {maybe_escape(dump)}\n")
+        if path:
+            file.write(f"{path} = {maybe_escape(dump)}\n")
 
 
-def loadFromFile(
-    file: TextIO, main: str
-) -> Sequence[tuple[Sequence[str], Sequence[tuple[str, str]]]]:
+def load_from_file(file: TextIO, main: str) -> Iterable[tuple[str, str]]:
 
-    ret: list[tuple[Sequence[str], Sequence[tuple[str, str]]]] = []
-
-    hierarchy: list[str] = []
-    keyvalues: list[tuple[str, str]] = []
     main = normalize(main)
+
+    current_section = ""
 
     for line in file:
         line = line.strip()
@@ -136,33 +163,19 @@ def loadFromFile(
 
         if line[0] == "[" and line[-1] == "]":
 
-            line = line[1:-1]
-            if not line:
-                keyvalues = []
+            current_section = cleanup_section(line[1:-1])
+            if not current_section:
                 continue
 
-            hierarchy = [
-                name
-                for item in line.split("/")
-                if (name := normalize(item.strip()))
-            ]
+            if current_section != main:
+                current_section = main + _SECTION_SEPARATOR + current_section
 
-            if not hierarchy:
-                keyvalues = []
-                continue
-
-            if hierarchy[0] != main:
-                hierarchy = [main] + hierarchy
-
-            keyvalues = []
-            ret.append((hierarchy, keyvalues))
+            yield current_section + _SECTION_SEPARATOR, ""
 
         elif "=" in line:
 
-            k, v = line.split("=", 1)
-            k = k.strip()
-            v = unescape(v.strip())
-            if k:
-                keyvalues.append((k, v))
-
-    return ret
+            path, dump = line.split("=", 1)
+            path = cleanup_path(path)
+            dump = unescape(dump.strip())
+            if path and current_section:
+                yield (current_section + _SECTION_SEPARATOR + path, dump)

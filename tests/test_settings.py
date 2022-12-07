@@ -31,28 +31,27 @@ class TestSettings:
     def test_new_section(self):
 
         settings = ExampleSettings()
-        assert settings.hierarchy() == ["main"]
+        assert settings.fieldPath() == "main/"
 
         section1 = settings.newSection(name="One level down")
-        assert section1.hierarchy() == ["main", "oneleveldown"]
+        assert section1.fieldPath() == "main/oneleveldown/"
 
         section2 = settings.newSection(name="One level down too")
-        assert section2.hierarchy() == ["main", "oneleveldowntoo"]
+        assert section2.fieldPath() == "main/oneleveldowntoo/"
 
         subsection1 = section1.newSection(name="Two levels down")
-        assert subsection1.hierarchy() == [
-            "main",
-            "oneleveldown",
-            "twolevelsdown",
-        ]
+        assert subsection1.fieldPath() == "main/oneleveldown/twolevelsdown/"
 
         anonymous = settings.newSection()
-        assert anonymous.hierarchy() == []
+        assert anonymous.fieldPath() == "main/?/"
 
         anonymous2 = anonymous.newSection(
             name="Not anonymous itself but in a anonymous hierachy"
         )
-        assert anonymous2.hierarchy() == []
+        assert (
+            anonymous2.fieldPath()
+            == "main/?/notanonymousitselfbutinaanonymoushierachy/"
+        )
 
     def test_new_named_section(self):
 
@@ -133,161 +132,26 @@ class TestSettings:
         assert settings.fieldPath() == "main/"
         assert settings.a.fieldPath() == "main/a"
 
-    def test_dumpall(self):
-
-        settings = ExampleSettings()
-        assert settings.dumpAll() == [(["main"], [])]
-
-        settings.a.set("new a")
-        settings.b.set("new b")
-        settings.inner_bundle.c.set(40)
-        settings.inner_bundle.d.set(True)
-        settings.bundle_list.appendOne().c.set(100)
-        settings.bundle_list.appendOne().d.set(True)
-        settings.key_list.appendOne().set("one")
-        settings.key_list.appendOne().set("two")
-        assert settings.dumpAll() == [
-            (
-                ["main"],
-                [
-                    ("a", "new a"),
-                    ("b", "new b"),
-                    ("bundle_list.1.c", "100"),
-                    ("bundle_list.2.d", "true"),
-                    ("inner_bundle.c", "40"),
-                    ("inner_bundle.d", "true"),
-                    ("key_list.1", "one"),
-                    ("key_list.2", "two"),
-                ],
-            )
-        ]
-
-        settings = ExampleSettings()
-        settings.a.set("a")
-        settings.bundle_list.appendOne().c.set(100)
-
-        section1 = settings.newSection(name="Level 1")
-        section1.a.set("sub a")
-        section1.b.set("sub b")
-        section1.bundle_list.appendOne().c.set(1000)
-
-        section2 = settings.newSection(name="Other level 1")
-        section2.inner_bundle.d.set(False)
-
-        anonymous = settings.newSection()
-        anonymous.a.set("anonymous")
-
-        subanonymous = anonymous.newSection(name="Should be ignored too")
-        subanonymous.b.set("anonymous 2")
-
-        subsection1 = section1.newSection(name="Level 2")
-        subsection1.inner_bundle.c.set(200)
-
-        assert settings.dumpAll() == [
-            (
-                ["main"],
-                [
-                    ("a", "a"),
-                    ("bundle_list.1.c", "100"),
-                ],
-            ),
-            (
-                ["main", "level1"],
-                [
-                    ("a", "sub a"),
-                    ("b", "sub b"),
-                    ("bundle_list.1.c", "1000"),
-                ],
-            ),
-            (
-                ["main", "level1", "level2"],
-                [
-                    ("inner_bundle.c", "200"),
-                ],
-            ),
-            (
-                ["main", "otherlevel1"],
-                [
-                    ("inner_bundle.d", "false"),
-                ],
-            ),
-        ]
-
-    def test_restoreall(self):
-
-        data = [
-            (
-                ["main"],
-                [
-                    ("a", "a"),
-                    ("key_list.1", "one"),
-                    ("key_list.2", "two"),
-                    ("bundle_list.1.c", "100"),
-                ],
-            ),
-            (
-                ["main", "level1"],
-                [
-                    ("a", "sub a"),
-                    ("b", "sub b"),
-                    ("key_list.1", "one"),
-                    ("key_list.2", "two"),
-                    ("bundle_list.1.c", "1000"),
-                ],
-            ),
-            (
-                ["main", "level1", "level2"],
-                [
-                    ("inner_bundle.c", "200"),
-                ],
-            ),
-            (
-                ["main", "otherlevel1"],
-                [
-                    ("inner_bundle.d", "false"),
-                ],
-            ),
-        ]
-
-        settings = ExampleSettings()
-        settings.restoreAll(data)
-
-        assert settings.a.get() == "a"
-        assert len(settings.bundle_list) == 1
-        assert settings.bundle_list[0].c.get() == 100
-        assert len(settings.key_list) == 2
-        assert settings.key_list[0].get() == "one"
-        assert settings.key_list[1].get() == "two"
-
-        settings_sections = {s.sectionName(): s for s in settings.sections()}
-        assert len(settings_sections) == 2
-        assert "level1" in settings_sections
-        level1 = settings_sections["level1"]
-        assert "otherlevel1" in settings_sections
-        otherlevel1 = settings_sections["otherlevel1"]
-
-        assert level1.a.get() == "sub a"
-        assert level1.b.get() == "sub b"
-        assert len(level1.bundle_list) == 1
-        assert level1.bundle_list[0].c.get() == 1000
-        assert len(level1.key_list) == 2
-        assert level1.key_list[0].get() == "one"
-        assert level1.key_list[1].get() == "two"
-
-        assert not otherlevel1.inner_bundle.d.get()
-
-        level1_sections = {s.sectionName(): s for s in level1.sections()}
-        assert len(level1_sections) == 1
-        assert "level2" in level1_sections
-        level2 = level1_sections["level2"]
-
-        assert level2.inner_bundle.c.get() == 200
-
     def test_dump_fields(self):
 
-        settings = ExampleSettings()
-        assert list(settings.dumpFields()) == []
+        # When no field is set, the name of the section should still be dumped.
 
+        settings = ExampleSettings()
+        assert list(settings.dumpFields()) == [
+            ("main/", ""),
+        ]
+
+        # This applies to subsections too.
+
+        settings.newSection("empty")
+        assert list(settings.dumpFields()) == [
+            ("main/", ""),
+            ("main/empty/", ""),
+        ]
+
+        # Set fields should be dumped, in alphabetic order.
+
+        settings = ExampleSettings()
         settings.b.set("new b")
         settings.a.set("new a")
         settings.inner_bundle.c.set(40)
@@ -307,6 +171,9 @@ class TestSettings:
             ("main/key_list.1", "one"),
             ("main/key_list.3", "three"),
         ]
+
+        # Anonymous sections, and subsections of anonymous sections, should not
+        # be dumped.
 
         settings = ExampleSettings()
         settings.a.set("a")
@@ -339,6 +206,8 @@ class TestSettings:
             ("main/section2/inner_bundle.d", "false"),
         ]
 
+        # Settings with a custom section name should use that name in dumps.
+
         settings.setSectionName("new")
         assert list(settings.dumpFields()) == [
             ("new/a", "a"),
@@ -350,14 +219,17 @@ class TestSettings:
             ("new/section2/inner_bundle.d", "false"),
         ]
 
+        # Section should be dumped in alphabetic order.
+
         settings = ExampleSettings()
-        settings.newSection("z").a.set("test section order")
-        settings.newSection("mm").a.set("test section order")
-        settings.newSection("aaa").a.set("test section order")
+        settings.newSection("z")
+        settings.newSection("mm")
+        settings.newSection("aaa")
         assert list(settings.dumpFields()) == [
-            ("main/aaa/a", "test section order"),
-            ("main/mm/a", "test section order"),
-            ("main/z/a", "test section order"),
+            ("main/", ""),
+            ("main/aaa/", ""),
+            ("main/mm/", ""),
+            ("main/z/", ""),
         ]
 
     def test_restore_field(self, mocker: MockerFixture):
@@ -482,6 +354,8 @@ class TestSettings:
         subsection1 = section1.newSection(name="Level 2")
         subsection1.inner_bundle.c.set(200)
 
+        settings.newSection("empty")
+
         file = io.StringIO()
         settings.save(file, blanklines=True)
 
@@ -491,6 +365,8 @@ class TestSettings:
 [main]
 a = a
 bundle_list.1.c = 100
+
+[empty]
 
 [level1]
 a = sub a
@@ -735,43 +611,43 @@ a = skipped
         assert len(sections) == 0
         assert settings.a.get() == "main"
 
-    def test_load_invalid_bad_key(self):
+    def test_load_bad_key(self):
 
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
                 """\
 [main]
-= a
+= should be skipped
 """
             )
         )
 
-        assert settings.a.get() == ""
+        assert not settings.isSet()
 
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
                 """\
 [main]
-??a = should be skipped
+??a = should be loaded
 """
             )
         )
 
-        assert settings.a.get() == ""
+        assert settings.a.get() == "should be loaded"
 
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
                 """\
 [main]
-[a] = should be skipped
+[a] = should be loaded
 """
             )
         )
 
-        assert settings.a.get() == ""
+        assert settings.a.get() == "should be loaded"
 
         settings = ExampleSettings()
         settings.load(
@@ -783,40 +659,71 @@ doesnotexist = should be skipped
             )
         )
 
-        assert settings.a.get() == ""
-
-    def test_load_list_order(self):
+        assert not settings.isSet()
 
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
                 """\
 [main]
-key_list.5 = five
-key_list.3 = three
-key_list.1 = dropped
-key_list.1 = one
-key_list.2 = two
-bundle_list.5.c = 5
-bundle_list.1.c = 0
-bundle_list.2.c = 2
-bundle_list.1.c = 1
-bundle_list.4.c = 4
+. = should be skipped
 """
             )
         )
 
-        assert len(settings.key_list) == 4
-        assert settings.key_list[0].get() == "one"
-        assert settings.key_list[1].get() == "two"
-        assert settings.key_list[2].get() == "three"
-        assert settings.key_list[3].get() == "five"
+        assert not settings.isSet()
 
-        assert len(settings.bundle_list) == 4
-        assert settings.bundle_list[0].c.get() == 1
-        assert settings.bundle_list[1].c.get() == 2
-        assert settings.bundle_list[2].c.get() == 4
-        assert settings.bundle_list[3].c.get() == 5
+        settings = ExampleSettings()
+        settings.load(
+            io.StringIO(
+                """\
+[main]
+.a = should be loaded
+"""
+            )
+        )
+
+        assert settings.a.get() == "should be loaded"
+
+        settings = ExampleSettings()
+        settings.load(
+            io.StringIO(
+                """\
+[main]
+a.. = should be loaded
+"""
+            )
+        )
+
+        assert settings.a.get() == "should be loaded"
+
+    def test_load_sections_created_even_if_empty(self):
+
+        settings = ExampleSettings()
+        settings.load(
+            io.StringIO(
+                """\
+[shouldexist]
+"""
+            )
+        )
+        assert settings.getSection("shouldexist") is not None
+
+    def test_load_renamed_settings(self):
+
+        settings = ExampleSettings()
+        settings.setSectionName("renamed")
+
+        settings.load(
+            io.StringIO(
+                """\
+[renamed]
+a = value
+"""
+            )
+        )
+
+        assert settings.a.get() == "value"
 
     def test_key_updated_notification(self, mocker: MockerFixture):
 

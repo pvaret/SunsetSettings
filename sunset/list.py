@@ -8,7 +8,6 @@ from typing import (
     Iterator,
     MutableSequence,
     Optional,
-    Sequence,
     SupportsIndex,
     TypeVar,
     Union,
@@ -420,50 +419,6 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         """
 
         self._update_notification_callbacks.add(callback)
-
-    def dump(self) -> Sequence[tuple[str, str]]:
-        """
-        Internal.
-        """
-
-        ret: list[tuple[str, str]] = []
-
-        for i, value in enumerate(self):
-            for sub_field_label, dump in value.dump():
-                label = ".".join(
-                    s for s in (self._labelForIndex(i), sub_field_label) if s
-                )
-                ret.append((label, dump))
-
-        return ret
-
-    def restore(self, data: Sequence[tuple[str, str]]) -> None:
-        """
-        Internal.
-        """
-
-        notification_enabled = self._update_notification_enabled
-        self._update_notification_enabled = False
-
-        subitems: dict[str, list[tuple[str, str]]] = {}
-
-        for label, dump in data:
-            if "." in label:
-                item_label, sublabel = label.split(".", 1)
-            else:
-                item_label, sublabel = label, ""
-
-            if not item_label.isdigit():
-                continue
-
-            subitems.setdefault(item_label, []).append((sublabel, dump))
-
-        for k in sorted(subitems.keys(), key=int):
-            item = self._newItem()
-            item.restore(subitems[k])
-            self.append(item)
-
-        self._update_notification_enabled = notification_enabled
 
     def dumpFields(self) -> Iterable[tuple[str, str]]:
         """

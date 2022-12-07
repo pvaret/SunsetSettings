@@ -7,7 +7,6 @@ from typing import (
     Iterator,
     Optional,
     Protocol,
-    Sequence,
     Type,
     TypeVar,
     runtime_checkable,
@@ -59,12 +58,6 @@ class Inheriter(Protocol):
 
 @runtime_checkable
 class Dumpable(Protocol):
-    def dump(self) -> Sequence[tuple[str, str]]:
-        ...
-
-    def restore(self, data: Sequence[tuple[str, str]]) -> None:
-        ...
-
     def dumpFields(self) -> Iterable[tuple[str, str]]:
         ...
 

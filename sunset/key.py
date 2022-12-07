@@ -7,7 +7,6 @@ from typing import (
     Iterable,
     Iterator,
     Optional,
-    Sequence,
     Type,
     TypeVar,
     cast,
@@ -316,48 +315,6 @@ class Key(Generic[SerializableT], ContainableImpl):
 
         for child in self._children:
             yield cast(Self, child)
-
-    def dump(self) -> Sequence[tuple[str, str]]:
-        """
-        Internal.
-        """
-
-        if self.isSet():
-            return [("", serialize(self.get()))]
-        else:
-            return []
-
-    def restore(self, data: Sequence[tuple[str, str]]) -> None:
-        """
-        Internal.
-        """
-
-        # Normally, a Key should be restored from one single item of data, with
-        # an empty label. However, if we are loading a partially corrupted dump
-        # where an entry is duplicated, it's better to restore one of the
-        # duplicates than drop them all. Arbitrarily, we restore the last valid
-        # one.
-
-        for label, dump in reversed(data):
-
-            if label:
-
-                # For a Key there should be no label. This entry is not valid.
-
-                continue
-
-            value = deserialize(self._type, dump)
-            if value is None:
-
-                # The given string is not a valid serialized value for this
-                # key. This entry is not valid.
-
-                continue
-
-            # Found a valid entry. Set it and finish.
-
-            self.set(value)
-            break
 
     def dumpFields(self) -> Iterable[tuple[str, str]]:
 

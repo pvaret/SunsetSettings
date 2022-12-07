@@ -98,29 +98,50 @@ b.c = sub test
 
 [level1/level2]
 a = sub sub test
+
+[empty]
 """
     )
 
-    assert exporter.loadFromFile(input, MAIN) == [
-        (
-            [MAIN],
-            [
-                ("a", "1"),
-                ("b.c", "test"),
-                ("d.1.e", "test 2\ntest 2"),
-                ("d.2.e", "  "),
-            ],
-        ),
-        (
-            [MAIN, "level1"],
-            [
-                ("b.c", "sub test"),
-            ],
-        ),
-        (
-            [MAIN, "level1", "level2"],
-            [
-                ("a", "sub sub test"),
-            ],
-        ),
+    assert list(exporter.load_from_file(input, MAIN)) == [
+        ("main/", ""),
+        ("main/a", "1"),
+        ("main/b.c", "test"),
+        ("main/d.1.e", "test 2\ntest 2"),
+        ("main/d.2.e", "  "),
+        ("main/level1/", ""),
+        ("main/level1/b.c", "sub test"),
+        ("main/level1/level2/", ""),
+        ("main/level1/level2/a", "sub sub test"),
+        ("main/empty/", ""),
     ]
+
+
+def test_section_cleanup():
+
+    for input, expected in (
+        ("", ""),
+        (" // / ", ""),
+        (" test 1 / test 2 ", "test1/test2"),
+        ("test1///test2", "test1/test2"),
+        ("/test", "test"),
+        ("test/", "test"),
+        ("  //   / I'snt This a Test? / // Yes! / // / ", "isntthisatest/yes"),
+    ):
+
+        assert exporter.cleanup_section(input) == expected
+
+
+def test_path_cleanup():
+
+    for input, expected in (
+        ("", ""),
+        (" .. . ", ""),
+        (" test 1 . test 2 ", "test1.test2"),
+        ("test1...test2", "test1.test2"),
+        (".test", "test"),
+        ("test.", "test"),
+        ("  ..   . I'snt This a Test? . .. Yes! . .. . ", "IsntThisaTest.Yes"),
+    ):
+
+        assert exporter.cleanup_path(input) == expected
