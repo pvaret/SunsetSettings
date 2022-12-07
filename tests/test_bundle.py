@@ -202,6 +202,7 @@ class TestBundle:
             (".a", "test dump a"),
             (".inner_bundle.b", "101"),
             (".list.1.c", "test dump c 1"),
+            (".list.2", None),
             (".list.3.c", "test dump c 3"),
         ]
 

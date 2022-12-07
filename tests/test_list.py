@@ -123,6 +123,7 @@ class TestList:
         key_list.appendOne().set("test 3")
         assert list(key_list.dumpFields()) == [
             (".1", "test 1"),
+            (".2", None),
             (".3", "test 3"),
         ]
 
@@ -133,16 +134,19 @@ class TestList:
         bundle_list.appendOne()
         assert list(bundle_list.dumpFields()) == [
             (".1.test", "test 1"),
+            (".2", None),
             (".3.test", "test 3"),
-            (".size", "4"),
+            (".4", None),
         ]
 
         key_list = List(Key(""))
         key_list.appendOne()
-        key_list.appendOne()
+        key_list.appendOne().set("")
         key_list.appendOne()
         assert list(key_list.dumpFields()) == [
-            (".size", "3"),
+            (".1", None),
+            (".2", ""),
+            (".3", None),
         ]
 
         class TestBundle(Bundle):
@@ -234,11 +238,17 @@ class TestList:
         assert len(test_list3) == 0
         callback.assert_not_called()
 
-        # Test restoring the List's size if ambiguous.
+        # Test restoring a List with empty items.
 
-        test_list3.restoreField(".size", "5")
-        assert len(test_list3) == 5
-        assert test_list3[-1].get() == "default"
+        test_list4 = List(Key("default"))
+        test_list4.onUpdateCall(callback)
+        test_list4.restoreField(".1", None)
+        test_list4.restoreField(".2", "")
+        test_list4.restoreField(".3", None)
+        assert len(test_list4) == 3
+        assert not test_list4[0].isSet()
+        assert test_list4[1].isSet() and test_list4[1].get() == ""
+        assert not test_list4[2].isSet()
         callback.assert_not_called()
 
     def test_persistence(self):

@@ -316,12 +316,15 @@ class Key(Generic[SerializableT], ContainableImpl):
         for child in self._children:
             yield cast(Self, child)
 
-    def dumpFields(self) -> Iterable[tuple[str, str]]:
+    def dumpFields(self) -> Iterable[tuple[str, Optional[str]]]:
 
         if self.isSet() and not self.isPrivate():
             yield self.fieldPath(), serialize(self.get())
 
-    def restoreField(self, path: str, value: str) -> None:
+    def restoreField(self, path: str, value: Optional[str]) -> None:
+
+        if value is None:
+            return
 
         self._update_notification_enabled = False
 

@@ -138,15 +138,15 @@ class TestSettings:
 
         settings = ExampleSettings()
         assert list(settings.dumpFields()) == [
-            ("main/", ""),
+            ("main/", None),
         ]
 
         # This applies to subsections too.
 
         settings.newSection("empty")
         assert list(settings.dumpFields()) == [
-            ("main/", ""),
-            ("main/empty/", ""),
+            ("main/", None),
+            ("main/empty/", None),
         ]
 
         # Set fields should be dumped, in alphabetic order.
@@ -169,6 +169,7 @@ class TestSettings:
             ("main/inner_bundle.c", "40"),
             ("main/inner_bundle.d", "true"),
             ("main/key_list.1", "one"),
+            ("main/key_list.2", None),
             ("main/key_list.3", "three"),
         ]
 
@@ -226,10 +227,10 @@ class TestSettings:
         settings.newSection("mm")
         settings.newSection("aaa")
         assert list(settings.dumpFields()) == [
-            ("main/", ""),
-            ("main/aaa/", ""),
-            ("main/mm/", ""),
-            ("main/z/", ""),
+            ("main/", None),
+            ("main/aaa/", None),
+            ("main/mm/", None),
+            ("main/z/", None),
         ]
 
     def test_restore_field(self, mocker: MockerFixture):
@@ -340,7 +341,8 @@ class TestSettings:
         section1.b.set("sub b")
         section1.bundle_list.appendOne().c.set(1000)
         section1.key_list.appendOne().set("one")
-        section1.key_list.appendOne().set("two")
+        section1.key_list.appendOne()
+        section1.key_list.appendOne().set("")
 
         section2 = settings.newSection(name="Other level 1")
         section2.inner_bundle.d.set(False)
@@ -373,7 +375,8 @@ a = sub a
 b = sub b
 bundle_list.1.c = 1000
 key_list.1 = one
-key_list.2 = two
+key_list.2 =
+key_list.3 = ""
 
 [level1/level2]
 inner_bundle.c = 200
@@ -399,6 +402,8 @@ bundle_list.1.c = 100
 a = sub a
 b = sub b
 key_list.1 = one
+key_list.2 =
+key_list.3 = ""
 bundle_list.1.c = 1000
 
 [level1/level2]
@@ -427,8 +432,10 @@ inner_bundle.d = false
         assert level1.b.get() == "sub b"
         assert len(level1.bundle_list) == 1
         assert level1.bundle_list[0].c.get() == 1000
-        assert len(level1.key_list) == 1
+        assert len(level1.key_list) == 3
         assert level1.key_list[0].get() == "one"
+        assert not level1.key_list[1].isSet()
+        assert level1.key_list[2].isSet() and level1.key_list[2].get() == ""
 
         assert not otherlevel1.inner_bundle.d.get()
 

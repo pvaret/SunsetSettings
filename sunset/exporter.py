@@ -1,4 +1,4 @@
-from typing import Iterable, TextIO
+from typing import Iterable, Optional, TextIO
 
 
 _SECTION_SEPARATOR = "/"
@@ -110,7 +110,7 @@ def cleanup_path(path: str) -> str:
 # yields lines of text, and then use file.writelines.
 def save_to_file(
     file: TextIO,
-    data: Iterable[tuple[str, str]],
+    data: Iterable[tuple[str, Optional[str]]],
     *,
     blanklines: bool,
 ):
@@ -146,10 +146,15 @@ def save_to_file(
             file.write(f"[{current_section}]\n")
 
         if path:
-            file.write(f"{path} = {maybe_escape(dump)}\n")
+            file.write(f"{path} =")
+            if dump is not None:
+                file.write(f" {maybe_escape(dump)}")
+            file.write("\n")
 
 
-def load_from_file(file: TextIO, main: str) -> Iterable[tuple[str, str]]:
+def load_from_file(
+    file: TextIO, main: str
+) -> Iterable[tuple[str, Optional[str]]]:
 
     main = normalize(main)
 
@@ -176,6 +181,7 @@ def load_from_file(file: TextIO, main: str) -> Iterable[tuple[str, str]]:
 
             path, dump = line.split("=", 1)
             path = cleanup_path(path)
-            dump = unescape(dump.strip())
+            dump = dump.strip()
             if path and current_section:
-                yield (current_section + _SECTION_SEPARATOR + path, dump)
+                payload = unescape(dump) if dump else None
+                yield (current_section + _SECTION_SEPARATOR + path, payload)

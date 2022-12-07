@@ -355,7 +355,7 @@ class Settings(Bundle):
 
         return self.sectionName() == ""
 
-    def dumpFields(self) -> Iterable[tuple[str, str]]:
+    def dumpFields(self) -> Iterable[tuple[str, Optional[str]]]:
         """
         Internal.
         """
@@ -366,14 +366,14 @@ class Settings(Bundle):
             # section is valid.
 
             if not self.isSet():
-                yield self.fieldPath(), ""
-
-            yield from super().dumpFields()
+                yield self.fieldPath(), None
+            else:
+                yield from super().dumpFields()
 
             for section in sorted(self.sections()):
                 yield from section.dumpFields()
 
-    def restoreField(self, path: str, value: str) -> None:
+    def restoreField(self, path: str, value: Optional[str]) -> None:
         """
         Internal.
         """

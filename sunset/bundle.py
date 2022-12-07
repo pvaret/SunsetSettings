@@ -279,7 +279,7 @@ class Bundle(ContainableImpl):
 
         return any(field.isSet() for field in self._fields.values())
 
-    def dumpFields(self) -> Iterable[tuple[str, str]]:
+    def dumpFields(self) -> Iterable[tuple[str, Optional[str]]]:
         """
         Internal.
         """
@@ -288,7 +288,7 @@ class Bundle(ContainableImpl):
             for _, field in sorted(self._fields.items()):
                 yield from field.dumpFields()
 
-    def restoreField(self, path: str, value: str) -> None:
+    def restoreField(self, path: str, value: Optional[str]) -> None:
         """
         Internal.
         """

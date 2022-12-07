@@ -367,6 +367,9 @@ class TestKey:
         key.restoreField("", "")
         assert not key.isSet()
         callback.assert_not_called()
+        key.restoreField("", None)
+        assert not key.isSet()
+        callback.assert_not_called()
 
         class TestBundle(Bundle):
             str_key = Key("")

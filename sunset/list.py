@@ -90,8 +90,6 @@ class List(MutableSequence[ListItemT], ContainableImpl):
     PARENT_FIRST = IterOrder.PARENT_FIRST
     PARENT_LAST = IterOrder.PARENT_LAST
 
-    _SIZE_MARKER: str = "size"
-
     _contents: list[ListItemT]
     _parent: Optional[weakref.ref["List[ListItemT]"]]
     _children: WeakNonHashableSet["List[ListItemT]"]
@@ -420,7 +418,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
 
         self._update_notification_callbacks.add(callback)
 
-    def dumpFields(self) -> Iterable[tuple[str, str]]:
+    def dumpFields(self) -> Iterable[tuple[str, Optional[str]]]:
         """
         Internal.
         """
@@ -428,13 +426,12 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         if not self.isPrivate():
 
             for item in self._contents:
-                yield from item.dumpFields()
+                if not item.isSet():
+                    yield self.fieldPath() + item.fieldLabel(), None
+                else:
+                    yield from item.dumpFields()
 
-            if length := len(self):
-                if not self[-1].isSet():
-                    yield self.fieldPath() + self._SIZE_MARKER, str(length)
-
-    def restoreField(self, path: str, value: str) -> None:
+    def restoreField(self, path: str, value: Optional[str]) -> None:
         """
         Internal.
         """
@@ -449,15 +446,11 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         _update_notification_enabled = self._update_notification_enabled
         self._update_notification_enabled = False
 
-        if path == self._SIZE_MARKER and value.isdigit():
-            self._ensureMinimumLength(int(value))
-
-        else:
-            field_label, *_ = path.split(self._PATH_SEPARATOR, 1)
-            index = self._indexForLabel(field_label)
-            if index is not None and index >= 0:
-                self._ensureMinimumLength(index + 1)
-                self[index].restoreField(path, value)
+        field_label, *_ = path.split(self._PATH_SEPARATOR, 1)
+        index = self._indexForLabel(field_label)
+        if index is not None and index >= 0:
+            self._ensureMinimumLength(index + 1)
+            self[index].restoreField(path, value)
 
         self._update_notification_enabled = _update_notification_enabled
 
