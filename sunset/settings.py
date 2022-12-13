@@ -9,6 +9,7 @@ from typing import (
 
 from .bundle import Bundle
 from .exporter import normalize, load_from_file, save_to_file
+from .lockable import Lockable
 from .non_hashable_set import NonHashableSet
 from .protocols import UpdateNotifier
 
@@ -19,7 +20,7 @@ _MAIN = "main"
 Self = TypeVar("Self", bound="Settings")
 
 
-class Settings(Bundle):
+class Settings(Bundle, Lockable):
     """
     A collection of keys that can be saved to and loaded from text, and supports
     subsections.
@@ -132,6 +133,7 @@ class Settings(Bundle):
 
         self._children = NonHashableSet()
 
+    @Lockable.with_lock
     def newSection(self: Self, name: Optional[str] = None) -> Self:
         """
         Creates and returns a new instance of this class. Each key of the new
@@ -168,6 +170,7 @@ class Settings(Bundle):
 
         return new
 
+    @Lockable.with_lock
     def getOrCreateSection(self: Self, name: str) -> Self:
         """
         Finds and returns the section of these Settings with the given name if
@@ -267,25 +270,38 @@ class Settings(Bundle):
         'test_2'
         """
 
-        name = name_base = normalize(name)
+        name = normalize(name)
         previous_name = self.sectionName()
+        if name == previous_name:
+            return name
 
-        # Loop until we find an unused name.
+        if (parent := self.parent()) is None:
+            self._section_name = name
 
-        if name:
-            i = 0
-            while any(
-                section.sectionName() == name for section in self.siblings()
-            ):
-                i += 1
-                name = f"{name_base}_{i}"
-
-        self._section_name = name
+        else:
+            parent._setUniqueNameForSection(name, self)
 
         if self.sectionName() != previous_name:
             self.triggerUpdateNotification(self)
 
         return self.sectionName()
+
+    @Lockable.with_lock
+    def _setUniqueNameForSection(self: Self, name: str, section: Self) -> None:
+
+        candidate = name = normalize(name)
+
+        if candidate:
+            other_names = set(
+                s.sectionName() for s in self.children() if s is not section
+            )
+
+            i = 0
+            while candidate in other_names:
+                i += 1
+                candidate = f"{name}_{i}"
+
+        section._section_name = candidate
 
     def sectionName(self) -> str:
         """
@@ -296,26 +312,39 @@ class Settings(Bundle):
         Returns:
             The name of this Settings instance.
         """
-        if self._section_name:
-            return self._section_name
+        if name := self._section_name:
+            return name
 
-        return self._section_name if self.parent() is not None else self.MAIN
+        return name if self.parent() is not None else self.MAIN
 
-    def siblings(self: Self) -> Iterator[Self]:
+    @Lockable.with_lock
+    def setParent(self: Self, parent: Optional[Self]) -> None:  # type: ignore
         """
-        Returns an iterator on the sibling sections of this Settings instance,
-        that is to say, the subsections of its parent, if any, that aren't this
-        section itself.
+        Makes the given Settings instance the parent of this one. If None,
+        remove this instance's parent, if any.
+
+        All the Key, List and Bundle fields defined on this instance will be
+        recursively reparented to the corresponding Key / List / Bundle field on
+        the given parent.
+
+        This method is for internal purposes and you will typically not need to
+        call it directly.
+
+        Args:
+            parent: Either a Settings instance that will become this instance's
+                parent, or None. The parent Settings instance must have the same
+                type as this instance.
 
         Returns:
-            An iterator over Settings instances of the same type as this one.
+            None.
         """
 
-        parent = self.parent()
+        super().setParent(parent)
+
+        # Ensure that this section's name is unique in its parent.
+
         if parent is not None:
-            yield from (
-                section for section in parent.sections() if section is not self
-            )
+            parent._setUniqueNameForSection(self._section_name, self)
 
     def triggerUpdateNotification(
         self, field: Optional[UpdateNotifier]

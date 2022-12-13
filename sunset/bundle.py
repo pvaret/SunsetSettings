@@ -242,7 +242,10 @@ class Bundle(ContainableImpl):
             An iterator over Bundle instances of the same type as this one.
         """
 
-        for child in self._children:
+        # Note that we iterate on a copy so that this will not break if a
+        # different thread updates the contents during the iteration.
+
+        for child in list(self._children):
             yield cast(Self, child)
 
     def onUpdateCall(self, callback: Callable[[Any], None]) -> None:

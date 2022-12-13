@@ -784,10 +784,8 @@ a = value
         for section in sections:
             section.setSectionName("test")
 
-        assert all(
-            section.sectionName()
-            not in {sibling.sectionName() for sibling in section.siblings()}
-            for section in sections
+        assert len(list(parent.children())) == len(
+            set(child.sectionName() for child in parent.children())
         )
 
     def test_anonymous_name_not_unique(self):
