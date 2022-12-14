@@ -26,9 +26,19 @@ test = [
     "pytest-cov",
     "pytest-mock",
 ]
+docs = [
+    "sphinx",
+    "sphinx_rtd_theme",
+]
 
 [tool.flit.module]
 name = "sunset"
 
 [tool.mypy]
 show_error_codes = true
+
+[tool.pytest.ini_options]
+addopts = "--doctest-modules --doctest-glob=README.md --doctest-glob=docs/*.rst"
+
+[tool.coverage.run]
+source = ["sunset"]
