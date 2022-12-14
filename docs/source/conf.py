@@ -13,7 +13,8 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath("../.."))
+_this_dir = os.path.dirname(__file__)
+sys.path.insert(0, os.path.abspath(os.path.join(_this_dir, "../..")))
 
 import sunset  # noqa -- module import not at top of file.
 

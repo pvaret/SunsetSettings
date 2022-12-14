@@ -20,6 +20,7 @@ Home = "https://github.com/pvaret/SunsetSettings"
 
 [project.optional-dependencies]
 test = [
+    "bandit[toml]",
     "pytest",
     "pytest-cov",
     "pytest-mock",
@@ -40,3 +41,10 @@ addopts = "--doctest-modules --doctest-glob=README.md --doctest-glob=docs/*.rst"
 
 [tool.coverage.run]
 source = ["sunset"]
+branch = true
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+skips = [
+    "B101",  # Disable alerting on 'assert' usage.
+]
