@@ -25,20 +25,18 @@ jobs:
     # Checkout the code as the first step. This is a dedicated CircleCI step.
     # The python orb's install-packages step will install the dependencies from a Pipfile via Pipenv by default.
     # Here we're making sure we use just use the system-wide pip. By default it uses the project root's requirements.txt.
+    # Which we don't want since these days the pyproject.toml file is the source of truth for dependencies.
+    # So instead we install by calling pip directly.
     # Then run your tests!
     # CircleCI will report the results back to your VCS provider.
     steps:
       - checkout
-      - python/install-packages:
-          pkg-manager: pip
-          pip-dependency-file: requirements.txt
-      - python/install-packages:
-          pkg-manager: pip
-          pip-dependency-file: tests/requirements.txt
+      # Install package plus its test dependencies.
+      - run: pip install .[test]
       - run:
           name: Run tests
           # This assumes pytest is installed via the install-package step above
-          command: pytest --doctest-modules --doctest-glob=README.md --junitxml=test-results/junit.xml
+          command: pytest --junitxml=test-results/junit.xml
       - store_test_results:
           path: test-results
 
@@ -47,16 +45,12 @@ jobs:
       - image: cimg/python:3.10.2
     steps:
       - checkout
-      - python/install-packages:
-          pkg-manager: pip
-          pip-dependency-file: requirements.txt
-      - python/install-packages:
-          pkg-manager: pip
-          pip-dependency-file: tests/requirements.txt
+      # Install package plus its test dependencies.
+      - run: pip install .[test]
       - run:
           name: Run tests
           # This assumes pytest is installed via the install-package step above
-          command: pytest --doctest-modules --doctest-glob=README.md --junitxml=test-results/junit.xml
+          command: pytest --junitxml=test-results/junit.xml
       - store_test_results:
           path: test-results
 
@@ -65,16 +59,12 @@ jobs:
       - image: cimg/python:3.11.0
     steps:
       - checkout
-      - python/install-packages:
-          pkg-manager: pip
-          pip-dependency-file: requirements.txt
-      - python/install-packages:
-          pkg-manager: pip
-          pip-dependency-file: tests/requirements.txt
+      # Install package plus its test dependencies.
+      - run: pip install .[test]
       - run:
           name: Run tests
           # This assumes pytest is installed via the install-package step above
-          command: pytest --doctest-modules --doctest-glob=README.md --junitxml=test-results/junit.xml
+          command: pytest --junitxml=test-results/junit.xml
       - store_test_results:
           path: test-results
 
