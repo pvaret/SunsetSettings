@@ -7,47 +7,54 @@ version: 2.1
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 
 jobs:
-  build-and-test: # This is the name of the job, feel free to change it to better match what you're trying to do!
+
+  build-and-test:
 
     parameters:
       python-version:
         type: string
 
-    # These next lines defines a Docker executors: https://circleci.com/docs/2.0/executor-types/
-    # You can specify an image from Dockerhub or use one of the convenience images from CircleCI's Developer Hub
-    # A list of available CircleCI Docker convenience images are available here: https://circleci.com/developer/images/image/cimg/python
+    # These next lines defines a Docker executors:
+    # https://circleci.com/docs/2.0/executor-types/ You can specify an image
+    # from Dockerhub or use one of the convenience images from CircleCI's
+    # Developer Hub A list of available CircleCI Docker convenience images are
+    # available here: https://circleci.com/developer/images/image/cimg/python
     # The executor is the environment in which the steps below will be executed.
     # Change the version below to your required version of python
 
     docker:
       - image: cimg/python:<< parameters.python-version >>
 
-    # Checkout the code as the first step. This is a dedicated CircleCI step.
-    # The python orb's install-packages step will install the dependencies from a Pipfile via Pipenv by default.
-    # Here we're making sure we use just use the system-wide pip. By default it uses the project root's requirements.txt.
-    # Which we don't want since these days the pyproject.toml file is the source of truth for dependencies.
-    # So instead we install by calling pip directly.
-    # Then run your tests!
-    # CircleCI will report the results back to your VCS provider.
-
     steps:
+
       - checkout
+
       # Install package plus its test dependencies.
+
       - run:
           name: Install package and dependencies
           command: pip install .[test]
+
       - run:
+
+          # This assumes pytest and pytest-cov are installed via the step above.
+          # Test results are stored in a format that CircleCI can parse, and
+          # coverage results are stored in a directly usage HTML format.
+
           name: Run tests
-          # This assumes pytest is installed via the install-package step above
-          command: pytest --junitxml=test-results/junit.xml
+          command: pytest --junitxml=test-results/junit.xml --cov=sunset --cov-report=html
+
       - store_test_results:
           path: test-results
 
+      - store_artifacts:
+          path: htmlcov  # default pytest-cov HTML output path.
+
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
+
 workflows:
-  test-all: # This is the name of the workflow, feel free to change it to better match your workflow.
-    # Inside the workflow, you define the jobs you want to run.
+  test-all:
     jobs:
       - build-and-test:
           name: test-py-<< matrix.python-version >>
