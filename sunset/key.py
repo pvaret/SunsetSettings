@@ -340,6 +340,8 @@ class Key(Generic[SerializableT], ContainableImpl):
             return
 
         self._value_change_callbacks.callAll(self.get())
+        for child in self.children():
+            child._notifyParentValueChanged()
 
     def triggerUpdateNotification(self):
         """

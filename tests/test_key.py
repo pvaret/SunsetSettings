@@ -86,29 +86,65 @@ class TestKey:
 
     def test_value_change_callback_inheritance(self, mocker: MockerFixture):
 
-        callback = mocker.stub()
+        callback_sub_child1 = mocker.stub()
+        callback_sub_child2 = mocker.stub()
+
+        # Set up keys so that one parent key has two children key, each with one
+        # child of its own.
 
         parent_key = Key(default="default")
-        child_key = Key(default="default")
-        child_key.setParent(parent_key)
+        child1_key = Key(default="default")
+        child2_key = Key(default="default")
+        sub_child1_key = Key(default="default")
+        sub_child2_key = Key(default="default")
 
-        child_key.onValueChangeCall(callback)
+        child1_key.setParent(parent_key)
+        child2_key.setParent(parent_key)
+        sub_child1_key.setParent(child1_key)
+        sub_child2_key.setParent(child2_key)
 
-        parent_key.set("inheritance")
-        callback.assert_called_once_with("inheritance")
-        callback.reset_mock()
+        # Set up callbacks on the grandchildren keys.
 
-        child_key.set("inheritance")
-        callback.assert_not_called()
-        callback.reset_mock()
+        sub_child1_key.onValueChangeCall(callback_sub_child1)
+        sub_child2_key.onValueChangeCall(callback_sub_child2)
 
-        child_key.clear()
-        callback.assert_not_called()
-        callback.reset_mock()
+        # One of the first generation children gets a value set on it. That
+        # should count as set even if the value is the same as the default value
+        # of the parent! But the sub-child's apparent value does not change, so
+        # its callback shouldn't be called.
+
+        child1_key.set("default")
+        callback_sub_child1.assert_not_called()
+
+        # If the toplevel parent's value changes to something new, the apparent
+        # value change should be propagated down the inheritance chain through
+        # all *unset* children. So only the second one in this case.
+
+        parent_key.set("test")
+        callback_sub_child1.assert_not_called()
+        callback_sub_child2.assert_called_once_with("test")
+        callback_sub_child2.reset_mock()
+
+        # Updating the intermediate child should update the value of its own
+        # child.
+
+        child1_key.set("test")
+        callback_sub_child1.assert_called_once_with("test")
+        callback_sub_child1.reset_mock()
+
+        # Clearing it causes its child to now inherit the value from the
+        # toplevel parent, but that value is the same; so the child's value is
+        # not updated.
+
+        child1_key.clear()
+        callback_sub_child1.assert_not_called()
+        callback_sub_child1.reset_mock()
+
+        # Clearing the parent does change the value inherited by the grandchild.
 
         parent_key.clear()
-        callback.assert_called_once_with("default")
-        callback.reset_mock()
+        callback_sub_child1.assert_called_once_with("default")
+        callback_sub_child1.reset_mock()
 
     def test_key_updated_callback(self, mocker: MockerFixture):
 
