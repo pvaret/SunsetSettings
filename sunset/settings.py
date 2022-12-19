@@ -1,11 +1,11 @@
 from typing import (
     Any,
     Callable,
+    IO,
     Iterable,
     Iterator,
     MutableSet,
     Optional,
-    TextIO,
     TypeVar,
 )
 
@@ -458,7 +458,7 @@ class Settings(Bundle, Lockable):
 
         self._update_notification_enabled = _update_notification_enabled
 
-    def save(self, file: TextIO, blanklines: bool = False) -> None:
+    def save(self, file: IO[str], blanklines: bool = False) -> None:
         """
         Writes the contents of this Settings instance and its subsections in
         text form to the given file object.
@@ -480,7 +480,7 @@ class Settings(Bundle, Lockable):
 
         save_to_file(file, self.dumpFields(), blanklines=blanklines)
 
-    def load(self, file: TextIO) -> None:
+    def load(self, file: IO[str]) -> None:
         """
         Loads settings from the given text file object.
 

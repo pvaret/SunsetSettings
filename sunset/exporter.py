@@ -1,4 +1,4 @@
-from typing import Iterable, Optional, TextIO
+from typing import Iterable, Optional, IO
 
 
 _SECTION_SEPARATOR = "/"
@@ -109,7 +109,7 @@ def cleanup_path(path: str) -> str:
 # TODO: turn into a function (like dump_to_ini maybe) that takes the data and
 # yields lines of text, and then use file.writelines.
 def save_to_file(
-    file: TextIO,
+    file: IO[str],
     data: Iterable[tuple[str, Optional[str]]],
     *,
     blanklines: bool,
@@ -153,7 +153,7 @@ def save_to_file(
 
 
 def load_from_file(
-    file: TextIO, main: str
+    file: IO[str], main: str
 ) -> Iterable[tuple[str, Optional[str]]]:
 
     main = normalize(main)
