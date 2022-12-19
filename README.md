@@ -150,4 +150,4 @@ That's it.
 
 ## API documentation
 
-The API documentation is available at https://sunsetsettings.readthedocs.io/en/latest/.
+The API documentation is available at https://sunsetsettings.readthedocs.io/.

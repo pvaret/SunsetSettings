@@ -17,6 +17,7 @@ dependencies = [
 
 [project.urls]
 Home = "https://github.com/pvaret/SunsetSettings"
+Documentation = "https://sunsetsettings.readthedocs.io/"
 
 [project.optional-dependencies]
 test = [
