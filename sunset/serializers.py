@@ -2,12 +2,12 @@ from typing import Any, Optional, Type, TypeVar, Union, cast
 
 from .protocols import Serializable
 
-AnySerializableType = Union[int, str, bool, float, Serializable]
+_AnySerializableType = Union[int, str, bool, float, Serializable]
 
-SerializableT = TypeVar("SerializableT", bound=AnySerializableType)
+AnySerializableType = TypeVar("AnySerializableType", bound=_AnySerializableType)
 
 
-def serialize(value: AnySerializableType) -> str:
+def serialize(value: _AnySerializableType) -> str:
 
     if isinstance(value, bool):
         return "true" if value else "false"
@@ -33,37 +33,37 @@ def serialize(value: AnySerializableType) -> str:
 
 
 def deserialize(
-    _type: Type[SerializableT], string: str
-) -> Optional[SerializableT]:
+    _type: Type[AnySerializableType], string: str
+) -> Optional[AnySerializableType]:
 
     if issubclass(_type, bool):
         if string.strip().lower() in ("true", "yes", "y", "1"):
             # The cast is unnecessary, but works around a mypy bug.
-            return cast(SerializableT, _type(True))
+            return cast(AnySerializableType, _type(True))
         if string.strip().lower() in ("false", "no", "n", "0"):
             # The cast is unnecessary, but works around a mypy bug.
-            return cast(SerializableT, _type(False))
+            return cast(AnySerializableType, _type(False))
         return None
 
     if issubclass(_type, int):
         try:
             # The cast is unnecessary, but works around a mypy bug.
-            return cast(SerializableT, _type(int(string)))
+            return cast(AnySerializableType, _type(int(string)))
         except ValueError:
             return None
 
     if issubclass(_type, float):
         try:
             # The cast is unnecessary, but works around a mypy bug.
-            return cast(SerializableT, _type(float(string)))
+            return cast(AnySerializableType, _type(float(string)))
         except ValueError:
             return None
 
     if issubclass(_type, str):
         # The cast is unnecessary, but works around a mypy bug.
-        return cast(SerializableT, _type(string))
+        return cast(AnySerializableType, _type(string))
 
     assert issubclass(_type, Serializable)
 
     # The cast is unnecessary, but works around a mypy bug.
-    return cast(SerializableT, _type.fromStr(string))
+    return cast(AnySerializableType, _type.fromStr(string))

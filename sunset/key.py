@@ -15,29 +15,30 @@ from typing import (
 from .exporter import maybe_escape
 from .protocols import ContainableImpl
 from .registry import CallbackRegistry
-from .serializers import SerializableT, deserialize, serialize
+from .serializers import AnySerializableType, deserialize, serialize
 
 
 # TODO: Replace with typing.Self when mypy finally supports that.
 Self = TypeVar("Self", bound="Key[Any]")
 
 
-class Key(Generic[SerializableT], ContainableImpl):
+class Key(Generic[AnySerializableType], ContainableImpl):
     """
     A single setting key containing a typed value.
 
     Keys support inheritance. If a Key does not have a value explicitly set, and
-    it has a parent, then its value will be that of its parent.
+    it has a parent, then its value will be that of its parent. Else its value
+    if unset is the default value it was instantiated with.
 
     Keys can call a callback when their value changes, regardless of if its
     their own value that changed, or that inherited from a parent. Set this
     callback with the :meth:`onValueChangeCall()` method.
 
     Args:
-        default: (str, int, bool, float, or anything that implements the
-            :class:`protocols.Serializable` protocol) The value that this Key
-            will return when not otherwise set; the type of this default
-            determines the type of the values that can be set on this Key.
+        default: (str, int, bool, float, or any type that implements the
+            :class:`~sunset.Serializable` protocol) The value that this Key will
+            return when not otherwise set; the type of this default determines
+            the type of the values that can be set on this Key.
 
     Example:
 
@@ -65,16 +66,16 @@ class Key(Generic[SerializableT], ContainableImpl):
     36
     """
 
-    _default: SerializableT
-    _value: Optional[SerializableT]
-    _value_change_callbacks: CallbackRegistry[SerializableT]
-    _update_notification_callbacks: CallbackRegistry["Key[SerializableT]"]
+    _default: AnySerializableType
+    _value: Optional[AnySerializableType]
+    _value_change_callbacks: CallbackRegistry[AnySerializableType]
+    _update_notification_callbacks: CallbackRegistry["Key[AnySerializableType]"]
     _update_notification_enabled: bool
-    _parent: Optional[weakref.ref["Key[SerializableT]"]]
-    _children: weakref.WeakSet["Key[SerializableT]"]
-    _type: Type[SerializableT]
+    _parent: Optional[weakref.ref["Key[AnySerializableType]"]]
+    _children: weakref.WeakSet["Key[AnySerializableType]"]
+    _type: Type[AnySerializableType]
 
-    def __init__(self, default: SerializableT):
+    def __init__(self, default: AnySerializableType):
 
         # serialize() raises an exception if the given value is not
         # serializable, so this call guarantees that the provided default is of
@@ -98,9 +99,9 @@ class Key(Generic[SerializableT], ContainableImpl):
         # Keep a runtime reference to the practical type contained in this
         # key.
 
-        self._type = cast(Type[SerializableT], default.__class__)
+        self._type = cast(Type[AnySerializableType], default.__class__)
 
-    def get(self) -> SerializableT:
+    def get(self) -> AnySerializableType:
         """
         Returns the current value of this Key.
 
@@ -120,13 +121,14 @@ class Key(Generic[SerializableT], ContainableImpl):
 
         return self._default
 
-    def set(self, value: SerializableT) -> None:
+    def set(self, value: AnySerializableType) -> None:
         """
         Sets the given value on this Key.
 
         Args:
             value: The value that this Key will now hold. Must be of the type
-                bound to this Key, i.e. the type of this Key's default value.
+                bound to this Key, i.e. the same type as this Key's default
+                value.
 
         Returns:
             None.
@@ -182,21 +184,22 @@ class Key(Generic[SerializableT], ContainableImpl):
         return self._value is not None
 
     def onValueChangeCall(
-        self, callback: Callable[[SerializableT], None]
+        self, callback: Callable[[AnySerializableType], None]
     ) -> None:
         """
-        Adds a callback to be called whenever the value exported by this Key
-        changes, even if it was not updated itself; for instance, this will
-        happen if there is no value currently set on it and its parent's value
-        changed.
+        Adds a callback to be called whenever the value returned by calling
+        :meth:`get()` on this Key would change, even if this Key itself was not
+        updated; for instance, this will happen if there is no value currently
+        set on it and its parent's value changed.
 
         The callback will be called with the new value as its argument.
 
         If you want a callback to be called whenever this Key is updated, even
         if its apparent value does not change, use :meth:`onUpdateCall()`
-        instead, For example, if you call set(0) on Key with a default value of
-        0, callbacks added with onUpdateCall() are called and callbacks added
-        with onValueChangeCall() are not.
+        instead. For example, if you call :meth:`set()` with a value of `0` on a
+        Key newly created with a default value of `0`, callbacks added with
+        :meth:`onUpdateCall()` are called and callbacks added with
+        :meth:`onValueChangeCall()` are not.
 
 
         Args:
@@ -214,7 +217,7 @@ class Key(Generic[SerializableT], ContainableImpl):
         self._value_change_callbacks.add(callback)
 
     def onUpdateCall(
-        self, callback: Callable[["Key[SerializableT]"], None]
+        self, callback: Callable[["Key[AnySerializableType]"], None]
     ) -> None:
         """
         Adds a callback to be called whenever this Key is updated, even if the
@@ -225,9 +228,9 @@ class Key(Generic[SerializableT], ContainableImpl):
         If you want a callback to be called only when the apparent value of this
         Key changes, use :meth:`onValueChangeCall()` instead. For example, if a
         Key has no value set on it and has a parent whose value is updated, then
-        callbacks added on this Key with onValueChangeCall() are called, and
-        callbacks added with onUpdateCall() are not, because it's not this Key
-        that was updated.
+        callbacks added on this Key with :meth:`onValueChangeCall()` are called,
+        and callbacks added with :meth:`onUpdateCall()` are not, because it's
+        not *this* Key that was updated.
 
         Args:
             callback: A callable that will be called with one argument of type

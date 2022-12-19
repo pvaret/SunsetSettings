@@ -43,10 +43,14 @@ API Reference
 
     .. automethod:: iter
 
+    .. automethod:: appendOne
+
+    .. automethod:: insertOne
+
     .. automethod:: onUpdateCall
 
-.. autoclass:: sunset.protocols.Serializable
-
-    .. automethod:: fromStr
+.. autoclass:: sunset.Serializable
 
     .. automethod:: toStr
+
+    .. automethod:: fromStr

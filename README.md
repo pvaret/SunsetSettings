@@ -34,6 +34,7 @@ checkers will tell you.
 
 ```
 
+
 ### Extensibility
 
 You can store arbitrary types in your SunsetSettings provided they implement a
@@ -67,6 +68,7 @@ simple serialization protocol. (See `sunset/protocols.py`.)
 
 ```
 
+
 ### Inheritance
 
 SunsetSettings lets the user have a general set of settings that can be
@@ -77,7 +79,7 @@ arbitrarily deep.
 ```python
 >>> from sunset import Key, Settings
 >>> class Animals(Settings):
-...     paws = Key(default=4)
+...     paws: Key[int] = Key(default=4)
 ... 
 >>> animals = Animals()
 >>> octopuses = animals.newSection(name="octopuses")
@@ -90,6 +92,7 @@ arbitrarily deep.
 4
 
 ```
+
 
 ### Callbacks
 
@@ -106,11 +109,13 @@ Pony count updated: 6
 
 ```
 
+
 ## Requirements
 
 - Python 3.9 or later.
 - If installing from sources:
     - The `flit` build tool.
+
 
 ## Installation
 
@@ -124,6 +129,7 @@ pip install SunsetSettings
 
 This will install the latest version of SunsetSettings, with its required
 dependencies.
+
 
 ### Installing from sources
 
@@ -141,7 +147,7 @@ dependencies.
 
 That's it.
 
+
 ## API documentation
 
-In progress! Honestly you should not be using SunsetSettings just YET, it's a
-work in progress and the API is not stable yet.
+The API documentation is available at https://sunsetsettings.readthedocs.io/en/latest/.

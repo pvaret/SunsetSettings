@@ -41,10 +41,10 @@ class Bundle(ContainableImpl):
     >>> from sunset import Bundle, Key
     >>> class Appearance(Bundle):
     ...     class Font(Bundle):
-    ...         name = Key(default="Arial")
-    ...         size = Key(default=14)
-    ...     main_font = Font()
-    ...     secondary_font = Font()
+    ...         name: Key[str] = Key(default="Arial")
+    ...         size: Key[int] = Key(default=14)
+    ...     main_font: Font      = Font()
+    ...     secondary_font: Font = Font()
     >>> appearance = Appearance()
     >>> appearance.main_font.name.get()
     'Arial'
@@ -251,8 +251,7 @@ class Bundle(ContainableImpl):
     def onUpdateCall(self, callback: Callable[[Any], None]) -> None:
         """
         Adds a callback to be called whenever this Bundle is updated. A Bundle
-        is considered updated when any of its fields is updated. As Bundles can
-        contain other Bundles
+        is considered updated when any of its fields is updated.
 
         The callback will be called with as its argument whichever field was
         just updated.
@@ -260,7 +259,7 @@ class Bundle(ContainableImpl):
         Args:
             callback: A callable that will be called with one argument of type
                 :class:`~sunset.List`, :class:`~sunset.Bundle` or
-                :class:`~sunset.Key`.
+                :class:`~sunset.Key`, and returns None.
 
         Returns:
             None.

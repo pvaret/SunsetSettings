@@ -70,9 +70,9 @@ class List(MutableSequence[ListItemT], ContainableImpl):
     >>> from sunset import Bundle, Key, List, Settings
     >>> class ExampleSettings(Settings):
     ...     class ExampleBundle(Bundle):
-    ...         a = Key(default="")
-    ...     key_list = List(Key(default=0))
-    ...     bundle_list = List(ExampleBundle())
+    ...         a: Key[str] = Key(default="")
+    ...     key_list: List[Key[int]]         = List(Key(default=0))
+    ...     bundle_list: List[ExampleBundle] = List(ExampleBundle())
     >>> settings = ExampleSettings()
     >>> settings.bundle_list
     []
@@ -324,11 +324,11 @@ class List(MutableSequence[ListItemT], ContainableImpl):
                 the contents of this List instance. If List.PARENT_FIRST, it
                 yields from this List's parents, if any, then this List itself.
                 If List.PARENT_LAST, it yields from this List itself, then from
-                its parents if any. Default: None.
+                its parents, if any. Default: None.
 
         Returns:
             An iterator over the items contained in this List and optionally its
-                parents.
+            parents.
 
         Example:
 
@@ -406,7 +406,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         Args:
             callback: A callable that will be called with one argument of type
                 :class:`~sunset.List`, :class:`~sunset.Bundle` or
-                :class:`~sunset.Key`.
+                :class:`~sunset.Key`, and returns None.
 
         Returns:
             None.

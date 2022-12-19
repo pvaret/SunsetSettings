@@ -38,8 +38,8 @@ class Serializable(Protocol):
         """
         Takes a string that represents a serialized instance of this class, and
         returns a newly created instance that corresponds to that
-        representation, or None is the string is not a valid serialized
-        representation of an instance.
+        representation, or None if the string is not a valid serialized
+        representation of an instance of this class.
         """
         ...
 

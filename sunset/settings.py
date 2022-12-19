@@ -1,4 +1,6 @@
 from typing import (
+    Any,
+    Callable,
     Iterable,
     Iterator,
     MutableSet,
@@ -39,18 +41,20 @@ class Settings(Bundle, Lockable):
     name by passing it to the :meth:`newSection()` method, or by using the
     :meth:`setSectionName()` method on the new section after creation.
 
-    Anonymous (unnamed) sections do not get saved. The name of each section is
-    used to construct the heading it is saved under. The top-level Settings
-    instance is saved under the '[main]' heading.
+    The name of each section is used to construct the heading it is saved under.
+    The top-level Settings instance is saved under the `[main]` heading by
+    default.
+
+    Anonymous (unnamed) sections do not get saved.
 
     Example:
 
     >>> from sunset import Key, Settings
     >>> class AnimalSettings(Settings):
-    ...     hearts = Key(default=0)
-    ...     legs = Key(default=0)
-    ...     wings = Key(default=0)
-    ...     fur = Key(default=False)
+    ...     hearts: Key[int] = Key(default=0)
+    ...     legs: Key[int]   = Key(default=0)
+    ...     wings: Key[int]  = Key(default=0)
+    ...     fur: Key[bool]   = Key(default=False)
     >>> animals = AnimalSettings()
     >>> animals.hearts.set(1)
     >>> mammals = animals.newSection(name="mammals")
@@ -226,7 +230,7 @@ class Settings(Bundle, Lockable):
             An iterator over Settings instances of the same type as this one.
         """
 
-        yield from self.children()
+        yield from sorted(self.children())
 
     def setSectionName(self, name: str) -> str:
         """
@@ -235,8 +239,8 @@ class Settings(Bundle, Lockable):
         normalized to lowercase, without space or punctuation.
 
         This name is guaranteed to be unique. If the given name is already used
-        by a Settings instance with the same parent as this one, then a numbered
-        suffix is generated to make this one's name unique.
+        by a section of the same Settings instance, then a numbered suffix is
+        generated to make this one's name unique.
 
         If the given name is empty, these settings will be skipped when saving.
 
@@ -345,6 +349,30 @@ class Settings(Bundle, Lockable):
 
         if parent is not None:
             parent._setUniqueNameForSection(self._section_name, self)
+
+    def onUpdateCall(self, callback: Callable[[Any], None]) -> None:
+        """
+        Adds a callback to be called whenever this Settings instance is updated.
+        A Settings instance is considered updated when any of its fields is
+        updated, or when its name is updated.
+
+        The callback will be called with as its argument whichever field was
+        just updated.
+
+        Args:
+            callback: A callable that will be called with one argument of type
+                :class:`~sunset.List`, :class:`~sunset.Bundle` or
+                :class:`~sunset.Key`, and returns None.
+
+        Returns:
+            None.
+
+        Note:
+            This method does not increase the reference count of the given
+            callback.
+        """
+
+        super().onUpdateCall(callback)
 
     def triggerUpdateNotification(
         self, field: Optional[UpdateNotifier]
