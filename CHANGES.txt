@@ -1,4 +1,4 @@
-* Unreleased
+* SunsetSettings 0.3.0 (2022-12-19)
 
   - Sphinx documentation added.
   - Renamed Setting class to Key.
@@ -8,7 +8,7 @@
   - Removed need for explicit type annotations in Settings class definitions.
   - Renamed List.iterAll() to iter() and added order parameter.
   - Replaced derive() and deriveAs() with newSection() and assorted functions.
-  - Renamed onKeyModifiedCall to onUpdateCall.
+  - Renamed onKeyModifiedCall() to onUpdateCall().
   - Added float to supported Key value types.
   - Renamed Settings.name() to Settings.sectionName() and Settings.setName() to Settings.setSectionName().
 
