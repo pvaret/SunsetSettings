@@ -1,6 +1,6 @@
-* Unreleased
+* SunsetSettings 0.3.1 (2022-12-19)
 
-  - None yet.
+  - Updated documentation links.
 
 * SunsetSettings 0.3.0 (2022-12-19)
 
