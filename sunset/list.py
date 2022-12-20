@@ -61,9 +61,11 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         template: A Key or a Bundle *instance* that represents the items that
             will be contained in this List. (The template itself will not be
             added to the List.)
-        order: One of List.NO_PARENT, List.PARENT_FIRST or List.PARENT_LAST.
-            Sets the default iteration order used in :meth:`iter()` when not
-            otherwise specified. Default: List.NO_PARENT.
+
+        order: One of `List.NO_PARENT`, `List.PARENT_FIRST` or
+            `List.PARENT_LAST`. Sets the default iteration order used in
+            :meth:`iter()` when not otherwise specified. Default:
+            `List.NO_PARENT`.
 
     Example:
 
@@ -318,13 +320,22 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         parents, if any.
 
         Args:
-            order: One of List.NO_PARENT, List.PARENT_FIRST, List.PARENT_LAST,
-                or None. If None, the order set on the List itself at creation
-                time will be used. If List.NO_PARENT, this method only yields
-                the contents of this List instance. If List.PARENT_FIRST, it
-                yields from this List's parents, if any, then this List itself.
-                If List.PARENT_LAST, it yields from this List itself, then from
-                its parents, if any. Default: None.
+            order: One of `List.NO_PARENT`, `List.PARENT_FIRST`,
+                `List.PARENT_LAST`, or None.
+
+                - If `List.NO_PARENT`, this method only yields the contents of
+                  this List instance.
+
+                - If `List.PARENT_FIRST`, it yields from this List's parents, if
+                  any, then this List itself.
+
+                - If `List.PARENT_LAST`, it yields from this List itself, then
+                  from its parents, if any.
+
+                - If None, the order set on the List itself at creation time
+                  will be used.
+
+                Default: None.
 
         Returns:
             An iterator over the items contained in this List and optionally its

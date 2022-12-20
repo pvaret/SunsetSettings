@@ -465,6 +465,7 @@ class Settings(Bundle, Lockable):
 
         Args:
             file: A text file object where to save this Settings instance.
+
             blanklines: Whether to add a blank line before section headings.
 
         Returns:
