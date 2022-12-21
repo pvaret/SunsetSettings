@@ -430,6 +430,9 @@ Load settings from an open text-mode file object with
 :meth:`~sunset.Settings.load()`. Save settings to an open, writable text-mode
 file object with :meth:`~sunset.Settings.save()`.
 
+Alternatively, use the :class:`~sunset.AutoSaver` context manager to
+automatically load and save your settings.
+
 SunsetSettings uses an INI-like file format to store settings. This format is
 intended to be easy to make sense of for humans.
 

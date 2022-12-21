@@ -1,6 +1,6 @@
 * Unreleased
 
-  - None yet.
+  - Added AutoSaver context manager.
 
 * SunsetSettings 0.3.1 (2022-12-19)
 

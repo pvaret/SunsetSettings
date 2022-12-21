@@ -49,6 +49,12 @@ API Reference
 
     .. automethod:: onUpdateCall
 
+.. autoclass:: sunset.AutoSaver
+
+    .. automethod:: doSave
+
+    .. automethod:: saveIfNeeded
+
 .. autoclass:: sunset.Serializable
 
     .. automethod:: toStr
