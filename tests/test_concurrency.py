@@ -1,4 +1,3 @@
-import random
 import threading
 import time
 import typing
@@ -10,8 +9,9 @@ from sunset import Key, List, Settings
 
 _P = typing_extensions.ParamSpec("_P")
 
-_THREAD_COUNT = 64
-_DURATION = 1.0  # seconds
+_THREAD_COUNT = 16
+_DURATION = 0.1  # seconds
+_ATTEMPTS = 5
 
 
 def run_threaded(
@@ -56,19 +56,21 @@ class TestKeyConcurrency:
             str_key.clear()
             str_key.set(str(thread_id))
 
-        run_threaded(clear_and_set_key)
+        for _ in range(_ATTEMPTS):
+            run_threaded(clear_and_set_key)
 
-        assert str_key.isSet()
-        assert str_key.get() != "default value"
+            assert str_key.isSet()
+            assert str_key.get() != "default value"
 
         def set_and_clear_key(thread_id: int):
             str_key.set(str(thread_id))
             str_key.clear()
 
-        run_threaded(set_and_clear_key)
+        for _ in range(_ATTEMPTS):
+            run_threaded(set_and_clear_key)
 
-        assert not str_key.isSet()
-        assert str_key.get() == "default value"
+            assert not str_key.isSet()
+            assert str_key.get() == "default value"
 
     def test_parenting(self):
 
@@ -80,10 +82,11 @@ class TestKeyConcurrency:
             str_key.setParent(None)
             str_key.setParent(parent_key)
 
-        run_threaded(set_parent)
+        for _ in range(_ATTEMPTS):
+            run_threaded(set_parent)
 
-        assert str_key.parent() is parent_key
-        assert str_key.get() == "parent"
+            assert str_key.parent() is parent_key
+            assert str_key.get() == "parent"
 
 
 class TestListConcurrency:
@@ -97,7 +100,7 @@ class TestListConcurrency:
 
         def update_list(thread_id: int, key_list: List[Key[str]]) -> None:
             value = str(thread_id)
-            if (fashion := random.randint(0, 3)) == 0:
+            if (fashion := thread_id % 4) == 0:
                 key_list.append(Key(value))
             elif fashion == 1:
                 key_list += [Key(value)]
@@ -106,21 +109,21 @@ class TestListConcurrency:
             elif fashion == 3:
                 key_list.insert(0, Key(value))
 
-            if (fashion := random.randint(0, 1)) == 0:
+            if (fashion := (thread_id << 2) % 2) == 0:
                 key_list.pop()
             elif fashion == 1:
                 del key_list[0]
 
             assert len(key_list) >= _start_items
 
-        run_threaded(update_list, key_list=key_list)
+        for _ in range(_ATTEMPTS):
+            run_threaded(update_list, key_list=key_list)
 
-        assert len(key_list) == _start_items
-        for i, item in enumerate(key_list):
-            assert item.container() is key_list
-            assert item.fieldLabel() == key_list._labelForIndex(  # type: ignore
-                i
-            )
+            assert len(key_list) == _start_items
+            for i, item in enumerate(key_list):
+                assert item.container() is key_list
+                expected_label = key_list._labelForIndex(i)  # type: ignore
+                assert item.fieldLabel() == expected_label
 
 
 class TestSettingsConcurrency:
@@ -139,9 +142,10 @@ class TestSettingsConcurrency:
             section.setSectionName("test")
             section.setSectionName("section")
 
-        run_threaded(rename_section, sections=sections)
+        for _ in range(_ATTEMPTS):
+            run_threaded(rename_section, sections=sections)
 
-        assert len(list(settings.sections())) == len(sections)
-        assert len(
-            set(section.sectionName() for section in settings.sections())
-        ) == len(sections)
+            assert len(list(settings.sections())) == len(sections)
+            assert len(
+                set(section.sectionName() for section in settings.sections())
+            ) == len(sections)
