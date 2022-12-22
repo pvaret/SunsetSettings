@@ -87,7 +87,7 @@ class AutoSaver:
             path = pathlib.Path(path)
 
         if path.exists():
-            with open(path) as f:
+            with open(path, encoding=self._ENCODING) as f:
                 settings.load(f)
 
         self._dirty = False

@@ -40,6 +40,19 @@ class ExampleSettings(Settings):
 
 
 class TestAutosaver:
+    def test_autoload(self, tmp_path: pathlib.Path):
+
+        settings_file = tmp_path / "test.conf"
+        settings_file.write_text("[main]\nkey_str = test\n")
+
+        settings = ExampleSettings()
+
+        assert settings.key_str.get() == ""
+
+        AutoSaver(settings, settings_file)
+
+        assert settings.key_str.get() == "test"
+
     def test_no_unneeded_saving(self, tmp_path: pathlib.Path):
 
         settings_file = tmp_path / "test.conf"
