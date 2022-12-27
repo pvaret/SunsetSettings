@@ -1,3 +1,7 @@
+* Unreleased
+
+  - AutoSaver now expands '~' to the current user's home directory.
+
 * SunsetSettings 0.3.2 (2022-12-22)
 
   - Added AutoSaver context manager.

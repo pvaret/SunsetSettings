@@ -16,7 +16,7 @@ class AutoSaver:
     settings automatically and safely.
 
     On instantiation, it automatically loads settings from the given file path,
-    if that file exists.
+    if that file exists, unless the `load_on_init` argument is set to False.
 
     When saving, it uses a two-steps mechanism to ensure the atomicity of the
     operation. That is to say, the operation either entirely succeeds or
@@ -45,6 +45,9 @@ class AutoSaver:
 
         save_on_delete: Whether to save the settings when this AutoSaver
             instance is deleted. Default: True.
+
+        load_on_init: Whether to load the settings when instantiating this
+            AutoSaver, provided the settings path exists. Default: True.
 
         save_delay: How long to wait, in seconds, before actually saving the
             settings when `save_on_update` is True and an update occurs. Setting
@@ -78,17 +81,17 @@ class AutoSaver:
         self,
         settings: Settings,
         path: Union[pathlib.Path, str],
+        *,
         save_on_update: bool = True,
         save_on_delete: bool = True,
+        load_on_init: bool = True,
         save_delay: float = 0.0,
     ) -> None:
 
         if isinstance(path, str):
             path = pathlib.Path(path)
 
-        if path.exists():
-            with open(path, encoding=self._ENCODING) as f:
-                settings.load(f)
+        path = path.expanduser()
 
         self._dirty = False
         self._path = path
@@ -98,6 +101,38 @@ class AutoSaver:
         self._save_timer = PersistentTimer(self.saveIfNeeded)
         self._settings = settings
         self._settings.onUpdateCall(self._onSettingsUpdated)
+
+        if load_on_init:
+            self.doLoad()
+
+    def path(self) -> pathlib.Path:
+        """
+        Returns the settings path for this AutoSaver.
+
+        Returns:
+            A path. It may or may not exist; that's not up to AutoSaver.
+        """
+
+        return self._path
+
+    def doLoad(self) -> None:
+        """
+        Load the settings from this AutoSaver's settings file path, if it
+        exists.
+
+        Unsaved settings, if any, will be lost.
+
+        Returns:
+            None.
+
+        Note:
+            Prefer letting AutoSaver load the settings during its initialization
+            in order to avoid race conditions.
+        """
+
+        if (path := self._path).exists():
+            with open(path, encoding=self._ENCODING) as f:
+                self._settings.load(f)
 
     def doSave(self) -> None:
         """

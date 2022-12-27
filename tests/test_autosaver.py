@@ -1,6 +1,9 @@
+import os.path
 import pathlib
 
 from typing import Any, Callable
+
+import pytest
 
 from sunset import AutoSaver, Key, Settings
 
@@ -40,7 +43,7 @@ class ExampleSettings(Settings):
 
 
 class TestAutosaver:
-    def test_autoload(self, tmp_path: pathlib.Path):
+    def test_load_on_init(self, tmp_path: pathlib.Path):
 
         settings_file = tmp_path / "test.conf"
         settings_file.write_text("[main]\nkey_str = test\n")
@@ -52,6 +55,19 @@ class TestAutosaver:
         AutoSaver(settings, settings_file)
 
         assert settings.key_str.get() == "test"
+
+    def test_no_load_on_init(self, tmp_path: pathlib.Path):
+
+        settings_file = tmp_path / "test.conf"
+        settings_file.write_text("[main]\nkey_str = test\n")
+
+        settings = ExampleSettings()
+
+        assert settings.key_str.get() == ""
+
+        AutoSaver(settings, settings_file, load_on_init=False)
+
+        assert settings.key_str.get() == ""
 
     def test_no_unneeded_saving(self, tmp_path: pathlib.Path):
 
@@ -150,3 +166,19 @@ class TestAutosaver:
         mock_timer.advanceTime(2.0)
 
         assert settings_file.exists()
+
+    def test_expand_user(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        def expanduser(path: str) -> str:
+            if not path.startswith("~"):
+                return path
+            return os.path.join("HOME", path[1:])
+
+        monkeypatch.setattr(os.path, "expanduser", expanduser)
+
+        saver1 = AutoSaver(ExampleSettings(), "/no/tilde", load_on_init=False)
+        assert str(saver1.path()) == "/no/tilde"
+
+        saver2 = AutoSaver(
+            ExampleSettings(), "~/with/tilde", load_on_init=False
+        )
+        assert str(saver2.path()) == "HOME/with/tilde"
