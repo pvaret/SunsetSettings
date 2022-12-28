@@ -1,5 +1,4 @@
 import logging
-import os.path
 import pathlib
 
 from typing import Any, Callable
@@ -173,12 +172,12 @@ class TestAutosaver:
         assert settings_file.exists()
 
     def test_expand_user(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        def expanduser(path: str) -> str:
-            if not path.startswith("~"):
+        def expanduser(path: pathlib.Path) -> pathlib.Path:
+            if not str(path).startswith("~"):
                 return path
-            return os.path.join("HOME", path[1:])
+            return pathlib.Path("HOME") / str(path).lstrip("~").lstrip("/")
 
-        monkeypatch.setattr(os.path, "expanduser", expanduser)
+        monkeypatch.setattr(pathlib.Path, "expanduser", expanduser)
 
         saver1 = AutoSaver(ExampleSettings(), "/no/tilde", load_on_init=False)
         assert str(saver1.path()) == "/no/tilde"
