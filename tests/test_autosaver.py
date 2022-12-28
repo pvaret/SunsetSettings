@@ -1,9 +1,12 @@
+import logging
 import os.path
 import pathlib
 
 from typing import Any, Callable
 
 import pytest
+
+from pytest_mock import MockerFixture
 
 from sunset import AutoSaver, Key, Settings
 
@@ -43,7 +46,7 @@ class ExampleSettings(Settings):
 
 
 class TestAutosaver:
-    def test_load_on_init(self, tmp_path: pathlib.Path):
+    def test_load_on_init(self, tmp_path: pathlib.Path) -> None:
 
         settings_file = tmp_path / "test.conf"
         settings_file.write_text("[main]\nkey_str = test\n")
@@ -56,7 +59,7 @@ class TestAutosaver:
 
         assert settings.key_str.get() == "test"
 
-    def test_no_load_on_init(self, tmp_path: pathlib.Path):
+    def test_no_load_on_init(self, tmp_path: pathlib.Path) -> None:
 
         settings_file = tmp_path / "test.conf"
         settings_file.write_text("[main]\nkey_str = test\n")
@@ -69,7 +72,7 @@ class TestAutosaver:
 
         assert settings.key_str.get() == ""
 
-    def test_no_unneeded_saving(self, tmp_path: pathlib.Path):
+    def test_no_unneeded_saving(self, tmp_path: pathlib.Path) -> None:
 
         settings_file = tmp_path / "test.conf"
         settings = ExampleSettings()
@@ -83,7 +86,7 @@ class TestAutosaver:
 
         assert not settings_file.exists()
 
-    def test_autosave_on_update(self, tmp_path: pathlib.Path):
+    def test_autosave_on_update(self, tmp_path: pathlib.Path) -> None:
 
         settings_file = tmp_path / "test.conf"
         settings = ExampleSettings()
@@ -98,7 +101,7 @@ class TestAutosaver:
 
         del autosaver  # So that it's not unused.
 
-    def test_autosave_on_delete(self, tmp_path: pathlib.Path):
+    def test_autosave_on_delete(self, tmp_path: pathlib.Path) -> None:
 
         settings_file = tmp_path / "test.conf"
         settings = ExampleSettings()
@@ -113,7 +116,9 @@ class TestAutosaver:
         assert settings_file.exists()
         assert settings_file.read_text() == "[main]\nkey_str = test\n"
 
-    def test_autosave_creates_missing_dirs(self, tmp_path: pathlib.Path):
+    def test_autosave_creates_missing_dirs(
+        self, tmp_path: pathlib.Path
+    ) -> None:
 
         settings = ExampleSettings()
         settings_file = tmp_path / "multiple" / "levels" / "deep" / "test.conf"
@@ -127,7 +132,7 @@ class TestAutosaver:
 
         assert settings_file.parent.exists()
 
-    def test_context_manager(self, tmp_path: pathlib.Path):
+    def test_context_manager(self, tmp_path: pathlib.Path) -> None:
 
         settings = ExampleSettings()
         settings_file = tmp_path / "test.conf"
@@ -140,7 +145,7 @@ class TestAutosaver:
         assert settings_file.exists()
         assert settings_file.read_text() == "[main]\nkey_str = test\n"
 
-    def test_delayed_save(self, tmp_path: pathlib.Path):
+    def test_delayed_save(self, tmp_path: pathlib.Path) -> None:
 
         settings_file = tmp_path / "test.conf"
         settings = ExampleSettings()
@@ -182,3 +187,28 @@ class TestAutosaver:
             ExampleSettings(), "~/with/tilde", load_on_init=False
         )
         assert str(saver2.path()) == "HOME/with/tilde"
+
+    def test_exceptions(
+        self, tmp_path: pathlib.Path, mocker: MockerFixture
+    ) -> None:
+
+        settings_file = tmp_path / "actually_a_folder"
+        settings_file.mkdir(parents=True)
+
+        logger_stub = mocker.MagicMock(logging.Logger)
+
+        saver = AutoSaver(
+            ExampleSettings(),
+            settings_file,
+            load_on_init=False,
+            logger=logger_stub,
+        )
+
+        logger_stub.error.assert_not_called()  # type: ignore
+        assert settings_file.exists()
+        assert not saver.doLoad()
+        logger_stub.error.assert_called_once()  # type: ignore
+        logger_stub.error.reset_mock()  # type: ignore
+
+        assert not saver.doSave()
+        logger_stub.error.assert_called_once()  # type: ignore

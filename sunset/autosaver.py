@@ -1,8 +1,9 @@
+import logging
 import os
 import pathlib
 import tempfile
 
-from typing import Any, TypeVar, Union
+from typing import Any, Optional, TypeVar, Union
 
 from .settings import Settings
 from .timer import PersistentTimer, TimerProtocol
@@ -55,13 +56,17 @@ class AutoSaver:
             triggering a save. If set to 0, the save is triggered immediately.
             Default: 0.
 
+        logger: A logger instance that will be used to log OS errors, if any,
+            while loading or saving settings. If none is given, the default root
+            logger will be used.
+
     Example:
 
     >>> from sunset import AutoSaver, Settings
     >>> class ExampleSettings(Settings):
     ...     ...
     >>> settings = ExampleSettings()
-    >>> with AutoSaver(settings, "/path/to/settings.conf"):  # doctest: +SKIP
+    >>> with AutoSaver(settings, "~/.config/my_app.conf"):  # doctest: +SKIP
     ...     main_program_loop(settings)
     """
 
@@ -76,6 +81,7 @@ class AutoSaver:
     _save_on_delete: bool
     _save_delay: float
     _save_timer: TimerProtocol
+    _logger: logging.Logger
 
     def __init__(
         self,
@@ -86,12 +92,16 @@ class AutoSaver:
         save_on_delete: bool = True,
         load_on_init: bool = True,
         save_delay: float = 0.0,
+        logger: Optional[logging.Logger] = None,
     ) -> None:
 
         if isinstance(path, str):
             path = pathlib.Path(path)
 
         path = path.expanduser()
+
+        if logger is None:
+            logger = logging.getLogger()
 
         self._dirty = False
         self._path = path
@@ -101,6 +111,7 @@ class AutoSaver:
         self._save_timer = PersistentTimer(self.saveIfNeeded)
         self._settings = settings
         self._settings.onUpdateCall(self._onSettingsUpdated)
+        self._logger = logger
 
         if load_on_init:
             self.doLoad()
@@ -115,7 +126,7 @@ class AutoSaver:
 
         return self._path
 
-    def doLoad(self) -> None:
+    def doLoad(self) -> bool:
         """
         Load the settings from this AutoSaver's settings file path, if it
         exists.
@@ -123,18 +134,30 @@ class AutoSaver:
         Unsaved settings, if any, will be lost.
 
         Returns:
-            None.
+            True if loading succeeded, else False. If an unexpected error
+            occurred, the error will be logged using the logger passed during
+            initialization. Note that it's not considered an error if the
+            settings file path does not exist yet.
 
         Note:
             Prefer letting AutoSaver load the settings during its initialization
             in order to avoid race conditions.
         """
 
-        if (path := self._path).exists():
-            with open(path, encoding=self._ENCODING) as f:
-                self._settings.load(f)
+        try:
+            if (path := self._path).exists():
+                with open(path, encoding=self._ENCODING) as f:
+                    self._settings.load(f)
+                return True
 
-    def doSave(self) -> None:
+        except OSError as e:
+            self._logger.error(
+                "Error while loading from '%s': %s", self._path, e
+            )
+
+        return False
+
+    def doSave(self) -> bool:
         """
         Unconditionally saves the settings attached to this AutoSaver instance.
 
@@ -147,7 +170,8 @@ class AutoSaver:
         method automatically creates it.
 
         Returns:
-            None.
+            True if saving succeeded, else False. If False, the error will be
+            logged using the logger passed during initialization.
         """
 
         self._save_timer.cancel()
@@ -155,18 +179,23 @@ class AutoSaver:
         dir = self._path.parent
         dir.mkdir(parents=True, mode=self._DIR_MODE, exist_ok=True)
 
-        with tempfile.NamedTemporaryFile(
-            dir=dir,
-            prefix=self._path.name,
-            mode="xt",
-            encoding=self._ENCODING,
-            delete=False,
-        ) as tmp:
-            self._settings.save(tmp.file, blanklines=True)
-            os.chmod(tmp.name, self._FILE_MODE)
-            os.rename(tmp.name, self._path)
+        try:
+            with tempfile.NamedTemporaryFile(
+                dir=dir,
+                prefix=self._path.name,
+                mode="xt",
+                encoding=self._ENCODING,
+                delete=False,
+            ) as tmp:
+                self._settings.save(tmp.file, blanklines=True)
+                os.chmod(tmp.name, self._FILE_MODE)
+                os.rename(tmp.name, self._path)
+        except OSError as e:
+            self._logger.error("Error while saving to '%s': %s", self._path, e)
+            return False
 
         self._dirty = False
+        return True
 
     def saveIfNeeded(self) -> bool:
         """
@@ -174,7 +203,7 @@ class AutoSaver:
         settings attached to this AutoSaver instance.
 
         Returns:
-            True if a save was performed, else False.
+            True if a save was performed and succeeded, else False.
         """
 
         save_needed = self._dirty
@@ -182,7 +211,7 @@ class AutoSaver:
         self._save_timer.cancel()
 
         if save_needed:
-            self.doSave()
+            return self.doSave()
 
         return save_needed
 
