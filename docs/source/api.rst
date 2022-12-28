@@ -53,6 +53,8 @@ API Reference
 
 .. autoclass:: sunset.AutoSaver
 
+    .. automethod:: doLoad
+
     .. automethod:: doSave
 
     .. automethod:: saveIfNeeded

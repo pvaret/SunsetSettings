@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Unreleased
-----------
+Latest
+------
 
   - AutoSaver now expands '~' to the current user's home directory.
   - Added atomic updateValue() method to Keys.
