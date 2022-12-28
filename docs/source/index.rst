@@ -15,6 +15,7 @@ project, per folder, per user, etc.
    installation
    usage
    api
+   changelog
 
 
 Indices and tables
