@@ -29,6 +29,8 @@ API Reference
 
     .. automethod:: isSet
 
+    .. automethod:: updateValue
+
     .. automethod:: clear
 
     .. automethod:: onValueChangeCall

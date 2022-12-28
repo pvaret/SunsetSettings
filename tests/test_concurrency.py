@@ -48,11 +48,11 @@ def run_threaded(
 
 
 class TestKeyConcurrency:
-    def test_set_clear(self):
+    def test_set_clear(self) -> None:
 
         str_key = Key("default value")
 
-        def clear_and_set_key(thread_id: int):
+        def clear_and_set_key(thread_id: int) -> None:
             str_key.clear()
             str_key.set(str(thread_id))
 
@@ -62,7 +62,7 @@ class TestKeyConcurrency:
             assert str_key.isSet()
             assert str_key.get() != "default value"
 
-        def set_and_clear_key(thread_id: int):
+        def set_and_clear_key(thread_id: int) -> None:
             str_key.set(str(thread_id))
             str_key.clear()
 
@@ -72,7 +72,24 @@ class TestKeyConcurrency:
             assert not str_key.isSet()
             assert str_key.get() == "default value"
 
-    def test_parenting(self):
+    def test_update_value(self) -> None:
+
+        count = [0]
+        int_key = Key(0)
+
+        def updater(value: int) -> int:
+            return value + 1
+
+        def update_key(_unused: int) -> None:
+            int_key.updateValue(updater)
+            count[0] += 1
+
+        for _ in range(_ATTEMPTS):
+            run_threaded(update_key)
+
+        assert int_key.get() == count[0]
+
+    def test_parenting(self) -> None:
 
         parent_key = Key("")
         parent_key.set("parent")
@@ -90,7 +107,7 @@ class TestKeyConcurrency:
 
 
 class TestListConcurrency:
-    def test_append_pop(self):
+    def test_append_pop(self) -> None:
 
         _start_items: int = 10
 
@@ -127,7 +144,7 @@ class TestListConcurrency:
 
 
 class TestSettingsConcurrency:
-    def test_settings_names(self):
+    def test_settings_names(self) -> None:
         class TestSettings(Settings):
             pass
 

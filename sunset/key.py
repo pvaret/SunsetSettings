@@ -13,6 +13,7 @@ from typing import (
 )
 
 from .exporter import maybe_escape
+from .lockable import Lockable
 from .protocols import ContainableImpl
 from .registry import CallbackRegistry
 from .serializers import AnySerializableType, deserialize, serialize
@@ -22,7 +23,7 @@ from .serializers import AnySerializableType, deserialize, serialize
 Self = TypeVar("Self", bound="Key[Any]")
 
 
-class Key(Generic[AnySerializableType], ContainableImpl):
+class Key(Generic[AnySerializableType], ContainableImpl, Lockable):
     """
     A single setting key containing a typed value.
 
@@ -172,6 +173,25 @@ class Key(Generic[AnySerializableType], ContainableImpl):
                 child._notifyParentValueChanged()
 
         self.triggerUpdateNotification()
+
+    @Lockable.with_lock
+    def updateValue(
+        self, updater: Callable[[AnySerializableType], AnySerializableType]
+    ) -> None:
+        """
+        Atomically updates this Key's value using the given update function. The
+        function will be called with the Key's current value, and the value it
+        returns will be set as the Key's new value.
+
+        Args:
+            updater: A function that takes an argument of the same type held in
+                this key, and returns an argument of the same type.
+
+        Returns:
+            None.
+        """
+
+        self.set(updater(self.get()))
 
     def isSet(self) -> bool:
         """

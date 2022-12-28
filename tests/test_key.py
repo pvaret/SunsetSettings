@@ -175,6 +175,19 @@ class TestKey:
         callback.assert_not_called()
         callback.reset_mock()
 
+    def test_updater(self):
+
+        key = Key("")
+
+        def updater(value: str) -> str:
+            return value + "x"
+
+        assert key.get() == ""
+        key.updateValue(updater)
+        assert key.get() == "x"
+        key.updateValue(updater)
+        assert key.get() == "xx"
+
     def test_inheritance(self):
 
         parent_key = Key(default="default a")
