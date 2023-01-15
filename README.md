@@ -1,6 +1,7 @@
 # SunsetSettings
 
 [![SunsetSettings](https://circleci.com/gh/pvaret/SunsetSettings.svg?style=shield)](https://circleci.com/gh/pvaret/SunsetSettings)
+[![Documentation Status](https://readthedocs.org/projects/sunsetsettings/badge/?version=latest)](https://sunsetsettings.readthedocs.io/en/latest/?badge=latest)
 
 SunsetSettings is a Python library that lets you define, load and save settings
 in a *type-safe* manner.
