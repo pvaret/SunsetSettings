@@ -1,6 +1,6 @@
 # SunsetSettings
 
-[![SunsetSettings](https://circleci.com/gh/pvaret/SunsetSettings.svg?style=shield)](https://circleci.com/gh/pvaret/SunsetSettings)
+[![Build Status](https://github.com/pvaret/SunsetSettings/actions/workflows/python-build.yml/badge.svg)](https://github.com/pvaret/SunsetSettings/actions/workflows/python-build.yml)
 [![Documentation Status](https://readthedocs.org/projects/sunsetsettings/badge/?version=latest)](https://sunsetsettings.readthedocs.io/en/latest/?badge=latest)
 
 SunsetSettings is a Python library that lets you define, load and save settings
