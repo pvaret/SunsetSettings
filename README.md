@@ -3,12 +3,107 @@
 [![Build Status](https://github.com/pvaret/SunsetSettings/actions/workflows/python-build.yml/badge.svg)](https://github.com/pvaret/SunsetSettings/actions/workflows/python-build.yml)
 [![Documentation Status](https://readthedocs.org/projects/sunsetsettings/badge/?version=latest)](https://sunsetsettings.readthedocs.io/en/latest/?badge=latest)
 
-SunsetSettings is a Python library that lets you define, load and save settings
-in a *type-safe* manner.
+SunsetSettings is a library that provides facilities to declare and use settings
+for an interactive application in a *type-safe* manner, and load and save them
+in a simple INI-like format.
+
+The settings can safely store arbitrary types, and can be structured in an
+arbitrarily deep hierarchy of subsections, which allows you to implement
+overrides per project, per folder, per user, etc.
 
 It is mainly intended for software where the user can change settings on the
 fly, for instance with a settings dialog, and those settings need to be
 preserved between sessions.
+
+
+## Examples
+
+Creating settings:
+
+```python
+>>> from sunset import Bundle, Key, List, Settings
+
+>>> class BackupToolSettings(Settings):
+...
+...     class UI(Bundle):
+...
+...         class Font(Bundle):
+...             name = Key(default="Arial")
+...             size = Key(default=12)
+...
+...         font  = Font()
+...         theme = Key(default="") 
+...
+...     class Backup(Bundle):
+...         folder      = Key(default="~")
+...         destination = Key(default="/mnt/backups")
+...         compress    = Key(default=True)
+...
+...     ui = UI()
+...     backups = List(Backup())
+
+```
+
+Loading and saving settings:
+
+```python
+>>> from sunset import AutoSaver
+
+>>> def main_program_loop(settings: BackupToolSettings):
+...     ...
+
+>>> settings = BackupToolSettings()
+>>> with AutoSaver(settings, "~/.config/backup.conf"):  # doctest: +SKIP
+...    main_program_loop(settings)
+
+```
+
+Using settings values:
+
+```python
+>>> def do_backup(source: str, destination: str, use_compression: bool):
+...     ...
+
+>>> def do_all_backups(settings: BackupToolSettings):
+...     for backup in settings.backups:
+...         do_backup(
+...             source=backup.folder.get(),
+...             destination=backup.destination.get(),
+...             use_compression=backup.compress.get(),
+...         )
+
+>>> do_all_backups(settings)
+
+```
+
+Changing settings values:
+
+```python
+>>> def update_font_settings(
+...     font_name: str,
+...     font_size: int,
+...     font_settings: BackupToolSettings.UI.Font,
+... ):
+...     font_settings.name.set(font_name)
+...     font_settings.size.set(font_size)
+
+>>> update_font_settings("Verdana", 11, settings.ui.font)
+
+```
+
+Reacting to setting value changes:
+
+```python
+>>> def apply_theme(new_theme_name: str):
+...     ...
+
+>>> def setup_theme_change_logic(ui_settings: BackupToolSettings.UI):
+...     ui_settings.theme.onValueChangeCall(apply_theme)
+
+>>> setup_theme_change_logic(settings.ui)
+
+```
+
 
 ## Features
 
@@ -39,11 +134,13 @@ checkers will tell you.
 ### Extensibility
 
 You can store arbitrary types in your SunsetSettings provided they implement a
-simple serialization protocol. (See `sunset/protocols.py`.)
+simple serialization protocol. (See [the API
+reference](https://sunsetsettings.rtfd.io/en/stable/api.html#sunset.Serializable).)
 
 ```python
 >>> import re
 >>> from typing import Optional, TYPE_CHECKING
+
 >>> class Coordinates:
 ...     def __init__(self, x: int, y: int) -> None:
 ...         self._x = x
@@ -73,23 +170,27 @@ simple serialization protocol. (See `sunset/protocols.py`.)
 ### Inheritance
 
 SunsetSettings lets the user have a general set of settings that can be
-partially overriden for specific cases (much like your VSCode settings can be
-overriden by workspace, for instance). The hierarchy of inheritance can be
-arbitrarily deep.
+partially overriden in subsections used in specific cases (much like your VSCode
+settings can be overriden by workspace, for instance). The hierarchy of
+subsections can be arbitrarily deep.
 
 ```python
 >>> from sunset import Key, Settings
+
 >>> class Animals(Settings):
-...     paws: Key[int] = Key(default=4)
+...     limbs: Key[int] = Key(default=4)
 ... 
 >>> animals = Animals()
 >>> octopuses = animals.newSection(name="octopuses")
->>> octopuses.paws.get()
+>>> octopuses.limbs.get()
 4
->>> octopuses.paws.set(8)
->>> octopuses.paws.get()
+>>> octopuses.limbs.set(8)
+>>> octopuses.limbs.get()
 8
->>> animals.paws.get()
+>>> animals.limbs.get()
+4
+>>> octopuses.limbs.clear()
+>>> octopuses.limbs.get()
 4
 
 ```
@@ -101,6 +202,7 @@ Each setting key can be given callbacks to be called when its value changes.
 
 ```python
 >>> from sunset import Key
+
 >>> number_of_ponies = Key(default=0)
 >>> def callback(value):
 ...     print("Pony count updated:", value)
