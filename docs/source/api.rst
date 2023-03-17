@@ -7,7 +7,7 @@ API Reference
 
     .. automethod:: save
 
-    .. automethods:: autosave
+    .. automethod:: autosave
 
     .. automethod:: newSection
 
