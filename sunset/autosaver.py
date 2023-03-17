@@ -3,6 +3,8 @@ import os
 import pathlib
 import tempfile
 
+from types import TracebackType
+
 from typing import Any, Optional, TypeVar, Union
 
 from .settings import Settings
@@ -94,7 +96,6 @@ class AutoSaver:
         save_delay: float = 0.0,
         logger: Optional[logging.Logger] = None,
     ) -> None:
-
         if isinstance(path, str):
             path = pathlib.Path(path)
 
@@ -216,7 +217,6 @@ class AutoSaver:
         return save_needed
 
     def _onSettingsUpdated(self, _: Any) -> None:
-
         self._dirty = True
         if self._save_on_update:
             self._save_timer.start(self._save_delay)
@@ -226,18 +226,21 @@ class AutoSaver:
         Internal.
         """
 
-        self._save_timer = timer = timer_class(self.saveIfNeeded)
+        timer = timer_class(self.saveIfNeeded)
+        self._save_timer = timer
         return timer
 
     def __del__(self) -> None:
-
         if self._save_on_delete:
             self.saveIfNeeded()
 
     def __enter__(self) -> "AutoSaver":
-
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:  # type: ignore
-
+    def __exit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> None:
         self.saveIfNeeded()

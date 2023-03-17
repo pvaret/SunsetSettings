@@ -1,6 +1,10 @@
+import logging
+
+from pathlib import Path
 from typing import (
     Any,
     Callable,
+    ContextManager,
     IO,
     Iterable,
     Iterator,
@@ -124,6 +128,7 @@ class Settings(Bunch, Lockable):
 
     _section_name: str
     _children: MutableSet[Bunch]
+    _autosaver: Optional[ContextManager[Any]] = None
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -500,6 +505,61 @@ class Settings(Bunch, Lockable):
 
         for path, dump in load_from_file(file, self.sectionName()):
             self.restoreField(path, dump)
+
+    def autosave(
+        self,
+        path: str | Path,
+        save_on_update: bool = True,
+        save_delay: int = 0,
+        logger: Optional[logging.Logger] = None,
+    ) -> ContextManager[Any]:
+        """
+        Returns a context manager that loads these Settings from the given file
+        path on instantiation and saves them on exit.
+
+        By default, it will also automatically save the settings whenever they
+        are updated from inside the application. Optionally, the updates can be
+        batched over a given delay before being saved.
+
+        See the documentation of `sunset.AutoSaver` for the details.
+
+        Args:
+            path: The full path to the file to load the settings from and save
+                them to. If this file does not exist yet, it will be created
+                when saving for the first time.
+
+            save_on_update: Whether to save the settings when they
+                are updated in any way. Default: True.
+
+            save_delay: How long to wait, in seconds, before actually saving the
+                settings when `save_on_update` is True and an update occurs.
+                Setting this to a few seconds will batch updates for that long
+                before triggering a save. If set to 0, the save is triggered
+                immediately. Default: 0.
+
+            logger: A logger instance that will be used to log OS errors, if
+                any, while loading or saving settings. If none is given, the
+                default root logger will be used.
+
+        Returns:
+            An AutoSaver context manager.
+        """
+
+        # Only do the import here in order to avoid cyclical imports.
+
+        from .autosaver import AutoSaver
+
+        # Keep a reference to the AutoSaver instance, so that its lifetime is
+        # bound to that of this Settings instance.
+
+        self._autosaver = AutoSaver(
+            self,
+            path,
+            save_on_update=save_on_update,
+            save_delay=save_delay,
+            logger=logger,
+        )
+        return self._autosaver
 
     def __lt__(self: Self, other: Self) -> bool:
         # Giving sections an order lets us easily sort them when dumping.

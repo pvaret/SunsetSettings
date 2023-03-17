@@ -7,6 +7,8 @@ API Reference
 
     .. automethod:: save
 
+    .. automethods:: autosave
+
     .. automethod:: newSection
 
     .. automethod:: getOrCreateSection

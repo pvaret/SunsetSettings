@@ -705,6 +705,26 @@ a = value
 
         assert settings.a.get() == "value"
 
+    def test_autosave(self, mocker: MockerFixture) -> None:
+        sentinel = object()
+        stub = mocker.patch("sunset.autosaver.AutoSaver", return_value=sentinel)
+
+        settings = ExampleSettings()
+        ret = settings.autosave(
+            "/tmp/test",
+            save_delay=12,
+        )
+
+        assert ret is sentinel
+
+        stub.assert_called_once_with(
+            settings,
+            "/tmp/test",
+            save_delay=12,
+            save_on_update=True,
+            logger=None,
+        )
+
     def test_key_updated_notification(self, mocker: MockerFixture):
         callback = mocker.stub()
 
