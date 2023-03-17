@@ -4,32 +4,27 @@ import pytest
 
 from pytest_mock import MockerFixture
 
-from sunset import Bundle, Key, protocols
+from sunset import Bunch, Key, protocols
 
 
 class ExampleSerializable:
     def __init__(self, value: str) -> None:
-
         self._value = value
 
     def toStr(self) -> str:
-
         return self._value
 
     @staticmethod
     def fromStr(value: str) -> Optional["ExampleSerializable"]:
-
         return ExampleSerializable(value)
 
 
 class TestKey:
     def test_protocol_implementation(self):
-
         key = Key(default="")
         assert isinstance(key, protocols.Field)
 
     def test_default(self):
-
         assert Key(default="default").get() == "default"
         assert Key(default=0).get() == 0
         assert type(Key(default=False).get()) is bool
@@ -39,13 +34,11 @@ class TestKey:
             Key(default=object())  # type: ignore # It's the point!
 
     def test_set(self):
-
         key = Key(default="test")
         key.set("other")
         assert key.get() == "other"
 
     def test_clear(self):
-
         key = Key(default="default")
         key.set("other")
         assert key.get() != "default"
@@ -54,7 +47,6 @@ class TestKey:
         assert key.get() == "default"
 
     def test_serializable_type(self):
-
         value = ExampleSerializable.fromStr("dummy")
         assert value is not None
         key: Key[ExampleSerializable] = Key(default=value)
@@ -62,7 +54,6 @@ class TestKey:
         assert key.get().toStr() == "dummy"
 
     def test_value_change_callback(self, mocker: MockerFixture):
-
         callback = mocker.stub()
 
         key = Key(default="default")
@@ -85,7 +76,6 @@ class TestKey:
         callback.assert_not_called()
 
     def test_value_change_callback_inheritance(self, mocker: MockerFixture):
-
         callback_sub_child1 = mocker.stub()
         callback_sub_child2 = mocker.stub()
 
@@ -147,7 +137,6 @@ class TestKey:
         callback_sub_child1.reset_mock()
 
     def test_key_updated_callback(self, mocker: MockerFixture):
-
         callback = mocker.stub()
 
         key = Key(default="default")
@@ -176,7 +165,6 @@ class TestKey:
         callback.reset_mock()
 
     def test_updater(self):
-
         key = Key("")
 
         def updater(value: str) -> str:
@@ -189,7 +177,6 @@ class TestKey:
         assert key.get() == "xx"
 
     def test_inheritance(self):
-
         parent_key = Key(default="default a")
         child_key = Key(default="")
 
@@ -212,7 +199,6 @@ class TestKey:
         assert child_key.get() == "default a"
 
     def test_inherit_wrong_type(self):
-
         parent_key = Key(default="str")
         child_key = Key(default=0)
 
@@ -223,7 +209,6 @@ class TestKey:
         assert child_key.parent() is None
 
     def test_inherit_revert(self):
-
         parent_key = Key(default="default a")
         child_key = Key(default="default b")
 
@@ -241,7 +226,6 @@ class TestKey:
         assert child_key.parent() is None
 
     def test_repr(self):
-
         key1 = Key(default="test")
         key2 = Key(default=12)
         key3 = Key(default="  test\ntest  ")
@@ -259,7 +243,6 @@ class TestKey:
         assert repr(key3) == '<Key[str]:"  test\\ntest  ">'
 
     def test_reparenting(self):
-
         key1 = Key(default="default a")
         key2 = Key(default="default b")
         child_key = Key(default="default c")
@@ -306,31 +289,29 @@ class TestKey:
         stub.assert_called_once_with("default a")
 
     def test_field_label(self):
-        class TestBundle(Bundle):
+        class TestBunch(Bunch):
             key1 = Key("test")
             key2 = Key("test")
 
-        bundle = TestBundle()
-        assert bundle.key1.fieldLabel() == "key1"
-        assert bundle.key2.fieldLabel() == "key2"
+        bunch = TestBunch()
+        assert bunch.key1.fieldLabel() == "key1"
+        assert bunch.key2.fieldLabel() == "key2"
 
         key = Key("test")
         assert key.fieldLabel() == ""
 
     def test_field_path(self):
-
         assert Key("").fieldPath() == ""
 
-        class TestBundle(Bundle):
+        class TestBunch(Bunch):
             key1 = Key("test")
             key2 = Key("test")
 
-        bundle = TestBundle()
-        assert bundle.key1.fieldPath() == ".key1"
-        assert bundle.key2.fieldPath() == ".key2"
+        bunch = TestBunch()
+        assert bunch.key1.fieldPath() == ".key1"
+        assert bunch.key2.fieldPath() == ".key2"
 
     def test_dump_fields(self):
-
         # An unattached Key should get dumped. It just doesn't have a label.
 
         key = Key("")
@@ -338,36 +319,34 @@ class TestKey:
         key.set("test")
         assert list(key.dumpFields()) == [("", "test")]
 
-        class TestBundle(Bundle):
-
+        class TestBunch(Bunch):
             str_key = Key(default="")
             serializable_key = Key(default=ExampleSerializable("empty"))
             _private = Key(default=0)
 
-        bundle = TestBundle()
+        bunch = TestBunch()
 
         # A public Key should get dumped.
 
-        assert list(bundle.str_key.dumpFields()) == []
-        bundle.str_key.set("test")
-        assert list(bundle.str_key.dumpFields()) == [(".str_key", "test")]
+        assert list(bunch.str_key.dumpFields()) == []
+        bunch.str_key.set("test")
+        assert list(bunch.str_key.dumpFields()) == [(".str_key", "test")]
 
         # A Key's value should be serialized in its dump.
 
-        assert list(bundle.serializable_key.dumpFields()) == []
-        bundle.serializable_key.set(ExampleSerializable("not empty"))
-        assert list(bundle.serializable_key.dumpFields()) == [
+        assert list(bunch.serializable_key.dumpFields()) == []
+        bunch.serializable_key.set(ExampleSerializable("not empty"))
+        assert list(bunch.serializable_key.dumpFields()) == [
             (".serializable_key", "not empty")
         ]
 
         # A Key with a private label should not get dumped.
 
-        assert list(bundle._private.dumpFields()) == []  # type: ignore
-        bundle._private.set(111)  # type: ignore
-        assert list(bundle._private.dumpFields()) == []  # type: ignore
+        assert list(bunch._private.dumpFields()) == []  # type: ignore
+        bunch._private.set(111)  # type: ignore
+        assert list(bunch._private.dumpFields()) == []  # type: ignore
 
     def test_restore_field(self, mocker: MockerFixture):
-
         key: Key[int] = Key(0)
         callback = mocker.stub()
         key.onUpdateCall(callback)
@@ -420,27 +399,26 @@ class TestKey:
         assert not key.isSet()
         callback.assert_not_called()
 
-        class TestBundle(Bundle):
+        class TestBunch(Bunch):
             str_key = Key("")
 
         # Same as the above when the Key has a non-empty label.
 
-        bundle = TestBundle()
-        bundle.str_key.restoreField("", "test")
-        assert not bundle.str_key.isSet()
-        bundle.str_key.restoreField("test", "test")
-        assert not bundle.str_key.isSet()
-        bundle.str_key.restoreField(".str_key", "test")
-        assert not bundle.str_key.isSet()
-        bundle.str_key.restoreField("str_key.", "test")
-        assert not bundle.str_key.isSet()
+        bunch = TestBunch()
+        bunch.str_key.restoreField("", "test")
+        assert not bunch.str_key.isSet()
+        bunch.str_key.restoreField("test", "test")
+        assert not bunch.str_key.isSet()
+        bunch.str_key.restoreField(".str_key", "test")
+        assert not bunch.str_key.isSet()
+        bunch.str_key.restoreField("str_key.", "test")
+        assert not bunch.str_key.isSet()
 
-        bundle.str_key.restoreField("str_key", "test")
-        assert bundle.str_key.isSet()
-        assert bundle.str_key.get() == "test"
+        bunch.str_key.restoreField("str_key", "test")
+        assert bunch.str_key.isSet()
+        assert bunch.str_key.get() == "test"
 
     def test_restore_field_serialization(self):
-
         key_str: Key[str] = Key(default="")
         key_str.restoreField("", "test")
         assert key_str.get() == "test"
@@ -464,7 +442,6 @@ class TestKey:
         assert key_custom.get().toStr() == "test"
 
     def test_persistence(self):
-
         # A Key does not keep a reference to its parent or children.
 
         key: Key[str] = Key(default="")

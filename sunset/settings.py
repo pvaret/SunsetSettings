@@ -9,7 +9,7 @@ from typing import (
     TypeVar,
 )
 
-from .bundle import Bundle
+from .bunch import Bunch
 from .exporter import normalize, load_from_file, save_to_file
 from .lockable import Lockable
 from .non_hashable_set import NonHashableSet
@@ -22,7 +22,7 @@ _MAIN = "main"
 Self = TypeVar("Self", bound="Settings")
 
 
-class Settings(Bundle, Lockable):
+class Settings(Bunch, Lockable):
     """
     A collection of keys that can be saved to and loaded from text, and supports
     subsections.
@@ -123,10 +123,9 @@ class Settings(Bundle, Lockable):
     _SECTION_SEPARATOR = "/"
 
     _section_name: str
-    _children: MutableSet[Bundle]
+    _children: MutableSet[Bunch]
 
     def __post_init__(self) -> None:
-
         super().__post_init__()
 
         self._section_name = ""
@@ -167,7 +166,6 @@ class Settings(Bundle, Lockable):
         new.setParent(self)
 
         if name:
-
             # Note that this will trigger an update notification.
 
             new.setSectionName(name)
@@ -292,7 +290,6 @@ class Settings(Bundle, Lockable):
 
     @Lockable.with_lock
     def _setUniqueNameForSection(self: Self, name: str, section: Self) -> None:
-
         candidate = name = normalize(name)
 
         if candidate:
@@ -327,8 +324,8 @@ class Settings(Bundle, Lockable):
         Makes the given Settings instance the parent of this one. If None,
         remove this instance's parent, if any.
 
-        All the Key, List and Bundle fields defined on this instance will be
-        recursively reparented to the corresponding Key / List / Bundle field on
+        All the Key, List and Bunch fields defined on this instance will be
+        recursively reparented to the corresponding Key / List / Bunch field on
         the given parent.
 
         This method is for internal purposes and you will typically not need to
@@ -361,7 +358,7 @@ class Settings(Bundle, Lockable):
 
         Args:
             callback: A callable that will be called with one argument of type
-                :class:`~sunset.List`, :class:`~sunset.Bundle` or
+                :class:`~sunset.List`, :class:`~sunset.Bunch` or
                 :class:`~sunset.Key`, and returns None.
 
         Returns:
@@ -377,7 +374,6 @@ class Settings(Bundle, Lockable):
     def triggerUpdateNotification(
         self, field: Optional[UpdateNotifier]
     ) -> None:
-
         if not self._update_notification_enabled:
             return
 
@@ -409,7 +405,6 @@ class Settings(Bundle, Lockable):
         )
 
     def isPrivate(self) -> bool:
-
         return self.sectionName() == ""
 
     def dumpFields(self) -> Iterable[tuple[str, Optional[str]]]:
@@ -418,7 +413,6 @@ class Settings(Bundle, Lockable):
         """
 
         if not self.isPrivate():
-
             # Ensure the section is dumped event if empty. Dumping an empty
             # section is valid.
 
@@ -473,7 +467,6 @@ class Settings(Bundle, Lockable):
         """
 
         if self.isPrivate():
-
             # This is an anonymous instance, actually. There is therefore
             # nothing to save.
 
@@ -509,7 +502,6 @@ class Settings(Bundle, Lockable):
             self.restoreField(path, dump)
 
     def __lt__(self: Self, other: Self) -> bool:
-
         # Giving sections an order lets us easily sort them when dumping.
 
         return self.sectionName() < other.sectionName()

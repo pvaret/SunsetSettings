@@ -8,7 +8,7 @@ __copyright__ = "2022, P. Varet"
 from . import exporter, non_hashable_set, serializers
 
 from .autosaver import AutoSaver
-from .bundle import Bundle
+from .bunch import Bunch
 from .key import Key
 from .list import List
 from .protocols import Serializable
@@ -16,8 +16,13 @@ from .registry import CallbackRegistry
 from .settings import Settings, normalize
 from .timer import PersistentTimer
 
+# Backward compatibility: Bunch used to be called Bundle. Retain compatibility
+# by keeping this name around for a few versions.
+Bundle = Bunch
+
 __all__ = [
     "AutoSaver",
+    "Bunch",
     "Bundle",
     "CallbackRegistry",
     "Key",

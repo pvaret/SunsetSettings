@@ -26,21 +26,21 @@ from .registry import CallbackRegistry
 
 
 # TODO: Replace with typing.Self when mypy finally supports that.
-Self = TypeVar("Self", bound="Bundle")
+Self = TypeVar("Self", bound="Bunch")
 
 
-class Bundle(ContainableImpl):
+class Bunch(ContainableImpl):
     """
     A collection of related Keys.
 
-    Under the hood, a Bundle is a dataclass, and can be used in the same manner,
+    Under the hood, a Bunch is a dataclass, and can be used in the same manner,
     i.e. by defining attributes directly on the class itself.
 
     Example:
 
-    >>> from sunset import Bundle, Key
-    >>> class Appearance(Bundle):
-    ...     class Font(Bundle):
+    >>> from sunset import Bunch, Key
+    >>> class Appearance(Bunch):
+    ...     class Font(Bunch):
     ...         name: Key[str] = Key(default="Arial")
     ...         size: Key[int] = Key(default=14)
     ...     main_font: Font      = Font()
@@ -58,27 +58,23 @@ class Bundle(ContainableImpl):
     'Calibri'
     """
 
-    _parent: Optional[weakref.ref["Bundle"]]
-    _children: MutableSet["Bundle"]
+    _parent: Optional[weakref.ref["Bunch"]]
+    _children: MutableSet["Bunch"]
     _fields: dict[str, Field]
     _update_notification_callbacks: CallbackRegistry[UpdateNotifier]
     _update_notification_enabled: bool
 
     def __new__(cls: Type[Self]) -> Self:
-
         # Automatically promote relevant attributes to dataclass fields.
 
         cls_parents = cls.__bases__
 
         potential_fields = list(vars(cls).items())
         for name, attr in potential_fields:
-
             if inspect.isclass(attr):
-
                 if attr.__name__ == name:
-
                     # This is probably a class definition that just happens to
-                    # be located inside the containing Bundle definition. This
+                    # be located inside the containing Bunch definition. This
                     # is fine.
 
                     continue
@@ -89,7 +85,6 @@ class Bundle(ContainableImpl):
                 )
 
             if isinstance(attr, ItemTemplate):
-
                 # Safety check: make sure the user isn't accidentally overriding
                 # an existing attribute.
 
@@ -111,7 +106,7 @@ class Bundle(ContainableImpl):
 
                 # Dataclass instantiation raises an error if a field does not
                 # have an explicit type annotation. But our Key, List and
-                # Bundle fields are unambiguously typed, so we don't actually
+                # Bunch fields are unambiguously typed, so we don't actually
                 # need the annotation. So we just tell the dataclass that the
                 # type of non-explicitly-annotated fields is 'Any'. Turns out,
                 # this works.
@@ -131,17 +126,15 @@ class Bundle(ContainableImpl):
         return super().__new__(wrapped)
 
     def __post_init__(self) -> None:
-
         super().__init__()
 
         self._parent = None
-        self._children = WeakNonHashableSet[Bundle]()
+        self._children = WeakNonHashableSet[Bunch]()
         self._fields = {}
         self._update_notification_callbacks = CallbackRegistry()
         self._update_notification_enabled = True
 
         for label, field in vars(self).items():
-
             if isinstance(field, Field):
                 self._fields[label] = field
                 field.setContainer(label, self)
@@ -162,26 +155,26 @@ class Bundle(ContainableImpl):
 
     def setParent(self: Self, parent: Optional[Self]) -> None:
         """
-        Makes the given Bundle the parent of this one. If None, remove this
-        Bundle's parent, if any.
+        Makes the given Bunch the parent of this one. If None, remove this
+        Bunch's parent, if any.
 
-        All the Key, List and Bundle fields defined on this Bundle instance
-        will be recursively reparented to the corresponding Key / List / Bundle
+        All the Key, List and Bunch fields defined on this Bunch instance
+        will be recursively reparented to the corresponding Key / List / Bunch
         field on the given parent.
 
         This method is for internal purposes and you will typically not need to
         call it directly.
 
         Args:
-            parent: Either a Bundle that will become this Bundle's parent, or
-                None. The parent Bundle must have the same type as this
-                Bundle.
+            parent: Either a Bunch that will become this Bunch's parent, or
+                None. The parent Bunch must have the same type as this
+                Bunch.
 
         Returns:
             None.
 
         Note:
-            A Bundle and its parent, if any, do not increase each other's
+            A Bunch and its parent, if any, do not increase each other's
             reference count.
         """
 
@@ -202,14 +195,12 @@ class Bundle(ContainableImpl):
             parent._children.add(self)
 
         for label, field in self._fields.items():
-
             if parent is None:
                 field.setParent(None)
                 continue
 
             parent_field = parent._fields.get(label)
             if parent_field is None:
-
                 # This is a safety check, but it shouldn't happen. By
                 # construction self should be of the same type as parent, so
                 # they should have the same attributes.
@@ -221,10 +212,10 @@ class Bundle(ContainableImpl):
 
     def parent(self: Self) -> Optional[Self]:
         """
-        Returns the parent of this Bundle, if any.
+        Returns the parent of this Bunch, if any.
 
         Returns:
-            A Bundle instance of the same type as this one, or None.
+            A Bunch instance of the same type as this one, or None.
         """
 
         # Make the type of self._parent more specific for the purpose of type
@@ -235,11 +226,11 @@ class Bundle(ContainableImpl):
 
     def children(self: Self) -> Iterator[Self]:
         """
-        Returns an iterator over the Bundle instances that have this Bundle
+        Returns an iterator over the Bunch instances that have this Bunch
         as their parent.
 
         Returns:
-            An iterator over Bundle instances of the same type as this one.
+            An iterator over Bunch instances of the same type as this one.
         """
 
         # Note that we iterate on a copy so that this will not break if a
@@ -250,7 +241,7 @@ class Bundle(ContainableImpl):
 
     def onUpdateCall(self, callback: Callable[[Any], None]) -> None:
         """
-        Adds a callback to be called whenever this Bundle is updated. A Bundle
+        Adds a callback to be called whenever this Bunch is updated. A Bunch
         is considered updated when any of its fields is updated.
 
         The callback will be called with as its argument whichever field was
@@ -258,7 +249,7 @@ class Bundle(ContainableImpl):
 
         Args:
             callback: A callable that will be called with one argument of type
-                :class:`~sunset.List`, :class:`~sunset.Bundle` or
+                :class:`~sunset.List`, :class:`~sunset.Bunch` or
                 :class:`~sunset.Key`, and returns None.
 
         Returns:
@@ -273,10 +264,10 @@ class Bundle(ContainableImpl):
 
     def isSet(self) -> bool:
         """
-        Indicates whether this Bundle holds any field that is set.
+        Indicates whether this Bunch holds any field that is set.
 
         Returns:
-            True if any field set on this Bundle is set, else False.
+            True if any field set on this Bunch is set, else False.
         """
 
         return any(field.isSet() for field in self._fields.values())
@@ -326,10 +317,10 @@ class Bundle(ContainableImpl):
 
     def newInstance(self: Self) -> Self:
         """
-        Internal. Returns a new instance of this Bundle with the same fields.
+        Internal. Returns a new instance of this Bunch with the same fields.
 
         Returns:
-            A Bundle instance.
+            A Bunch instance.
         """
 
         new = self.__class__()

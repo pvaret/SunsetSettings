@@ -69,28 +69,28 @@ Keys can also contain any type that implements the
     implement the `Serializable` protocol, because SunsetSettings needs to know
     how to safely and reliably load them from and save them to text.
 
-Related keys can be grouped together with the :class:`~sunset.Bundle` class.
+Related keys can be grouped together with the :class:`~sunset.Bunch` class.
 
 
-Bundles
+Bunches
 ~~~~~~~
 
-A :class:`~sunset.Bundle` provides a way to group together related Keys. This
+A :class:`~sunset.Bunch` provides a way to group together related Keys. This
 allows you to pass only that group of Keys to the relevant parts of your
 application, so that those parts can remain decoupled. For instance, you could
-have one Bundle for UI-related Keys, one for network-related Keys, etc.
+have one Bunch for UI-related Keys, one for network-related Keys, etc.
 
 For example:
 
 .. code-block:: python
 
-    >>> from sunset import Bundle, Key, Settings
+    >>> from sunset import Bunch, Key, Settings
 
-    >>> class UI(Bundle):
+    >>> class UI(Bunch):
     ...     font_name: Key[str] = Key(default="Arial")
     ...     font_size: Key[int] = Key(default=14)
 
-    >>> class Network(Bundle):
+    >>> class Network(Bunch):
     ...     server: Key[str] = Key(default="127.0.0.1")
     ...     port: Key[int]   = Key(default=80)
     ...     ssl: Key[bool]   = Key(default=False)
@@ -109,33 +109,33 @@ Here too, type annotations are optional, but can be used, and are a good idea:
 
 .. warning::
 
-    Note that the Bundle fields *have* to be instantiated in the Settings class
+    Note that the Bunch fields *have* to be instantiated in the Settings class
     definition, else you will encounter strange bugs that will confuse you. If
-    you encounter problems where modifying the value of a Key in a Bundle also
-    changes the value of the corresponding Key in another Bundle, make sure that
-    your Bundle fields are properly instantiated.
+    you encounter problems where modifying the value of a Key in a Bunch also
+    changes the value of the corresponding Key in another Bunch, make sure that
+    your Bunch fields are properly instantiated.
     
-    Using type annotations for Bundle fields ensures that the type checker will
-    catch un-instantiated Bundles.
+    Using type annotations for Bunch fields ensures that the type checker will
+    catch un-instantiated Bunches.
 
-Bundles can be nested within other Bundles:
+Bunches can be nested within other Bunches:
 
 .. code-block:: python
 
-    >>> class Colors(Bundle):
+    >>> class Colors(Bunch):
     ...     bg_color: Key[str] = Key(default="#ffffff")
     ...     fg_color: Key[str] = Key(default="#000000")
 
-    >>> class Font(Bundle):
+    >>> class Font(Bunch):
     ...     font_name: Key[str] = Key(default="Arial")
     ...     font_size: Key[int] = Key(default=14)
 
-    >>> class UI(Bundle):
+    >>> class UI(Bunch):
     ...     colors: Colors = Colors()
     ...     font: Font     = Font()
 
-It is possible and safe to have multiple Bundle fields instantiated from the
-same Bundle class:
+It is possible and safe to have multiple Bunch fields instantiated from the
+same Bunch class:
 
 .. code-block:: python
 
@@ -143,10 +143,10 @@ same Bundle class:
     ...     input_ui: UI  = UI()
     ...     output_ui: UI = UI()
 
-These Bundle instances are independent from one another, that is to say, their
+These Bunch instances are independent from one another, that is to say, their
 Keys will not be sharing values.
 
-Variable numbers of Keys or Bundles of the same type can be stored using the
+Variable numbers of Keys or Bunches of the same type can be stored using the
 :class:`~sunset.List` class.
 
 
@@ -154,22 +154,22 @@ Lists
 ~~~~~
 
 :class:`~sunset.List` provides a container that is type-compatible with Python
-lists, and can store Keys or Bundles.
+lists, and can store Keys or Bunches.
 
-A List is created by passing it an *instantiated* Key or Bundle as its argument.
-This Key or Bundle instance will serve as a template for new items in the List,
+A List is created by passing it an *instantiated* Key or Bunch as its argument.
+This Key or Bunch instance will serve as a template for new items in the List,
 but the template itself does not get added to the List. Lists are created empty.
 
-The type of the template Key or Bundle determines the type of the List. A List
+The type of the template Key or Bunch determines the type of the List. A List
 can only hold items of the same type as its template item.
 
 For example:
 
 .. code-block:: python
 
-    >>> from sunset import Bundle, Key, List, Settings
+    >>> from sunset import Bunch, Key, List, Settings
 
-    >>> class Color(Bundle):
+    >>> class Color(Bunch):
     ...     name: Key[str]    = Key(default="black")
     ...     hexcode: Key[str] = Key(default="#000000")
 
@@ -259,13 +259,13 @@ Overview
 - Load your settings from a file with :meth:`~sunset.Settings.load()`. See
   :ref:`loading and saving`.
 
-- Pass down the relevant Settings, Bundle or Key instances to the code locations
+- Pass down the relevant Settings, Bunch or Key instances to the code locations
   that will update the Keys from user actions and the code locations that will
   make use of the Keys' values.
 
   .. note::
 
-        Grouping Keys into Bundles allows you to pass only the relevant Keys to
+        Grouping Keys into Bunches allows you to pass only the relevant Keys to
         the parts of your program that use them. This helps prevent the
         introduction of tight coupling between the individual parts of your
         program.
@@ -278,7 +278,7 @@ Overview
 
 - Add callbacks to take action when a Key's value changes with the
   :meth:`~sunset.Key.onValueChangeCall()` method. Add callbacks to take action
-  when a Settings, Bundle or Key is updated in any way with their respective
+  when a Settings, Bunch or Key is updated in any way with their respective
   :meth:`~sunset.Key.onUpdateCall()` methods.
 
 - Save your settings to a file when they are updated or when your application
@@ -297,8 +297,8 @@ Your application may need to override settings per user, per folder, etc. In
 SunsetSettings, this is done by creating a hierarchy of subsections of your
 Settings class, using the :meth:`~sunset.Settings.newSection()` method. This
 method creates a new instance of your Settings that holds the same set of
-Bundle, List and Key fields, with potentially different values. Those Bundles,
-Lists and Keys *inherit* from the corresponding Bundles, Lists and Keys on the
+Bunch, List and Key fields, with potentially different values. Those Bunches,
+Lists and Keys *inherit* from the corresponding Bunches, Lists and Keys on the
 parent section.
 
 Sections can be given a name, either at creation time or after the fact by
@@ -366,11 +366,11 @@ Here is what these Settings would look like when saved to a file:
     path = /home/user1/Videos/
 
 
-Bundles, Lists and Keys
+Bunches, Lists and Keys
 .......................
 
-When you create a new section for your Settings, the Bundles, Lists and Keys in
-that section are automatically set up to inherit from the corresponding Bundles,
+When you create a new section for your Settings, the Bunches, Lists and Keys in
+that section are automatically set up to inherit from the corresponding Bunches,
 Lists and Keys in the parent section.
 
 .. note::
@@ -381,9 +381,9 @@ Lists and Keys in the parent section.
 A Key that does not have a value set on it, but has a parent, returns its
 parent's value instead of its default.
 
-A Bundle's behavior does not change when it has a parent. Giving it a parent
-only recursively sets up inheritance for the Bundles, Lists and Keys held in
-that Bundle.
+A Bunch's behavior does not change when it has a parent. Giving it a parent
+only recursively sets up inheritance for the Bunches, Lists and Keys held in
+that Bunch.
 
 A List's behavior does not change when it has a parent except for the
 :meth:`~sunset.List.iter()` method. This method return an iterator on the List's

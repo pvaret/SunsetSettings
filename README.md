@@ -21,20 +21,20 @@ preserved between sessions.
 Creating settings:
 
 ```python
->>> from sunset import Bundle, Key, List, Settings
+>>> from sunset import Bunch, Key, List, Settings
 
 >>> class BackupToolSettings(Settings):
 ...
-...     class UI(Bundle):
+...     class UI(Bunch):
 ...
-...         class Font(Bundle):
+...         class Font(Bunch):
 ...             name = Key(default="Arial")
 ...             size = Key(default=12)
 ...
 ...         font  = Font()
 ...         theme = Key(default="") 
 ...
-...     class Backup(Bundle):
+...     class Backup(Bunch):
 ...         folder      = Key(default="~")
 ...         destination = Key(default="/mnt/backups")
 ...         compress    = Key(default=True)

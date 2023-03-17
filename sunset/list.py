@@ -15,7 +15,7 @@ from typing import (
     overload,
 )
 
-from .bundle import Bundle
+from .bunch import Bunch
 from .key import Key
 from .non_hashable_set import WeakNonHashableSet
 from .protocols import Containable, ContainableImpl, UpdateNotifier
@@ -26,7 +26,7 @@ ListItemT = TypeVar(
     # Note that we match on Key[Any] and not Key[SerializableT], because a
     # TypeVar cannot be defined in terms of another TypeVar. This is fine,
     # because Keys can only be created bound to a SerializableT type anyway.
-    bound=Union[Bundle, Key[Any]],
+    bound=Union[Bunch, Key[Any]],
 )
 
 
@@ -42,7 +42,7 @@ Self = TypeVar("Self", bound="List[Any]")
 
 class List(MutableSequence[ListItemT], ContainableImpl):
     """
-    A list-like container for Keys or Bundles of a given type, to be used in a
+    A list-like container for Keys or Bunches of a given type, to be used in a
     Settings' definition.
 
     It is type-compatible with standard Python lists and supports indexing,
@@ -58,7 +58,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
     methods to do it in one step.
 
     Args:
-        template: A Key or a Bundle *instance* that represents the items that
+        template: A Key or a Bunch *instance* that represents the items that
             will be contained in this List. (The template itself will not be
             added to the List.)
 
@@ -69,18 +69,18 @@ class List(MutableSequence[ListItemT], ContainableImpl):
 
     Example:
 
-    >>> from sunset import Bundle, Key, List, Settings
+    >>> from sunset import Bunch, Key, List, Settings
     >>> class ExampleSettings(Settings):
-    ...     class ExampleBundle(Bundle):
+    ...     class ExampleBunch(Bunch):
     ...         a: Key[str] = Key(default="")
     ...     key_list: List[Key[int]]         = List(Key(default=0))
-    ...     bundle_list: List[ExampleBundle] = List(ExampleBundle())
+    ...     bunch_list: List[ExampleBunch] = List(ExampleBunch())
     >>> settings = ExampleSettings()
-    >>> settings.bundle_list
+    >>> settings.bunch_list
     []
-    >>> settings.bundle_list.appendOne().a.set("demo")
-    >>> settings.bundle_list
-    [ExampleSettings.ExampleBundle(a=<Key[str]:demo>)]
+    >>> settings.bunch_list.appendOne().a.set("demo")
+    >>> settings.bunch_list
+    [ExampleSettings.ExampleBunch(a=<Key[str]:demo>)]
     >>> settings.key_list
     []
     >>> settings.key_list.appendOne().set(12)
@@ -103,7 +103,6 @@ class List(MutableSequence[ListItemT], ContainableImpl):
     def __init__(
         self, template: ListItemT, order: IterOrder = IterOrder.NO_PARENT
     ) -> None:
-
         super().__init__()
 
         self._contents = []
@@ -116,7 +115,6 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         self._template = template
 
     def insert(self, index: SupportsIndex, value: ListItemT) -> None:
-
         self._contents.insert(index, value)
         self._relabelItems()
         self.triggerUpdateNotification(self)
@@ -132,7 +130,6 @@ class List(MutableSequence[ListItemT], ContainableImpl):
     def __getitem__(
         self, index: Union[SupportsIndex, slice]
     ) -> Union[ListItemT, list[ListItemT]]:
-
         return self._contents[index]
 
     @overload
@@ -148,7 +145,6 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         index: Union[SupportsIndex, slice],
         value: Union[ListItemT, Iterable[ListItemT]],
     ) -> None:
-
         if isinstance(index, slice):
             assert isinstance(value, Iterable)
             self._contents[index] = value
@@ -162,38 +158,31 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         self.triggerUpdateNotification(self)
 
     def __delitem__(self, index: Union[SupportsIndex, slice]) -> None:
-
         del self._contents[index]
         self._relabelItems()
         self.triggerUpdateNotification(self)
 
     def extend(self, values: Iterable[ListItemT]) -> None:
-
         self._contents.extend(values)
         self._relabelItems()
         self.triggerUpdateNotification(self)
 
     def append(self, value: ListItemT) -> None:
-
         self.extend((value,))
 
     def __iadd__(self: Self, values: Iterable[ListItemT]) -> Self:
-
         self.extend(values)
         return self
 
     def clear(self) -> None:
-
         self._contents.clear()
         self._relabelItems()
         self.triggerUpdateNotification(self)
 
     def __len__(self) -> int:
-
         return len(self._contents)
 
     def _newItem(self) -> ListItemT:
-
         item = self._template.newInstance()
 
         # WORKAROUND: This lets mypy properly typecheck the return type.
@@ -261,7 +250,6 @@ class List(MutableSequence[ListItemT], ContainableImpl):
             return False
 
     def _relabelItems(self) -> None:
-
         for i, item in enumerate(self._contents):
             item.setContainer(self._labelForIndex(i), self)
 
@@ -416,7 +404,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
 
         Args:
             callback: A callable that will be called with one argument of type
-                :class:`~sunset.List`, :class:`~sunset.Bundle` or
+                :class:`~sunset.List`, :class:`~sunset.Bunch` or
                 :class:`~sunset.Key`, and returns None.
 
         Returns:
@@ -435,7 +423,6 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         """
 
         if not self.isPrivate():
-
             for item in self._contents:
                 if not item.isSet():
                     yield self.fieldPath() + item.fieldLabel(), None
@@ -466,7 +453,6 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         self._update_notification_enabled = _update_notification_enabled
 
     def _ensureMinimumLength(self, length: int) -> None:
-
         missing_count = length - len(self)
 
         if missing_count > 0:
@@ -502,7 +488,6 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         return self.__class__(template=self._template, order=self._iter_order)
 
     def __repr__(self) -> str:
-
         parent = self.parent()
         items = [repr(item) for item in self.iter(order=IterOrder.NO_PARENT)]
         if parent is not None and self._iter_order == IterOrder.PARENT_FIRST:

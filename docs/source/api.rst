@@ -37,7 +37,7 @@ API Reference
 
     .. automethod:: onUpdateCall
 
-.. autoclass:: sunset.Bundle
+.. autoclass:: sunset.Bunch
 
     .. automethod:: onUpdateCall
 
