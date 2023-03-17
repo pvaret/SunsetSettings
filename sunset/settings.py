@@ -1,6 +1,6 @@
 import logging
+import pathlib
 
-from pathlib import Path
 from typing import (
     Any,
     Callable,
@@ -11,6 +11,7 @@ from typing import (
     MutableSet,
     Optional,
     TypeVar,
+    Union,
 )
 
 from .bunch import Bunch
@@ -508,7 +509,7 @@ class Settings(Bunch, Lockable):
 
     def autosave(
         self,
-        path: str | Path,
+        path: Union[str, pathlib.Path],
         save_on_update: bool = True,
         save_delay: int = 0,
         logger: Optional[logging.Logger] = None,
