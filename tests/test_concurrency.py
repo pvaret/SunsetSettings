@@ -21,7 +21,6 @@ def run_threaded(
     *args: _P.args,
     **kwargs: _P.kwargs,
 ) -> None:
-
     exceptions: list[Exception] = []
     deadline: float = time.monotonic() + duration
     barrier = threading.Barrier(parties=thread_count)
@@ -49,7 +48,6 @@ def run_threaded(
 
 class TestKeyConcurrency:
     def test_set_clear(self) -> None:
-
         str_key = Key("default value")
 
         def clear_and_set_key(thread_id: int) -> None:
@@ -73,16 +71,17 @@ class TestKeyConcurrency:
             assert str_key.get() == "default value"
 
     def test_update_value(self) -> None:
-
         count = [0]
         int_key = Key(0)
+        count_lock = threading.Lock()
 
         def updater(value: int) -> int:
             return value + 1
 
         def update_key(_unused: int) -> None:
             int_key.updateValue(updater)
-            count[0] += 1
+            with count_lock:
+                count[0] += 1
 
         for _ in range(_ATTEMPTS):
             run_threaded(update_key)
@@ -90,7 +89,6 @@ class TestKeyConcurrency:
         assert int_key.get() == count[0]
 
     def test_parenting(self) -> None:
-
         parent_key = Key("")
         parent_key.set("parent")
         str_key = Key("")
@@ -108,7 +106,6 @@ class TestKeyConcurrency:
 
 class TestListConcurrency:
     def test_append_pop(self) -> None:
-
         _start_items: int = 10
 
         key_list = List(Key(""))
@@ -154,7 +151,6 @@ class TestSettingsConcurrency:
         def rename_section(
             thread_id: int, sections: list[TestSettings]
         ) -> None:
-
             section = sections[thread_id % len(sections)]
             section.setSectionName("test")
             section.setSectionName("section")
