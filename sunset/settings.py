@@ -522,7 +522,7 @@ class Settings(Bunch, Lockable):
         are updated from inside the application. Optionally, the updates can be
         batched over a given delay before being saved.
 
-        See the documentation of `sunset.AutoSaver` for the details.
+        See the documentation of :class:`~sunset.AutoSaver` for the details.
 
         Args:
             path: The full path to the file to load the settings from and save
