@@ -63,6 +63,11 @@ Keys can also contain any type that implements the
 :class:`~sunset.Serializable` protocol. See
 :ref:`storing-custom-types`.
 
+As a convenience, SunsetSettings provides the :class:`~sunset.SerializableEnum`
+and :class:`~sunset.SerializableFlag` classes, which are subclasses of
+respectively `enum.Enum` and `enum.Flag` that implement the
+:class:`~sunset.Serializable` protocol. 
+
 .. note::
 
     Key values are limited to `str`, `int`, `float` and `bool` and types that

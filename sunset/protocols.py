@@ -31,7 +31,7 @@ class Serializable(Protocol):
         Returns a string representation of this instance that can be used by
         :meth:`fromStr()` to reconstruct a copy of this instance.
         """
-        ...
+        ...  # noqa  # Else pylint complains of useless ellipsis.
 
     @classmethod
     def fromStr(cls: Type[Self], value: str) -> Optional[Self]:
@@ -41,7 +41,6 @@ class Serializable(Protocol):
         representation, or None if the string is not a valid serialized
         representation of an instance of this class.
         """
-        ...
 
 
 @runtime_checkable

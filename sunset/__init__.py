@@ -13,6 +13,10 @@ from .key import Key
 from .list import List
 from .protocols import Serializable
 from .registry import CallbackRegistry
+from .serializable_enum import (
+    SerializableEnum,
+    SerializableFlag,
+)
 from .settings import Settings, normalize
 from .timer import PersistentTimer
 
@@ -29,6 +33,8 @@ __all__ = [
     "List",
     "PersistentTimer",
     "Serializable",
+    "SerializableEnum",
+    "SerializableFlag",
     "Settings",
     "exporter",
     "non_hashable_set",

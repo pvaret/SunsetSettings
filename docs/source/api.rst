@@ -66,3 +66,7 @@ API Reference
     .. automethod:: toStr
 
     .. automethod:: fromStr
+
+.. autoclass:: sunset.SerializableEnum
+
+.. autoclass:: sunset.SerializableFlag

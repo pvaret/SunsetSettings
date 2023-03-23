@@ -5,6 +5,7 @@ Latest
 ------
 
   - Renamed Bundle to Bunch. Just makes more sense for something that holds Keys.
+  - Added serializable Enum and Flag subclasses.
   - AutoSaver now expands '~' to the current user's home directory.
   - Added atomic updateValue() method to Keys.
 

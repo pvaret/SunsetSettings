@@ -4,7 +4,7 @@ import pytest
 
 from pytest_mock import MockerFixture
 
-from sunset import Bunch, Key, protocols
+from sunset import Bunch, Key, protocols, SerializableEnum, SerializableFlag
 
 
 class ExampleSerializable:
@@ -19,6 +19,17 @@ class ExampleSerializable:
         return ExampleSerializable(value)
 
 
+class ExampleEnum(SerializableEnum):
+    ONE = 1
+    TWO = 2
+
+
+class ExampleFlag(SerializableFlag):
+    ONE = 1
+    TWO = 2
+    THREE = ONE | TWO
+
+
 class TestKey:
     def test_protocol_implementation(self):
         key = Key(default="")
@@ -30,6 +41,11 @@ class TestKey:
         assert type(Key(default=False).get()) is bool
         assert not Key(default=False).get()
         assert Key(default=12.345e-67).get() == 12.345e-67
+        assert Key(default=ExampleEnum.ONE).get() == ExampleEnum.ONE
+        assert (
+            Key(default=ExampleFlag.ONE | ExampleFlag.TWO).get()
+            == ExampleFlag.THREE
+        )
         with pytest.raises(TypeError):
             Key(default=object())  # type: ignore # It's the point!
 
