@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Latest
-------
+SunsetSettings 0.4.0 (2023-03-22)
+---------------------------------
 
   - Renamed Bundle to Bunch. Just makes more sense for something that holds Keys.
   - Added serializable Enum and Flag subclasses.
