@@ -239,7 +239,7 @@ class Bunch(ContainableImpl):
         for child in list(self._children):
             yield cast(Self, child)
 
-    def onUpdateCall(self, callback: Callable[[Any], None]) -> None:
+    def onUpdateCall(self, callback: Callable[[Any], Any]) -> None:
         """
         Adds a callback to be called whenever this Bunch is updated. A Bunch
         is considered updated when any of its fields is updated.
@@ -250,7 +250,7 @@ class Bunch(ContainableImpl):
         Args:
             callback: A callable that will be called with one argument of type
                 :class:`~sunset.List`, :class:`~sunset.Bunch` or
-                :class:`~sunset.Key`, and returns None.
+                :class:`~sunset.Key`.
 
         Returns:
             None.

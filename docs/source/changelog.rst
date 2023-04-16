@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Latest
+------
+
+  - onUpdateCall() and onValueChangeCall() now accept callbacks with any return value.
+
 SunsetSettings 0.4.0 (2023-03-22)
 ---------------------------------
 

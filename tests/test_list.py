@@ -10,12 +10,12 @@ class ExampleBunch(Bunch):
 
 
 class TestList:
-    def test_protocol_implementation(self):
+    def test_protocol_implementation(self) -> None:
         list_key: List[Key[int]] = List(Key(default=0))
         assert isinstance(list_key, protocols.Field)
         assert isinstance(list_key, protocols.Container)
 
-    def test_add_pop(self):
+    def test_add_pop(self) -> None:
         list_key: List[Key[str]] = List(Key(default=""))
         list_key.appendOne()
 
@@ -28,7 +28,7 @@ class TestList:
 
         assert len(list_key) == 0
 
-    def test_inheritance(self):
+    def test_inheritance(self) -> None:
         parent_list: List[Key[int]] = List(Key(default=0))
         child_list: List[Key[int]] = List(Key(default=0))
 
@@ -43,7 +43,7 @@ class TestList:
         assert child_list not in parent_list.children()
         assert child_list.parent() is None
 
-    def test_reparenting(self):
+    def test_reparenting(self) -> None:
         list1: List[Key[int]] = List(Key(default=0))
         list2: List[Key[int]] = List(Key(default=0))
         child_list: List[Key[int]] = List(Key(default=0))
@@ -67,7 +67,7 @@ class TestList:
         assert child_list not in list2.children()
         assert child_list.parent() is None
 
-    def test_iter_inheritance(self):
+    def test_iter_inheritance(self) -> None:
         def flatten(keys: Iterator[Key[str]]) -> list[str]:
             return [key.get() for key in keys]
 
@@ -110,7 +110,7 @@ class TestList:
             "parent",
         ]
 
-    def test_dump_fields(self):
+    def test_dump_fields(self) -> None:
         key_list = List(Key(""))
         key_list.appendOne().set("test 1")
         key_list.appendOne()
@@ -154,7 +154,7 @@ class TestList:
             (".key_list.1", "test public"),
         ]
 
-    def test_restore_field(self, mocker: MockerFixture):
+    def test_restore_field(self, mocker: MockerFixture) -> None:
         callback = mocker.stub()
 
         # Test restoring one value. Also, restoring a field should not trigger a
@@ -243,7 +243,7 @@ class TestList:
         assert not test_list4[2].isSet()
         callback.assert_not_called()
 
-    def test_persistence(self):
+    def test_persistence(self) -> None:
         # A List does not keep a reference to its parent or children.
 
         bunch_list: List[Key[int]] = List(Key(default=0))
@@ -260,9 +260,20 @@ class TestList:
         assert level1.parent() is None
         assert len(list(level1.children())) == 0
 
+    def test_callback_type_is_flexible(self) -> None:
+        key_list = List(Key(""))
+
+        class Dummy:
+            pass
+
+        def callback(_: List[Key[str]]) -> Dummy:
+            return Dummy()
+
+        key_list.onUpdateCall(callback)
+
     def test_update_callback_called_on_list_contents_changed(
         self, mocker: MockerFixture
-    ):
+    ) -> None:
         callback = mocker.stub()
 
         key_list: List[Key[int]] = List(Key(default=0))
@@ -327,7 +338,7 @@ class TestList:
 
     def test_update_callback_called_on_contained_item_update(
         self, mocker: MockerFixture
-    ):
+    ) -> None:
         callback = mocker.stub()
 
         bunch_list: List[ExampleBunch] = List(ExampleBunch())
@@ -383,7 +394,7 @@ class TestList:
 
     def test_update_callback_not_called_for_removed_items(
         self, mocker: MockerFixture
-    ):
+    ) -> None:
         bunch_list: List[ExampleBunch] = List(ExampleBunch())
 
         bunch1 = ExampleBunch()
@@ -437,7 +448,7 @@ class TestList:
         bunch1.test.set("test")
         callback.assert_not_called()
 
-    def test_label_set_on_contained_items(self):
+    def test_label_set_on_contained_items(self) -> None:
         # Testing List.appendOne()
 
         key_list = List(Key(""))
@@ -502,7 +513,7 @@ class TestList:
         assert key_list[2].fieldLabel() == "3"
         assert key_list[4].fieldLabel() == "5"
 
-    def test_label_unset_on_removed_items(self):
+    def test_label_unset_on_removed_items(self) -> None:
         key_list = List(Key(""))
         for _ in range(15):
             key_list.appendOne()
@@ -548,7 +559,7 @@ class TestList:
         key_list.clear()
         assert all(key.fieldLabel() == "" for key in keys)
 
-    def test_field_path(self):
+    def test_field_path(self) -> None:
         test_list1 = List(Key(""))
         assert test_list1.fieldPath() == "."
         test_list1.appendOne()
@@ -565,7 +576,7 @@ class TestList:
         assert test_list2[0].test.fieldPath() == ".1.test"
         assert test_list2[1].test.fieldPath() == ".2.test"
 
-    def test_repr(self):
+    def test_repr(self) -> None:
         parent = List(Key(default=0))
         list_iter_no_parent = List(Key(default=0), order=List.NO_PARENT)
         list_iter_parent_first = List(Key(default=0), order=List.PARENT_FIRST)

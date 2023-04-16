@@ -19,19 +19,19 @@ class ExampleBunch(Bunch):
 
 
 class TestBunch:
-    def test_protocol_implementation(self):
+    def test_protocol_implementation(self) -> None:
         bunch = ExampleBunch()
         assert isinstance(bunch, protocols.Field)
         assert isinstance(bunch, protocols.Container)
 
-    def test_creation(self):
+    def test_creation(self) -> None:
         bunch = ExampleBunch()
         bunch.list.appendOne()
         assert bunch.a.get() == "default a"
         assert bunch.inner_bunch.b.get() == 42
         assert bunch.list[0].c.get() == "default c"
 
-    def test_uninstantiated_field_fails(self):
+    def test_uninstantiated_field_fails(self) -> None:
         class InnerBunch(Bunch):
             pass
 
@@ -41,7 +41,7 @@ class TestBunch:
         with pytest.raises(TypeError):
             FaultyBunch()
 
-    def test_inner_bunch_definition_is_fine(self):
+    def test_inner_bunch_definition_is_fine(self) -> None:
         class FineBunch(Bunch):
             class InnerBunch(Bunch):
                 pass
@@ -50,7 +50,7 @@ class TestBunch:
 
         FineBunch()
 
-    def test_fields_cant_override_existing_attributes(self):
+    def test_fields_cant_override_existing_attributes(self) -> None:
         # "__init__" is an attribute that happens to exist on the class.
 
         assert getattr(Bunch, "__init__", None) is not None
@@ -61,7 +61,7 @@ class TestBunch:
         with pytest.raises(TypeError):
             FaultyBunch()
 
-    def test_inheritance(self):
+    def test_inheritance(self) -> None:
         parent_bunch = ExampleBunch()
         child_bunch = ExampleBunch()
 
@@ -76,7 +76,7 @@ class TestBunch:
         assert child_bunch not in parent_bunch.children()
         assert child_bunch.parent() is None
 
-    def test_parenting(self):
+    def test_parenting(self) -> None:
         parent_bunch = ExampleBunch()
         child_bunch = ExampleBunch()
         child_bunch.setParent(parent_bunch)
@@ -84,7 +84,7 @@ class TestBunch:
         assert child_bunch.parent() is parent_bunch
         assert child_bunch in parent_bunch.children()
 
-    def test_reparenting(self):
+    def test_reparenting(self) -> None:
         bunch1 = ExampleBunch()
         bunch2 = ExampleBunch()
         child_bunch = ExampleBunch()
@@ -108,7 +108,7 @@ class TestBunch:
         assert child_bunch not in bunch2.children()
         assert child_bunch.parent() is None
 
-    def test_inheritance_propagation(self):
+    def test_inheritance_propagation(self) -> None:
         parent_bunch = ExampleBunch()
         child_bunch = ExampleBunch()
         child_bunch.setParent(parent_bunch)
@@ -118,7 +118,7 @@ class TestBunch:
         assert child_bunch.inner_bunch.b.parent() is parent_bunch.inner_bunch.b
         assert child_bunch.list.parent() is parent_bunch.list
 
-    def test_inheritance_values(self):
+    def test_inheritance_values(self) -> None:
         parent_bunch = ExampleBunch()
         child_bunch = ExampleBunch()
         child_bunch.setParent(parent_bunch)
@@ -156,13 +156,13 @@ class TestBunch:
             "test child"
         ]
 
-    def test_field_label(self):
+    def test_field_label(self) -> None:
         bunch = ExampleBunch()
 
         assert bunch.fieldLabel() == ""
         assert bunch.inner_bunch.fieldLabel() == "inner_bunch"
 
-    def test_field_path(self):
+    def test_field_path(self) -> None:
         bunch = ExampleBunch()
         assert bunch.fieldPath() == "."
         assert bunch.a.fieldPath() == ".a"
@@ -174,7 +174,7 @@ class TestBunch:
         assert bunch.list[0].fieldPath() == ".list.1."
         assert bunch.list[0].c.fieldPath() == ".list.1.c"
 
-    def test_dump_fields(self):
+    def test_dump_fields(self) -> None:
         bunch = ExampleBunch()
         assert list(bunch.dumpFields()) == []
 
@@ -193,7 +193,7 @@ class TestBunch:
             (".list.3.c", "test dump c 3"),
         ]
 
-    def test_restore_field(self, mocker: MockerFixture):
+    def test_restore_field(self, mocker: MockerFixture) -> None:
         callback = mocker.stub()
 
         # Test all flavors of valid paths. Also, restoring a field should not
@@ -248,7 +248,7 @@ class TestBunch:
         other_bunch.restoreField("", "invalid path")
         assert not other_bunch.isSet()
 
-    def test_persistence(self):
+    def test_persistence(self) -> None:
         # A Bunch does not keep a reference to its parent or children.
 
         bunch = ExampleBunch()
@@ -265,7 +265,7 @@ class TestBunch:
         assert level1.parent() is None
         assert len(list(level1.children())) == 0
 
-    def test_key_updated_notification(self, mocker: MockerFixture):
+    def test_key_updated_notification(self, mocker: MockerFixture) -> None:
         callback = mocker.stub()
 
         bunch = ExampleBunch()
@@ -293,3 +293,14 @@ class TestBunch:
         child.a.set("test 3")
         callback.assert_not_called()
         callback.reset_mock()
+
+    def test_callback_type_is_flexible(self) -> None:
+        bunch = ExampleBunch()
+
+        class Dummy:
+            pass
+
+        def callback(_: ExampleBunch) -> Dummy:
+            return Dummy()
+
+        bunch.onUpdateCall(callback)

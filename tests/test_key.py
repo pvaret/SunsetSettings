@@ -31,11 +31,11 @@ class ExampleFlag(SerializableFlag):
 
 
 class TestKey:
-    def test_protocol_implementation(self):
+    def test_protocol_implementation(self) -> None:
         key = Key(default="")
         assert isinstance(key, protocols.Field)
 
-    def test_default(self):
+    def test_default(self) -> None:
         assert Key(default="default").get() == "default"
         assert Key(default=0).get() == 0
         assert type(Key(default=False).get()) is bool
@@ -49,12 +49,12 @@ class TestKey:
         with pytest.raises(TypeError):
             Key(default=object())  # type: ignore # It's the point!
 
-    def test_set(self):
+    def test_set(self) -> None:
         key = Key(default="test")
         key.set("other")
         assert key.get() == "other"
 
-    def test_clear(self):
+    def test_clear(self) -> None:
         key = Key(default="default")
         key.set("other")
         assert key.get() != "default"
@@ -62,14 +62,14 @@ class TestKey:
         key.clear()
         assert key.get() == "default"
 
-    def test_serializable_type(self):
+    def test_serializable_type(self) -> None:
         value = ExampleSerializable.fromStr("dummy")
         assert value is not None
         key: Key[ExampleSerializable] = Key(default=value)
 
         assert key.get().toStr() == "dummy"
 
-    def test_value_change_callback(self, mocker: MockerFixture):
+    def test_value_change_callback(self, mocker: MockerFixture) -> None:
         callback = mocker.stub()
 
         key = Key(default="default")
@@ -91,7 +91,9 @@ class TestKey:
         key.clear()
         callback.assert_not_called()
 
-    def test_value_change_callback_inheritance(self, mocker: MockerFixture):
+    def test_value_change_callback_inheritance(
+        self, mocker: MockerFixture
+    ) -> None:
         callback_sub_child1 = mocker.stub()
         callback_sub_child2 = mocker.stub()
 
@@ -152,7 +154,7 @@ class TestKey:
         callback_sub_child1.assert_called_once_with("default")
         callback_sub_child1.reset_mock()
 
-    def test_key_updated_callback(self, mocker: MockerFixture):
+    def test_key_updated_callback(self, mocker: MockerFixture) -> None:
         callback = mocker.stub()
 
         key = Key(default="default")
@@ -180,7 +182,22 @@ class TestKey:
         callback.assert_not_called()
         callback.reset_mock()
 
-    def test_updater(self):
+    def test_callback_type_is_flexible(self) -> None:
+        key = Key("")
+
+        class Dummy:
+            pass
+
+        def callback1(_: Key[str]) -> Dummy:
+            return Dummy()
+
+        def callback2(_: str) -> Dummy:
+            return Dummy()
+
+        key.onUpdateCall(callback1)
+        key.onValueChangeCall(callback2)
+
+    def test_updater(self) -> None:
         key = Key("")
 
         def updater(value: str) -> str:
@@ -192,7 +209,7 @@ class TestKey:
         key.updateValue(updater)
         assert key.get() == "xx"
 
-    def test_inheritance(self):
+    def test_inheritance(self) -> None:
         parent_key = Key(default="default a")
         child_key = Key(default="")
 
@@ -214,7 +231,7 @@ class TestKey:
         child_key.clear()
         assert child_key.get() == "default a"
 
-    def test_inherit_wrong_type(self):
+    def test_inherit_wrong_type(self) -> None:
         parent_key = Key(default="str")
         child_key = Key(default=0)
 
@@ -224,7 +241,7 @@ class TestKey:
 
         assert child_key.parent() is None
 
-    def test_inherit_revert(self):
+    def test_inherit_revert(self) -> None:
         parent_key = Key(default="default a")
         child_key = Key(default="default b")
 
@@ -241,7 +258,7 @@ class TestKey:
         assert child_key not in parent_key.children()
         assert child_key.parent() is None
 
-    def test_repr(self):
+    def test_repr(self) -> None:
         key1 = Key(default="test")
         key2 = Key(default=12)
         key3 = Key(default="  test\ntest  ")
@@ -258,7 +275,7 @@ class TestKey:
         assert repr(key2) == "<Key[int]:12>"
         assert repr(key3) == '<Key[str]:"  test\\ntest  ">'
 
-    def test_reparenting(self):
+    def test_reparenting(self) -> None:
         key1 = Key(default="default a")
         key2 = Key(default="default b")
         child_key = Key(default="default c")
@@ -280,7 +297,7 @@ class TestKey:
 
     def test_callback_triggered_on_parent_value_change(
         self, mocker: MockerFixture
-    ):
+    ) -> None:
         stub = mocker.stub()
 
         parent_key = Key(default="default a")
@@ -304,7 +321,7 @@ class TestKey:
         parent_key.clear()
         stub.assert_called_once_with("default a")
 
-    def test_field_label(self):
+    def test_field_label(self) -> None:
         class TestBunch(Bunch):
             key1 = Key("test")
             key2 = Key("test")
@@ -316,7 +333,7 @@ class TestKey:
         key = Key("test")
         assert key.fieldLabel() == ""
 
-    def test_field_path(self):
+    def test_field_path(self) -> None:
         assert Key("").fieldPath() == ""
 
         class TestBunch(Bunch):
@@ -327,7 +344,7 @@ class TestKey:
         assert bunch.key1.fieldPath() == ".key1"
         assert bunch.key2.fieldPath() == ".key2"
 
-    def test_dump_fields(self):
+    def test_dump_fields(self) -> None:
         # An unattached Key should get dumped. It just doesn't have a label.
 
         key = Key("")
@@ -362,7 +379,7 @@ class TestKey:
         bunch._private.set(111)  # type: ignore
         assert list(bunch._private.dumpFields()) == []  # type: ignore
 
-    def test_restore_field(self, mocker: MockerFixture):
+    def test_restore_field(self, mocker: MockerFixture) -> None:
         key: Key[int] = Key(0)
         callback = mocker.stub()
         key.onUpdateCall(callback)
@@ -434,7 +451,7 @@ class TestKey:
         assert bunch.str_key.isSet()
         assert bunch.str_key.get() == "test"
 
-    def test_restore_field_serialization(self):
+    def test_restore_field_serialization(self) -> None:
         key_str: Key[str] = Key(default="")
         key_str.restoreField("", "test")
         assert key_str.get() == "test"
@@ -457,7 +474,7 @@ class TestKey:
         key_custom.restoreField("", "test")
         assert key_custom.get().toStr() == "test"
 
-    def test_persistence(self):
+    def test_persistence(self) -> None:
         # A Key does not keep a reference to its parent or children.
 
         key: Key[str] = Key(default="")

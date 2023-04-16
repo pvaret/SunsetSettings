@@ -3,8 +3,7 @@ import io
 from sunset import exporter
 
 
-def test_escape():
-
+def test_escape() -> None:
     assert exporter.maybe_escape("") == '""'
     assert exporter.maybe_escape("123") == "123"
     assert exporter.maybe_escape("test test") == "test test"
@@ -16,8 +15,7 @@ def test_escape():
     assert exporter.maybe_escape(r"test\test") == r'"test\\test"'
 
 
-def test_unescape():
-
+def test_unescape() -> None:
     assert exporter.unescape("") == ""
     assert exporter.unescape('""') == ""
     assert exporter.unescape('"') == '"'
@@ -33,8 +31,7 @@ def test_unescape():
     assert exporter.unescape(r'"test\\test"') == r"test\test"
 
 
-def test_escape_reversible():
-
+def test_escape_reversible() -> None:
     for string in (
         "",
         "123",
@@ -49,8 +46,7 @@ def test_escape_reversible():
         assert exporter.unescape(exporter.maybe_escape(string)) == string
 
 
-def test_save():
-
+def test_save() -> None:
     input = [
         ("main/a", "1"),
         ("main/b.c", "test"),
@@ -81,9 +77,8 @@ a = sub sub test
     )
 
 
-def test_load():
-
-    MAIN = "main"
+def test_load() -> None:
+    _main = "main"
 
     input = io.StringIO(
         """\
@@ -103,7 +98,7 @@ a = sub sub test
 """
     )
 
-    assert list(exporter.load_from_file(input, MAIN)) == [
+    assert list(exporter.load_from_file(input, _main)) == [
         ("main/", ""),
         ("main/a", "1"),
         ("main/b.c", "test"),
@@ -117,8 +112,7 @@ a = sub sub test
     ]
 
 
-def test_section_cleanup():
-
+def test_section_cleanup() -> None:
     for input, expected in (
         ("", ""),
         (" // / ", ""),
@@ -128,12 +122,10 @@ def test_section_cleanup():
         ("test/", "test"),
         ("  //   / I'snt This a Test? / // Yes! / // / ", "isntthisatest/yes"),
     ):
-
         assert exporter.cleanup_section(input) == expected
 
 
-def test_path_cleanup():
-
+def test_path_cleanup() -> None:
     for input, expected in (
         ("", ""),
         (" .. . ", ""),
@@ -143,5 +135,4 @@ def test_path_cleanup():
         ("test.", "test"),
         ("  ..   . I'snt This a Test? . .. Yes! . .. . ", "IsntThisaTest.Yes"),
     ):
-
         assert exporter.cleanup_path(input) == expected

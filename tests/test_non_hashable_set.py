@@ -8,8 +8,7 @@ class Dummy:
 
 
 class TestNonHashableSet:
-    def test_mutableset(self):
-
+    def test_mutableset(self) -> None:
         s: MutableSet[Any] = non_hashable_set.NonHashableSet()
         item = Dummy()
 
@@ -28,8 +27,7 @@ class TestNonHashableSet:
         assert len(s) == 0
         assert list(s) == []
 
-    def test_persistence(self):
-
+    def test_persistence(self) -> None:
         s: MutableSet[Any] = non_hashable_set.NonHashableSet()
         item = Dummy()
 
@@ -41,7 +39,7 @@ class TestNonHashableSet:
 
 
 class TestWeakNonHashableSet:
-    def test_mutableset(self):
+    def test_mutableset(self) -> None:
         s: MutableSet[Any] = non_hashable_set.WeakNonHashableSet()
         item = Dummy()
 
@@ -60,8 +58,7 @@ class TestWeakNonHashableSet:
         assert len(s) == 0
         assert list(s) == []
 
-    def test_persistence(self):
-
+    def test_persistence(self) -> None:
         s: MutableSet[Any] = non_hashable_set.WeakNonHashableSet()
         item = Dummy()
 

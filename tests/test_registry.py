@@ -4,8 +4,7 @@ from sunset import CallbackRegistry
 
 
 class TestCallbackRegistry:
-    def test_function(self):
-
+    def test_function(self) -> None:
         call_args: list[str] = []
 
         def test(value: str) -> None:
@@ -28,8 +27,7 @@ class TestCallbackRegistry:
         reg.callAll("not added either")
         assert call_args == ["added"]
 
-    def test_method(self):
-
+    def test_method(self) -> None:
         call_args: list[str] = []
 
         class Test:
@@ -54,7 +52,7 @@ class TestCallbackRegistry:
         reg.callAll("not added")
         assert call_args == ["added"]
 
-    def test_discard_function(self):
+    def test_discard_function(self) -> None:
         def test(_: int) -> None:
             pass
 
@@ -65,7 +63,7 @@ class TestCallbackRegistry:
         reg.discard(test)
         assert test not in reg
 
-    def test_discard_method(self):
+    def test_discard_method(self) -> None:
         class Test:
             def test(self, _: int) -> None:
                 pass
@@ -79,8 +77,8 @@ class TestCallbackRegistry:
         reg.discard(t.test)
         assert t.test not in reg
 
-    def test_pop(self):
-        def test(_: bool):
+    def test_pop(self) -> None:
+        def test(_: bool) -> None:
             pass
 
         reg: CallbackRegistry[bool] = CallbackRegistry()
@@ -91,8 +89,7 @@ class TestCallbackRegistry:
         assert test not in reg
         assert other is test
 
-    def test_function_added_once(self):
-
+    def test_function_added_once(self) -> None:
         call_args: list[str] = []
 
         def test(value: str) -> None:
@@ -108,8 +105,7 @@ class TestCallbackRegistry:
         reg.callAll("once")
         assert call_args == ["once"]
 
-    def test_same_method_added_once(self):
-
+    def test_same_method_added_once(self) -> None:
         call_args: list[str] = []
 
         class Test:
@@ -128,10 +124,9 @@ class TestCallbackRegistry:
         reg.callAll("once")
         assert call_args == ["once"]
 
-    def test_non_hashable_element(self):
+    def test_non_hashable_element(self) -> None:
         class Test(list[int]):
             def __init__(self) -> None:
-
                 super().__init__()
 
                 self.value = 0
@@ -142,7 +137,6 @@ class TestCallbackRegistry:
         t = Test()
 
         with pytest.raises(TypeError):
-
             # Prove that type Test is not hashable.
 
             hash(t)
@@ -154,8 +148,7 @@ class TestCallbackRegistry:
 
         assert t.value == 42
 
-    def test_different_method_added_twice(self):
-
+    def test_different_method_added_twice(self) -> None:
         call_args: list[str] = []
 
         class Test:

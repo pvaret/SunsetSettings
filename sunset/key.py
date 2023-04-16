@@ -77,7 +77,6 @@ class Key(Generic[AnySerializableType], ContainableImpl, Lockable):
     _type: Type[AnySerializableType]
 
     def __init__(self, default: AnySerializableType):
-
         # serialize() raises an exception if the given value is not
         # serializable, so this call guarantees that the provided default is of
         # a type allowed in a Key. In case the user went ahead and ignored the
@@ -204,7 +203,7 @@ class Key(Generic[AnySerializableType], ContainableImpl, Lockable):
         return self._value is not None
 
     def onValueChangeCall(
-        self, callback: Callable[[AnySerializableType], None]
+        self, callback: Callable[[AnySerializableType], Any]
     ) -> None:
         """
         Adds a callback to be called whenever the value returned by calling
@@ -223,8 +222,8 @@ class Key(Generic[AnySerializableType], ContainableImpl, Lockable):
 
 
         Args:
-            callback: A callable that takes one argument of the same type of the
-                values held by this Key, and that returns None.
+            callback: A callable that takes one argument of the same type as the
+                values held by this Key.
 
         Returns:
             None.
@@ -237,7 +236,7 @@ class Key(Generic[AnySerializableType], ContainableImpl, Lockable):
         self._value_change_callbacks.add(callback)
 
     def onUpdateCall(
-        self, callback: Callable[["Key[AnySerializableType]"], None]
+        self, callback: Callable[["Key[AnySerializableType]"], Any]
     ) -> None:
         """
         Adds a callback to be called whenever this Key is updated, even if the
@@ -305,7 +304,6 @@ class Key(Generic[AnySerializableType], ContainableImpl, Lockable):
             return
 
         if parent._type is not self._type:
-
             # This should not happen... unless the user is holding it wrong.
             # So, better safe than sorry.
 
@@ -340,12 +338,10 @@ class Key(Generic[AnySerializableType], ContainableImpl, Lockable):
             yield cast(Self, child)
 
     def dumpFields(self) -> Iterable[tuple[str, Optional[str]]]:
-
         if self.isSet() and not self.isPrivate():
             yield self.fieldPath(), serialize(self.get())
 
     def restoreField(self, path: str, value: Optional[str]) -> None:
-
         if value is None:
             return
 
@@ -358,7 +354,6 @@ class Key(Generic[AnySerializableType], ContainableImpl, Lockable):
         self._update_notification_enabled = True
 
     def _notifyParentValueChanged(self):
-
         if self.isSet():
             return
 
@@ -391,7 +386,6 @@ class Key(Generic[AnySerializableType], ContainableImpl, Lockable):
         return self.__class__(default=self._default)
 
     def __repr__(self) -> str:
-
         type_name = self._type.__name__
         value = maybe_escape(serialize(self.get()))
         if not self.isSet():

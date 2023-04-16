@@ -69,7 +69,7 @@ class Dumpable(Protocol):
 
 @runtime_checkable
 class UpdateNotifier(Protocol):
-    def onUpdateCall(self, callback: Callable[[Any], None]) -> None:
+    def onUpdateCall(self, callback: Callable[[Any], Any]) -> None:
         ...
 
 
@@ -81,7 +81,6 @@ class ItemTemplate(Protocol):
 
 @runtime_checkable
 class Containable(Protocol):
-
     _PATH_SEPARATOR: str
 
     def setContainer(
@@ -124,7 +123,6 @@ class ContainableImpl:
     _container: Optional[weakref.ref[Container]]
 
     def __init__(self) -> None:
-
         super().__init__()
 
         self._field_label = ""

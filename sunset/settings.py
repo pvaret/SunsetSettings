@@ -353,7 +353,7 @@ class Settings(Bunch, Lockable):
         if parent is not None:
             parent._setUniqueNameForSection(self._section_name, self)
 
-    def onUpdateCall(self, callback: Callable[[Any], None]) -> None:
+    def onUpdateCall(self, callback: Callable[[Any], Any]) -> None:
         """
         Adds a callback to be called whenever this Settings instance is updated.
         A Settings instance is considered updated when any of its fields is
@@ -365,7 +365,7 @@ class Settings(Bunch, Lockable):
         Args:
             callback: A callable that will be called with one argument of type
                 :class:`~sunset.List`, :class:`~sunset.Bunch` or
-                :class:`~sunset.Key`, and returns None.
+                :class:`~sunset.Key`.
 
         Returns:
             None.

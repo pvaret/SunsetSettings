@@ -8,8 +8,7 @@ from sunset import PersistentTimer
 
 
 class TestPersistentTimer:
-    def test_timer_no_delay(self, monkeypatch: MonkeyPatch):
-
+    def test_timer_no_delay(self, monkeypatch: MonkeyPatch) -> None:
         mock_cls = MagicMock(threading.Timer, autospec=True)
         mock = mock_cls.return_value
         monkeypatch.setattr(threading, "Timer", mock_cls)
@@ -32,8 +31,7 @@ class TestPersistentTimer:
 
         assert timer._timer is None  # type: ignore
 
-    def test_timer_with_delay(self, monkeypatch: MonkeyPatch):
-
+    def test_timer_with_delay(self, monkeypatch: MonkeyPatch) -> None:
         mock_cls = MagicMock(threading.Timer, autospec=True)
         mock = mock_cls.return_value
         monkeypatch.setattr(threading, "Timer", mock_cls)

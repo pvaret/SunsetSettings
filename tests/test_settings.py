@@ -5,7 +5,7 @@ from pytest_mock import MockerFixture
 from sunset import Bunch, Key, List, Settings, normalize
 
 
-def test_normalize():
+def test_normalize() -> None:
     assert normalize("") == ""
     assert normalize("     ") == ""
     assert normalize("  A  B  ") == "ab"
@@ -27,7 +27,7 @@ class ExampleSettings(Settings):
 
 
 class TestSettings:
-    def test_new_section(self):
+    def test_new_section(self) -> None:
         settings = ExampleSettings()
         assert settings.fieldPath() == "main/"
 
@@ -51,7 +51,7 @@ class TestSettings:
             == "main/?/notanonymousitselfbutinaanonymoushierachy/"
         )
 
-    def test_new_named_section(self):
+    def test_new_named_section(self) -> None:
         settings = ExampleSettings()
 
         assert len(list(settings.sections())) == 0
@@ -64,7 +64,7 @@ class TestSettings:
 
         assert othersection is section
 
-    def test_field_path(self):
+    def test_field_path(self) -> None:
         settings = ExampleSettings()
 
         assert settings.fieldPath() == "main/"
@@ -121,7 +121,7 @@ class TestSettings:
         assert settings.fieldPath() == "main/"
         assert settings.a.fieldPath() == "main/a"
 
-    def test_dump_fields(self):
+    def test_dump_fields(self) -> None:
         # When no field is set, the name of the section should still be dumped.
 
         settings = ExampleSettings()
@@ -221,7 +221,7 @@ class TestSettings:
             ("main/z/", None),
         ]
 
-    def test_restore_field(self, mocker: MockerFixture):
+    def test_restore_field(self, mocker: MockerFixture) -> None:
         callback = mocker.stub()
 
         # Test restorting a field. As well, restoring a field should not trigger
@@ -301,7 +301,7 @@ class TestSettings:
         assert not other_settings.isSet()
         callback.assert_not_called()
 
-    def test_persistence(self):
+    def test_persistence(self) -> None:
         # Settings keep a reference to their sections, but not to their parent.
 
         settings = ExampleSettings()
@@ -316,7 +316,7 @@ class TestSettings:
         assert level1.parent() is None
         assert len(list(level1.sections())) == 1
 
-    def test_save(self):
+    def test_save(self) -> None:
         settings = ExampleSettings()
         settings.a.set("a")
         settings.bunch_list.appendOne().c.set(100)
@@ -371,7 +371,7 @@ inner_bunch.d = false
 """
         )
 
-    def test_load(self, mocker: MockerFixture):
+    def test_load(self, mocker: MockerFixture) -> None:
         settings = ExampleSettings()
         callback = mocker.stub()
         settings.onUpdateCall(callback)
@@ -430,7 +430,7 @@ inner_bunch.d = false
 
         assert level2.inner_bunch.c.get() == 200
 
-    def test_load_invalid_no_section(self):
+    def test_load_invalid_no_section(self) -> None:
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
@@ -442,7 +442,7 @@ a = no bunch header
 
         assert settings.a.get() == ""
 
-    def test_load_invalid_repeated_key(self):
+    def test_load_invalid_repeated_key(self) -> None:
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
@@ -456,7 +456,7 @@ a = last value should be used
 
         assert settings.a.get() == "last value should be used"
 
-    def test_load_invalid_repeated_section(self):
+    def test_load_invalid_repeated_section(self) -> None:
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
@@ -475,7 +475,7 @@ a = bunch values will be merged, last takes precedence
             == "bunch values will be merged, last takes precedence"
         )
 
-    def test_load_invalid_missing_main(self):
+    def test_load_invalid_missing_main(self) -> None:
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
@@ -492,7 +492,7 @@ a = main bunch is implicitly created if needed
             sections[0].a.get() == "main bunch is implicitly created if needed"
         )
 
-    def test_load_invalid_extra_section_separators(self):
+    def test_load_invalid_extra_section_separators(self) -> None:
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
@@ -540,7 +540,7 @@ a = extra separators should be skipped
         assert len(sections) == 1
         assert sections[0].a.get() == "extra separators should be skipped"
 
-    def test_load_invalid_bad_section_is_skipped(self):
+    def test_load_invalid_bad_section_is_skipped(self) -> None:
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
@@ -558,7 +558,7 @@ a = bad bunch
         assert len(sections) == 0
         assert settings.a.get() == "main"
 
-    def test_load_invalid_similar_are_merged(self):
+    def test_load_invalid_similar_are_merged(self) -> None:
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
@@ -576,7 +576,7 @@ a = merged
         assert len(sections) == 0
         assert settings.a.get() == "merged"
 
-    def test_load_invalid_empty_section_is_skipped(self):
+    def test_load_invalid_empty_section_is_skipped(self) -> None:
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
@@ -594,7 +594,7 @@ a = skipped
         assert len(sections) == 0
         assert settings.a.get() == "main"
 
-    def test_load_bad_key(self):
+    def test_load_bad_key(self) -> None:
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
@@ -679,7 +679,7 @@ a.. = should be loaded
 
         assert settings.a.get() == "should be loaded"
 
-    def test_load_sections_created_even_if_empty(self):
+    def test_load_sections_created_even_if_empty(self) -> None:
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
@@ -690,7 +690,7 @@ a.. = should be loaded
         )
         assert settings.getSection("shouldexist") is not None
 
-    def test_load_renamed_settings(self):
+    def test_load_renamed_settings(self) -> None:
         settings = ExampleSettings()
         settings.setSectionName("renamed")
 
@@ -725,7 +725,18 @@ a = value
             logger=None,
         )
 
-    def test_key_updated_notification(self, mocker: MockerFixture):
+    def test_callback_type_is_flexible(self) -> None:
+        settings = ExampleSettings()
+
+        class Dummy:
+            pass
+
+        def callback(_: ExampleSettings) -> Dummy:
+            return Dummy()
+
+        settings.onUpdateCall(callback)
+
+    def test_key_updated_notification(self, mocker: MockerFixture) -> None:
         callback = mocker.stub()
 
         settings = ExampleSettings()
@@ -767,7 +778,7 @@ a = value
         callback.assert_called_once_with(anonymoussection.a)
         callback.reset_mock()
 
-    def test_name_unicity(self):
+    def test_name_unicity(self) -> None:
         class TestSettings(Settings):
             pass
 
@@ -780,7 +791,7 @@ a = value
             set(child.sectionName() for child in parent.children())
         )
 
-    def test_anonymous_name_not_unique(self):
+    def test_anonymous_name_not_unique(self) -> None:
         class TestSettings(Settings):
             pass
 

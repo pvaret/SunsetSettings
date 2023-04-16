@@ -391,7 +391,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         for child in self._children:
             yield cast(Self, child)
 
-    def onUpdateCall(self, callback: Callable[[Any], None]) -> None:
+    def onUpdateCall(self, callback: Callable[[Any], Any]) -> None:
         """
         Adds a callback to be called whenever this List, *or* any item contained
         in this List, is updated.
@@ -405,7 +405,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         Args:
             callback: A callable that will be called with one argument of type
                 :class:`~sunset.List`, :class:`~sunset.Bunch` or
-                :class:`~sunset.Key`, and returns None.
+                :class:`~sunset.Key`.
 
         Returns:
             None.
