@@ -286,6 +286,8 @@ class List(MutableSequence[ListItemT], ContainableImpl):
             if type(self) is not type(parent):
                 return
 
+        # pylint: disable=protected-access
+
         old_parent = self.parent()
         if old_parent is not None:
             old_parent._children.discard(self)

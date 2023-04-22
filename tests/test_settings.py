@@ -707,9 +707,10 @@ a = value
 
     def test_autosave(self, mocker: MockerFixture) -> None:
         sentinel = object()
-        stub = mocker.patch("sunset.autosaver.AutoSaver", return_value=sentinel)
+        stub = mocker.Mock(return_value=sentinel)
 
         settings = ExampleSettings()
+        settings.setAutosaverClass(stub)
         ret = settings.autosave(
             "/tmp/test",
             save_delay=12,

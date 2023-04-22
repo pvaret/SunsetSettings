@@ -186,12 +186,14 @@ class Bunch(ContainableImpl):
 
         old_parent = self.parent()
         if old_parent is not None:
+            # pylint: disable=protected-access
             old_parent._children.discard(self)
 
         if parent is None:
             self._parent = None
         else:
             self._parent = weakref.ref(parent)
+            # pylint: disable=protected-access
             parent._children.add(self)
 
         for label, field in self._fields.items():

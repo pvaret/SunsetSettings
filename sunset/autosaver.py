@@ -5,12 +5,27 @@ import tempfile
 
 from types import TracebackType
 
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, Callable, IO, Optional, Protocol, TypeVar, Union
 
-from .settings import Settings
 from .timer import PersistentTimer, TimerProtocol
 
 _TimerT = TypeVar("_TimerT", bound=TimerProtocol)
+
+
+class _SavableProtocol(Protocol):
+    """
+    This protocol lets AutoSaver know how to use a Settings instance without
+    having to import the actual Settings class.
+    """
+
+    def load(self, file: IO[str]) -> None:
+        ...
+
+    def save(self, file: IO[str], blanklines: bool = False) -> None:
+        ...
+
+    def onUpdateCall(self, callback: Callable[[Any], Any]) -> None:
+        ...
 
 
 class AutoSaver:
@@ -77,7 +92,7 @@ class AutoSaver:
     _ENCODING: str = "UTF-8"
 
     _path: pathlib.Path
-    _settings: Settings
+    _settings: _SavableProtocol
     _dirty: bool
     _save_on_update: bool
     _save_on_delete: bool
@@ -87,7 +102,7 @@ class AutoSaver:
 
     def __init__(
         self,
-        settings: Settings,
+        settings: _SavableProtocol,
         path: Union[pathlib.Path, str],
         *,
         save_on_update: bool = True,
@@ -177,12 +192,12 @@ class AutoSaver:
 
         self._save_timer.cancel()
 
-        dir = self._path.parent
-        dir.mkdir(parents=True, mode=self._DIR_MODE, exist_ok=True)
+        directory = self._path.parent
+        directory.mkdir(parents=True, mode=self._DIR_MODE, exist_ok=True)
 
         try:
             with tempfile.NamedTemporaryFile(
-                dir=dir,
+                dir=directory,
                 prefix=self._path.name,
                 mode="xt",
                 encoding=self._ENCODING,

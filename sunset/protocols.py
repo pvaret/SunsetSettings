@@ -17,6 +17,11 @@ Self = TypeVar("Self")
 _T = TypeVar("_T")
 
 
+# pylint: disable=unnecessary-ellipsis
+# The ellipses in the protocol definitions below are in fact necessary: they let
+# the type checker know it's fine we're not returning values.
+
+
 @runtime_checkable
 class Serializable(Protocol):
     """
@@ -32,7 +37,7 @@ class Serializable(Protocol):
         Returns a string representation of this instance that can be used by
         :meth:`fromStr()` to reconstruct a copy of this instance.
         """
-        ...  # noqa  # Else pylint complains of useless ellipsis.
+        ...
 
     @classmethod
     def fromStr(cls: type[Self], string: str) -> Optional[Self]:

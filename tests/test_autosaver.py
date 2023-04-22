@@ -11,29 +11,24 @@ from sunset import AutoSaver, Key, Settings
 
 
 class MockTimer:
-
     _clock: float
     _interval: float
     _function: Callable[[], None]
 
     def __init__(self, function: Callable[[], Any]) -> None:
-
         self._function = function
         self._interval = 0
         self._clock = -1.0
 
     def cancel(self) -> None:
-
         self._clock = -1.0
 
     def start(self, interval: float) -> None:
-
         if self._clock < 0:
             self._interval = interval
             self._clock = 0.0
 
     def advanceTime(self, time: float) -> None:
-
         if self._clock >= 0:
             self._clock += time
             if self._clock >= self._interval:
@@ -46,7 +41,6 @@ class ExampleSettings(Settings):
 
 class TestAutosaver:
     def test_load_on_init(self, tmp_path: pathlib.Path) -> None:
-
         settings_file = tmp_path / "test.conf"
         settings_file.write_text("[main]\nkey_str = test\n")
 
@@ -59,7 +53,6 @@ class TestAutosaver:
         assert settings.key_str.get() == "test"
 
     def test_no_load_on_init(self, tmp_path: pathlib.Path) -> None:
-
         settings_file = tmp_path / "test.conf"
         settings_file.write_text("[main]\nkey_str = test\n")
 
@@ -72,7 +65,6 @@ class TestAutosaver:
         assert settings.key_str.get() == ""
 
     def test_no_unneeded_saving(self, tmp_path: pathlib.Path) -> None:
-
         settings_file = tmp_path / "test.conf"
         settings = ExampleSettings()
         autosaver = AutoSaver(
@@ -86,7 +78,6 @@ class TestAutosaver:
         assert not settings_file.exists()
 
     def test_autosave_on_update(self, tmp_path: pathlib.Path) -> None:
-
         settings_file = tmp_path / "test.conf"
         settings = ExampleSettings()
         autosaver = AutoSaver(settings, settings_file, save_on_delete=False)
@@ -101,7 +92,6 @@ class TestAutosaver:
         del autosaver  # So that it's not unused.
 
     def test_autosave_on_delete(self, tmp_path: pathlib.Path) -> None:
-
         settings_file = tmp_path / "test.conf"
         settings = ExampleSettings()
         autosaver = AutoSaver(settings, settings_file, save_on_update=False)
@@ -118,7 +108,6 @@ class TestAutosaver:
     def test_autosave_creates_missing_dirs(
         self, tmp_path: pathlib.Path
     ) -> None:
-
         settings = ExampleSettings()
         settings_file = tmp_path / "multiple" / "levels" / "deep" / "test.conf"
         autosaver = AutoSaver(
@@ -132,7 +121,6 @@ class TestAutosaver:
         assert settings_file.parent.exists()
 
     def test_context_manager(self, tmp_path: pathlib.Path) -> None:
-
         settings = ExampleSettings()
         settings_file = tmp_path / "test.conf"
         with AutoSaver(
@@ -145,7 +133,6 @@ class TestAutosaver:
         assert settings_file.read_text() == "[main]\nkey_str = test\n"
 
     def test_delayed_save(self, tmp_path: pathlib.Path) -> None:
-
         settings_file = tmp_path / "test.conf"
         settings = ExampleSettings()
         autosaver = AutoSaver(
@@ -190,7 +177,6 @@ class TestAutosaver:
     def test_exceptions(
         self, tmp_path: pathlib.Path, mocker: MockerFixture
     ) -> None:
-
         settings_file = tmp_path / "actually_a_folder"
         settings_file.mkdir(parents=True)
 

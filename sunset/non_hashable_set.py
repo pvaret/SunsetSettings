@@ -17,13 +17,11 @@ class NonHashableSet(MutableSet[_T]):
     def __init__(
         self, mapping_type: Type[MutableMapping[int, _T]] = dict
     ) -> None:
-
         super().__init__()
 
         self._contents = mapping_type()
 
     def _computeHash(self, value: Any) -> int:
-
         # Try to return the normal hash for the value if possible. This is
         # because hash is more selective than id. For instance! If value is a
         # weakref, then hash properly identifies two distinct weakrefs to the
@@ -38,26 +36,21 @@ class NonHashableSet(MutableSet[_T]):
             return id(value)
 
     def add(self, value: _T) -> None:
-
         self._contents[self._computeHash(value)] = value
 
     def discard(self, value: _T) -> None:
-
         try:
             del self._contents[self._computeHash(value)]
         except KeyError:
             pass
 
-    def __contains__(self, object: Any) -> bool:
-
-        return self._computeHash(object) in self._contents
+    def __contains__(self, obj: Any) -> bool:
+        return self._computeHash(obj) in self._contents
 
     def __iter__(self) -> Iterator[_T]:
-
         yield from self._contents.values()
 
     def __len__(self) -> int:
-
         return len(self._contents)
 
 
@@ -69,5 +62,4 @@ class WeakNonHashableSet(NonHashableSet[_T]):
     """
 
     def __init__(self) -> None:
-
         super().__init__(mapping_type=weakref.WeakValueDictionary)

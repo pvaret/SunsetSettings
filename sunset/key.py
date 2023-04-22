@@ -165,6 +165,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
         if prev_value != self.get():
             self._value_change_callbacks.callAll(self.get())
             for child in self.children():
+                # pylint: disable=protected-access
                 child._notifyParentValueChanged()
 
         if not previously_set or prev_value != self.get():
@@ -187,6 +188,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
         if prev_value != self.get():
             self._value_change_callbacks.callAll(self.get())
             for child in self.children():
+                # pylint: disable=protected-access
                 child._notifyParentValueChanged()
 
         self.triggerUpdateNotification()
@@ -307,6 +309,8 @@ class Key(Generic[_T], ContainableImpl, Lockable):
             if type(self) is not type(parent):
                 return
 
+        # pylint: disable=protected-access
+
         old_parent = self.parent()
         if old_parent is not None:
             old_parent._children.discard(self)
@@ -371,6 +375,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
 
         self._value_change_callbacks.callAll(self.get())
         for child in self.children():
+            # pylint: disable=protected-access
             child._notifyParentValueChanged()
 
     def triggerUpdateNotification(self):

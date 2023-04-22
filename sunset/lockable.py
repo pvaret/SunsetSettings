@@ -23,7 +23,6 @@ class Lockable:
     _lock: threading.RLock
 
     def __init__(self) -> None:
-
         super().__init__()
 
         self._lock = threading.RLock()
@@ -36,6 +35,7 @@ class Lockable:
         def locked_method(
             self: _Self, *args: _P.args, **kwargs: _P.kwargs
         ) -> _R:
+            # pylint: disable-next=protected-access
             with self._lock:
                 return method(self, *args, **kwargs)
 

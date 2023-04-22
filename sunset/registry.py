@@ -10,11 +10,9 @@ _T = TypeVar("_T")
 
 
 class CallbackRegistry(MutableSet[Callable[[_T], None]]):
-
     _content: NonHashableSet[weakref.ref[Callable[[_T], None]]]
 
     def __init__(self) -> None:
-
         super().__init__()
 
         # We can't just use a WeakNonHashableSet because it does not know how to
@@ -25,9 +23,7 @@ class CallbackRegistry(MutableSet[Callable[[_T], None]]):
         self._content = NonHashableSet()
 
     def add(self, value: Callable[[_T], None]) -> None:
-
         if isinstance(value, MethodType):
-
             # Note: WeakMethod has incorrect type annotations, so we have to
             # ignore types here.
 
@@ -39,30 +35,25 @@ class CallbackRegistry(MutableSet[Callable[[_T], None]]):
         self._content.add(r)
 
     def __contains__(self, value: Any) -> bool:
-
         return any(self._isSameCallable(candidate, value) for candidate in self)
 
     def __iter__(self) -> Iterator[Callable[[_T], None]]:
-
         for ref in self._content:
             value = ref()
             if value is not None:
                 yield value
 
     def __len__(self) -> int:
-
         return len(self._content)
 
     def discard(self, value: Callable[[_T], None]) -> None:
-
         refs = list(self._content)
         for ref in refs:
-            callable = ref()
-            if callable is not None and self._isSameCallable(callable, value):
+            callable_ = ref()
+            if callable_ is not None and self._isSameCallable(callable_, value):
                 self._content.discard(ref)
 
     def callAll(self, value: _T) -> None:
-
         for callback in self:
             callback(value)
 
@@ -70,7 +61,6 @@ class CallbackRegistry(MutableSet[Callable[[_T], None]]):
     def _isSameCallable(
         callable1: Callable[[_T], None], callable2: Callable[[_T], None]
     ) -> bool:
-
         if isinstance(callable1, MethodType) and isinstance(
             callable2, MethodType
         ):
@@ -79,9 +69,7 @@ class CallbackRegistry(MutableSet[Callable[[_T], None]]):
                 and callable1.__name__ == callable2.__name__
             )
 
-        else:
-            return callable1 is callable2
+        return callable1 is callable2
 
     def _onExpire(self, ref: weakref.ref[Callable[[_T], None]]) -> None:
-
         self._content.discard(ref)

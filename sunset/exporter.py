@@ -5,18 +5,17 @@ _SECTION_SEPARATOR = "/"
 _PATH_SEPARATOR = "."
 
 
-def normalize(input: str, to_lower: bool = True) -> str:
-
+def normalize(string: str, to_lower: bool = True) -> str:
     ret = ""
-    for c in input:
+    for c in string:
         if c.isalnum() or c in ("-", "_"):
             ret += c
     return ret.lower() if to_lower else ret
 
 
 def maybe_escape(value: str) -> str:
-
     if (
+        # pylint: disable-next=too-many-boolean-expressions
         len(value) == 0
         or '"' in value
         or "\\" in value
@@ -24,7 +23,6 @@ def maybe_escape(value: str) -> str:
         or value[0].isspace()
         or value[-1].isspace()
     ):
-
         ret = ""
         for c in value:
             if c == '"':
@@ -41,8 +39,7 @@ def maybe_escape(value: str) -> str:
     return value
 
 
-def unescape(value: str):
-
+def unescape(value: str) -> str:
     if '"' not in value and "\\" not in value:
         return value
 
@@ -59,13 +56,12 @@ def unescape(value: str):
     escaped = False
 
     for c in value:
-
         if not escaped:
             if c == "\\":
                 escaped = True
                 continue
-            else:
-                ret += c
+
+            ret += c
 
         else:
             if c == "n":
@@ -78,7 +74,6 @@ def unescape(value: str):
 
 
 def cleanup_string(string: str, /, sep: str, to_lower: bool) -> str:
-
     replacements = (
         (f" {sep}", f"{sep}"),
         (f"{sep} ", f"{sep}"),
@@ -97,12 +92,10 @@ def cleanup_string(string: str, /, sep: str, to_lower: bool) -> str:
 
 
 def cleanup_section(section: str) -> str:
-
     return cleanup_string(section, sep=_SECTION_SEPARATOR, to_lower=True)
 
 
 def cleanup_path(path: str) -> str:
-
     return cleanup_string(path, sep=_PATH_SEPARATOR, to_lower=False)
 
 
@@ -114,12 +107,10 @@ def save_to_file(
     *,
     blanklines: bool,
 ):
-
     need_space = False
     current_section = ""
 
     def extract_section(path: str) -> tuple[str, str]:
-
         if _SECTION_SEPARATOR not in path:
             return "", ""
 
@@ -130,13 +121,11 @@ def save_to_file(
         return section, path
 
     for path, dump in data:
-
         section, path = extract_section(path.strip())
         if not section:
             continue
 
         if section != current_section:
-
             current_section = section
 
             if need_space and blanklines:
@@ -155,7 +144,6 @@ def save_to_file(
 def load_from_file(
     file: IO[str], main: str
 ) -> Iterable[tuple[str, Optional[str]]]:
-
     main = normalize(main)
 
     current_section = ""
@@ -167,7 +155,6 @@ def load_from_file(
             continue
 
         if line[0] == "[" and line[-1] == "]":
-
             current_section = cleanup_section(line[1:-1])
             if not current_section:
                 continue
@@ -178,7 +165,6 @@ def load_from_file(
             yield current_section + _SECTION_SEPARATOR, ""
 
         elif "=" in line:
-
             path, dump = line.split("=", 1)
             path = cleanup_path(path)
             dump = dump.strip()

@@ -14,6 +14,7 @@ from typing import (
     Union,
 )
 
+from .autosaver import AutoSaver
 from .bunch import Bunch
 from .exporter import normalize, load_from_file, save_to_file
 from .lockable import Lockable
@@ -130,6 +131,7 @@ class Settings(Bunch, Lockable):
     _section_name: str
     _children: MutableSet[Bunch]
     _autosaver: Optional[ContextManager[Any]] = None
+    _autosaver_class: type[AutoSaver]
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -141,6 +143,7 @@ class Settings(Bunch, Lockable):
         # items; in this class, it does.
 
         self._children = NonHashableSet()
+        self._autosaver_class = AutoSaver
 
     @Lockable.with_lock
     def newSection(self: Self, name: Optional[str] = None) -> Self:
@@ -287,6 +290,7 @@ class Settings(Bunch, Lockable):
             self._section_name = name
 
         else:
+            # pylint: disable-next=protected-access
             parent._setUniqueNameForSection(name, self)
 
         if self.sectionName() != previous_name:
@@ -308,6 +312,7 @@ class Settings(Bunch, Lockable):
                 i += 1
                 candidate = f"{name}_{i}"
 
+        # pylint: disable=protected-access
         section._section_name = candidate
 
     def sectionName(self) -> str:
@@ -351,8 +356,12 @@ class Settings(Bunch, Lockable):
         # Ensure that this section's name is unique in its parent.
 
         if parent is not None:
+            # pylint: disable=protected-access
             parent._setUniqueNameForSection(self._section_name, self)
 
+    # Not actually useless. This lets us override the docstring with
+    # Settings-specific info.
+    # pylint: disable-next=useless-parent-delegation
     def onUpdateCall(self, callback: Callable[[Any], Any]) -> None:
         """
         Adds a callback to be called whenever this Settings instance is updated.
@@ -507,6 +516,12 @@ class Settings(Bunch, Lockable):
         for path, dump in load_from_file(file, self.sectionName()):
             self.restoreField(path, dump)
 
+    def setAutosaverClass(self, class_: type[AutoSaver]) -> None:
+        """
+        Internal.
+        """
+        self._autosaver_class = class_
+
     def autosave(
         self,
         path: Union[str, pathlib.Path],
@@ -546,14 +561,10 @@ class Settings(Bunch, Lockable):
             An AutoSaver context manager.
         """
 
-        # Only do the import here in order to avoid cyclical imports.
-
-        from .autosaver import AutoSaver
-
         # Keep a reference to the AutoSaver instance, so that its lifetime is
         # bound to that of this Settings instance.
 
-        self._autosaver = AutoSaver(
+        self._autosaver = self._autosaver_class(
             self,
             path,
             save_on_update=save_on_update,
