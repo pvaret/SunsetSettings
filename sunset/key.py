@@ -1,3 +1,4 @@
+import logging
 import weakref
 
 from typing import (
@@ -80,6 +81,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
     _default: _T
     _value: Optional[_T]
     _serializer: Serializer[_T]
+    _bad_value_string: Optional[str]
     _value_change_callbacks: CallbackRegistry[_T]
     _update_notification_callbacks: CallbackRegistry["Key[_T]"]
     _update_notification_enabled: bool
@@ -99,6 +101,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
 
         self._default = default
         self._value = None
+        self._bad_value_string = None
 
         if serializer is None:
             serializer = lookup(self._type)
@@ -157,6 +160,10 @@ class Key(Generic[_T], ContainableImpl, Lockable):
         if not isinstance(value, self._type):
             return
 
+        # Setting a Key's value programmatically always resets bad values.
+
+        self._bad_value_string = None
+
         previously_set = self.isSet()
         prev_value = self.get()
 
@@ -178,6 +185,10 @@ class Key(Generic[_T], ContainableImpl, Lockable):
         Returns:
             None.
         """
+
+        # Clearing the Key always resets bad values.
+
+        self._bad_value_string = None
 
         if not self.isSet():
             return
@@ -354,8 +365,17 @@ class Key(Generic[_T], ContainableImpl, Lockable):
             yield cast(Self, child)
 
     def dumpFields(self) -> Iterable[tuple[str, Optional[str]]]:
-        if self.isSet() and not self.isPrivate():
-            yield self.fieldPath(), self._serializer.toStr(self.get())
+        if not self.isPrivate():
+            if self.isSet():
+                yield self.fieldPath(), self._serializer.toStr(self.get())
+
+            elif self._bad_value_string is not None:
+                # If a bad value was set in the settings file for this Key, and
+                # the Key was not modified since, then save the bad value again.
+                # This way, typos in the settings file don't outright destroy
+                # the entry.
+
+                yield self.fieldPath(), self._bad_value_string
 
     def restoreField(self, path: str, value: Optional[str]) -> None:
         if value is None:
@@ -367,9 +387,20 @@ class Key(Generic[_T], ContainableImpl, Lockable):
             if (val := self._serializer.fromStr(value)) is not None:
                 self.set(val)
 
+            else:
+                # Keep track of the value that failed to restore, so that we can
+                # dump it again when saving. That way, if a user makes a typo
+                # while editing the settings file, the faulty entry is not
+                # entirely lost when we save.
+
+                logging.error(
+                    "Invalid value for Key %s: %s", self.fieldPath(), value
+                )
+                self._bad_value_string = value
+
         self._update_notification_enabled = True
 
-    def _notifyParentValueChanged(self):
+    def _notifyParentValueChanged(self) -> None:
         if self.isSet():
             return
 
@@ -378,7 +409,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
             # pylint: disable=protected-access
             child._notifyParentValueChanged()
 
-    def triggerUpdateNotification(self):
+    def triggerUpdateNotification(self) -> None:
         """
         Internal.
         """

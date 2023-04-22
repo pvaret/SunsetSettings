@@ -513,6 +513,23 @@ class TestKey:
         key_custom.restoreField("", "test")
         assert key_custom.get().toStr() == "test"
 
+    def test_invalid_restore_value_is_still_dumped(self) -> None:
+        key = Key[int](default=0)
+
+        key.restoreField("", "12error")
+        assert key.get() == 0
+
+        assert list(key.dumpFields()) == [("", "12error")]
+
+        # Clearing or setting the Key also clears the bad value.
+
+        key.clear()
+        assert list(key.dumpFields()) == []
+
+        key.restoreField("", "12error")
+        key.set(0)
+        assert list(key.dumpFields()) == [("", "0")]
+
     def test_persistence(self) -> None:
         # A Key does not keep a reference to its parent or children.
 

@@ -4,6 +4,7 @@ Changelog
 Latest
 ------
 
+  - Making a typo in a value when editing a settings file manually no longer causes the entry to be deleted on save.
   - Added ability to serialize Enum subclasses natively.
   - Deprecated now unnecessary SerializableEnum and -Flag classes.
   - Added ability to pass a custom serializer when instantiating a Key.
