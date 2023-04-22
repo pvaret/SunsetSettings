@@ -230,27 +230,29 @@ class TestSettings:
         settings = ExampleSettings()
         settings.onUpdateCall(callback)
         assert settings.a.get() == ""
-        settings.restoreField("main/a", "test main a")
+        assert settings.restoreField("main/a", "test main a")
         assert settings.a.get() == "test main a"
         callback.assert_not_called()
 
         # Test restoring a field on an inner Bunch.
 
         assert settings.inner_bunch.c.get() == 0
-        settings.restoreField("main/inner_bunch.c", "123")
+        assert settings.restoreField("main/inner_bunch.c", "123")
         assert settings.inner_bunch.c.get() == 123
         callback.assert_not_called()
 
         # Test restoring a field on a subsection.
 
         assert settings.getSection("section1") is None
-        settings.restoreField("main/section1/a", "test section1 a")
+        assert settings.restoreField("main/section1/a", "test section1 a")
         section1 = settings.getSection("section1")
         assert section1 is not None
         assert section1.a.get() == "test section1 a"
         callback.assert_not_called()
 
-        settings.restoreField("main/section2/subsection/a", "test subsection a")
+        assert settings.restoreField(
+            "main/section2/subsection/a", "test subsection a"
+        )
         section2 = settings.getSection("section2")
         assert section2 is not None
         subsection = section2.getSection("subsection")
@@ -263,12 +265,12 @@ class TestSettings:
         renamed_settings = ExampleSettings()
         renamed_settings.setSectionName("renamed")
         renamed_settings.onUpdateCall(callback)
-        renamed_settings.restoreField("renamed/a", "test renamed a")
+        assert renamed_settings.restoreField("renamed/a", "test renamed a")
         assert renamed_settings.a.get() == "test renamed a"
         callback.assert_not_called()
 
         assert renamed_settings.b.get() == ""
-        renamed_settings.restoreField("main/b", "test invalid b")
+        assert not renamed_settings.restoreField("main/b", "test invalid b")
         assert renamed_settings.b.get() == ""
         callback.assert_not_called()
 
@@ -277,27 +279,27 @@ class TestSettings:
         other_settings = ExampleSettings()
         other_settings.onUpdateCall(callback)
         assert not other_settings.isSet()
-        other_settings.restoreField("invalid/a", "test invalid a")
+        assert not other_settings.restoreField("invalid/a", "test invalid a")
         assert not other_settings.isSet()
         callback.assert_not_called()
 
-        other_settings.restoreField("main/invalid", "test invalid a")
+        assert not other_settings.restoreField("main/invalid", "test invalid a")
         assert not other_settings.isSet()
         callback.assert_not_called()
 
-        other_settings.restoreField("invalid", "test invalid a")
+        assert not other_settings.restoreField("invalid", "test invalid a")
         assert not other_settings.isSet()
         callback.assert_not_called()
 
-        other_settings.restoreField("/a", "test invalid a")
+        assert not other_settings.restoreField("/a", "test invalid a")
         assert not other_settings.isSet()
         callback.assert_not_called()
 
-        other_settings.restoreField("a/invalid", "test invalid a")
+        assert not other_settings.restoreField("a/invalid", "test invalid a")
         assert not other_settings.isSet()
         callback.assert_not_called()
 
-        other_settings.restoreField("a", "test invalid a")
+        assert not other_settings.restoreField("a", "test invalid a")
         assert not other_settings.isSet()
         callback.assert_not_called()
 

@@ -35,6 +35,8 @@ API Reference
 
     .. automethod:: clear
 
+    .. automethod:: setValidator
+
     .. automethod:: onValueChangeCall
 
     .. automethod:: onUpdateCall

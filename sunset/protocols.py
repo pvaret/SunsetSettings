@@ -95,7 +95,7 @@ class Dumpable(Protocol):
     def dumpFields(self) -> Iterable[tuple[str, Optional[str]]]:
         ...
 
-    def restoreField(self, path: str, value: Optional[str]) -> None:
+    def restoreField(self, path: str, value: Optional[str]) -> bool:
         ...
 
     def isSet(self) -> bool:

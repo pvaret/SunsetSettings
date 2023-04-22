@@ -63,18 +63,27 @@ class Settings(Bunch, Lockable):
     ...     fur: Key[bool]   = Key(default=False)
     >>> animals = AnimalSettings()
     >>> animals.hearts.set(1)
+    True
     >>> mammals = animals.newSection(name="mammals")
     >>> mammals.fur.set(True)
+    True
     >>> mammals.legs.set(4)
+    True
     >>> humans = mammals.newSection(name="humans")
     >>> humans.legs.set(2)
+    True
     >>> humans.fur.set(False)
+    True
     >>> birds = animals.newSection(name="birds")
     >>> birds.legs.set(2)
+    True
     >>> birds.wings.set(2)
+    True
     >>> aliens = animals.newSection()  # No name given!
     >>> aliens.hearts.set(2)
+    True
     >>> aliens.legs.set(7)
+    True
     >>> print(mammals.hearts.get())
     1
     >>> print(mammals.legs.get())
@@ -439,17 +448,19 @@ class Settings(Bunch, Lockable):
             for section in sorted(self.sections()):
                 yield from section.dumpFields()
 
-    def restoreField(self, path: str, value: Optional[str]) -> None:
+    def restoreField(self, path: str, value: Optional[str]) -> bool:
         """
         Internal.
         """
 
         if self._SECTION_SEPARATOR not in path:
-            return
+            return False
 
         section_name, path = path.split(self._SECTION_SEPARATOR, 1)
         if self.sectionName() != section_name:
-            return
+            return False
+
+        success: bool = False
 
         _update_notification_enabled = self._update_notification_enabled
         self._update_notification_enabled = False
@@ -458,14 +469,16 @@ class Settings(Bunch, Lockable):
             subsection_name, _ = path.split(self._SECTION_SEPARATOR, 1)
             if subsection_name:
                 section = self.getOrCreateSection(subsection_name)
-                section.restoreField(path, value)
+                success = section.restoreField(path, value)
 
         else:
             field_label, *_ = path.split(self._PATH_SEPARATOR, 1)
             if (field := self._fields.get(field_label)) is not None:
-                field.restoreField(path, value)
+                success = field.restoreField(path, value)
 
         self._update_notification_enabled = _update_notification_enabled
+
+        return success
 
     def save(self, file: IO[str], blanklines: bool = False) -> None:
         """

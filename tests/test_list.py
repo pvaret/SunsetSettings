@@ -162,21 +162,21 @@ class TestList:
 
         test_list1 = List(Key("default"))
         test_list1.onUpdateCall(callback)
-        test_list1.restoreField(".1", "test")
+        assert test_list1.restoreField(".1", "test")
         assert len(test_list1) == 1
         assert test_list1[0].get() == "test"
         callback.assert_not_called()
 
         # Test overwriting a restored value.
 
-        test_list1.restoreField(".1", "other test")
+        assert test_list1.restoreField(".1", "other test")
         assert len(test_list1) == 1
         assert test_list1[0].get() == "other test"
         callback.assert_not_called()
 
         # Test restoring a value that requires extending the List.
 
-        test_list1.restoreField(".5", "extension test")
+        assert test_list1.restoreField(".5", "extension test")
         assert len(test_list1) == 5
         assert test_list1[4].get() == "extension test"
         callback.assert_not_called()
@@ -186,27 +186,27 @@ class TestList:
         test_list2 = List(Key("default"))
         test_list2.onUpdateCall(callback)
 
-        test_list2.restoreField("", "test")
+        assert not test_list2.restoreField("", "test")
         assert len(test_list2) == 0
         callback.assert_not_called()
 
-        test_list2.restoreField("invalid", "test")
+        assert not test_list2.restoreField("invalid", "test")
         assert len(test_list2) == 0
         callback.assert_not_called()
 
-        test_list2.restoreField("invalid.1", "test")
+        assert not test_list2.restoreField("invalid.1", "test")
         assert len(test_list2) == 0
         callback.assert_not_called()
 
-        test_list2.restoreField("1.invalid", "test")
+        assert not test_list2.restoreField("1.invalid", "test")
         assert len(test_list2) == 0
         callback.assert_not_called()
 
-        test_list2.restoreField(".", "test")
+        assert not test_list2.restoreField(".", "test")
         assert len(test_list2) == 0
         callback.assert_not_called()
 
-        test_list2.restoreField(".0", "test")
+        assert not test_list2.restoreField(".0", "test")
         assert len(test_list2) == 0
         callback.assert_not_called()
 
@@ -217,7 +217,7 @@ class TestList:
 
         bunch = TestBunch()
         bunch.str_list.onUpdateCall(callback)
-        bunch.str_list.restoreField("str_list.1", "test")
+        assert bunch.str_list.restoreField("str_list.1", "test")
         assert len(bunch.str_list) == 1
         assert bunch.str_list[0].get() == "test"
         callback.assert_not_called()
@@ -226,7 +226,7 @@ class TestList:
 
         test_list3 = List(Key("default"))
         test_list3.onUpdateCall(callback)
-        test_list3.restoreField(".size", "invalid")
+        assert not test_list3.restoreField(".size", "invalid")
         assert len(test_list3) == 0
         callback.assert_not_called()
 
@@ -234,9 +234,9 @@ class TestList:
 
         test_list4 = List(Key("default"))
         test_list4.onUpdateCall(callback)
-        test_list4.restoreField(".1", None)
-        test_list4.restoreField(".2", "")
-        test_list4.restoreField(".3", None)
+        assert test_list4.restoreField(".1", None)
+        assert test_list4.restoreField(".2", "")
+        assert test_list4.restoreField(".3", None)
         assert len(test_list4) == 3
         assert not test_list4[0].isSet()
         assert test_list4[1].isSet() and test_list4[1].get() == ""

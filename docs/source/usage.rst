@@ -375,18 +375,25 @@ Example:
 
     >>> settings = BackupSettings()
     >>> settings.compression.set(True)
+    True
 
     >>> user1section = settings.newSection("User 1")
     >>> user1section.path.set("/home/user1/")
+    True
     >>> user1section.destination.set("/var/backups/user1/")
+    True
 
     >>> user1videossection = user1section.newSection("Videos")
     >>> user1videossection.path.set("/home/user1/Videos/")
+    True
     >>> user1videossection.compression.set(False)
+    True
 
     >>> mailssection = settings.newSection("Mails")
     >>> mailssection.path.set("/var/mail/")
+    True
     >>> mailssection.destination.set("/var/backups/mails/")
+    True
 
 Here is what these Settings would look like when saved to a file:
 
@@ -451,12 +458,17 @@ Example:
 
     >>> user1section = settings.newSection("User 1")
     >>> user1section.path.set("/home/user1/")
+    True
     >>> user1section.ignore_patterns.appendOne().set("*.tmp")
+    True
 
     >>> user1codesection = user1section.newSection("Code")
     >>> user1codesection.path.set("/home/user1/Code/Python/")
+    True
     >>> user1codesection.ignore_patterns.appendOne().set("*.py")
+    True
     >>> user1codesection.ignore_patterns.appendOne().set("__pycache__")
+    True
 
     >>> print([
     ...     pattern.get() for pattern in user1codesection.ignore_patterns.iter()

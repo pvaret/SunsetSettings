@@ -36,6 +36,9 @@ class Key(Generic[_T], ContainableImpl, Lockable):
     their own value that changed, or that inherited from a parent. Set this
     callback with the :meth:`onValueChangeCall()` method.
 
+    You can control the values that can be set on this Key by passing a
+    `validator` argument when instantiating it.
+
     Args:
         default: The value that this Key will return when not otherwise set; the
             type of this default determines the type of the values that can be
@@ -52,6 +55,10 @@ class Key(Generic[_T], ContainableImpl, Lockable):
             SunsetSettings serializer. If a serializer is passed, it will be
             used even if SunsetSettings has its own serializer for that type.
 
+        validator: A function that returns True if the given value can be set on
+            this Key, else False. This allows you to control what values are
+            allowable for this Key. Default: None.
+
     Example:
 
     >>> from sunset import Key
@@ -59,6 +66,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
     >>> key.get()
     0
     >>> key.set(42)
+    True
     >>> key.get()
     42
     >>> child_key: Key[int] = Key(default=0)
@@ -66,9 +74,11 @@ class Key(Generic[_T], ContainableImpl, Lockable):
     >>> child_key.get()
     42
     >>> child_key.set(101)
+    True
     >>> child_key.get()
     101
     >>> key.set(36)
+    True
     >>> key.get()
     36
     >>> child_key.get()
@@ -81,6 +91,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
     _default: _T
     _value: Optional[_T]
     _serializer: Serializer[_T]
+    _validator: Callable[[_T], bool]
     _bad_value_string: Optional[str]
     _value_change_callbacks: CallbackRegistry[_T]
     _update_notification_callbacks: CallbackRegistry["Key[_T]"]
@@ -90,7 +101,10 @@ class Key(Generic[_T], ContainableImpl, Lockable):
     _type: type[_T]
 
     def __init__(
-        self, default: _T, serializer: Optional[Serializer[_T]] = None
+        self,
+        default: _T,
+        serializer: Optional[Serializer[_T]] = None,
+        validator: Optional[Callable[[_T], bool]] = None,
     ) -> None:
         super().__init__()
 
@@ -112,6 +126,11 @@ class Key(Generic[_T], ContainableImpl, Lockable):
                     " supported by a native serializer. Please construct"
                     " the Key with an explicit serializer argument."
                 )
+
+        if validator is not None:
+            self._validator = validator
+        else:
+            self._validator = lambda _: True
 
         self._serializer = serializer
 
@@ -142,7 +161,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
 
         return self._default
 
-    def set(self, value: _T) -> None:
+    def set(self, value: _T) -> bool:
         """
         Sets the given value on this Key.
 
@@ -152,13 +171,22 @@ class Key(Generic[_T], ContainableImpl, Lockable):
                 value.
 
         Returns:
-            None.
+            True if the value was successfully set, else False, for instance if
+            the validator refused the value.
         """
 
         # Safety check in case the user is holding it wrong.
 
         if not isinstance(value, self._type):
-            return
+            return False
+
+        if not self._validator(value):
+            logging.debug(
+                "Validator rejected value for Key %s: %r",
+                self.fieldPath(),
+                value,
+            )
+            return False
 
         # Setting a Key's value programmatically always resets bad values.
 
@@ -177,6 +205,8 @@ class Key(Generic[_T], ContainableImpl, Lockable):
 
         if not previously_set or prev_value != self.get():
             self.triggerUpdateNotification()
+
+        return True
 
     def clear(self) -> None:
         """
@@ -290,6 +320,21 @@ class Key(Generic[_T], ContainableImpl, Lockable):
 
         self._update_notification_callbacks.add(callback)
 
+    def setValidator(self, validator: Callable[[_T], bool]) -> None:
+        """
+        Replaces this Key's validator.
+
+        Args:
+            validator: A function that returns True if the given value can be
+                set on this Key, else False. This allows you to control what
+                values are allowable for this Key.
+
+        Returns:
+            None.
+        """
+
+        self._validator = validator
+
     def setParent(self: Self, parent: Optional[Self]) -> None:
         """
         Makes the given Key the parent of this one. If None, remove this
@@ -377,15 +422,20 @@ class Key(Generic[_T], ContainableImpl, Lockable):
 
                 yield self.fieldPath(), self._bad_value_string
 
-    def restoreField(self, path: str, value: Optional[str]) -> None:
+    def restoreField(self, path: str, value: Optional[str]) -> bool:
         if value is None:
-            return
+            # Note that doing nothing when the given value is None, is
+            # considered a success.
+
+            return True
+
+        success: bool = False
 
         self._update_notification_enabled = False
 
         if path == self.fieldLabel():
             if (val := self._serializer.fromStr(value)) is not None:
-                self.set(val)
+                success = self.set(val)
 
             else:
                 # Keep track of the value that failed to restore, so that we can
@@ -399,6 +449,8 @@ class Key(Generic[_T], ContainableImpl, Lockable):
                 self._bad_value_string = value
 
         self._update_notification_enabled = True
+
+        return success
 
     def _notifyParentValueChanged(self) -> None:
         if self.isSet():

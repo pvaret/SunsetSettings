@@ -51,7 +51,9 @@ class Bunch(ContainableImpl):
     >>> appearance.secondary_font.name.get()
     'Arial'
     >>> appearance.main_font.name.set("Times New Roman")
+    True
     >>> appearance.secondary_font.name.set("Calibri")
+    True
     >>> appearance.main_font.name.get()
     'Times New Roman'
     >>> appearance.secondary_font.name.get()
@@ -283,21 +285,23 @@ class Bunch(ContainableImpl):
             for _, field in sorted(self._fields.items()):
                 yield from field.dumpFields()
 
-    def restoreField(self, path: str, value: Optional[str]) -> None:
+    def restoreField(self, path: str, value: Optional[str]) -> bool:
         """
         Internal.
         """
 
         if self._PATH_SEPARATOR not in path:
-            return
+            return False
 
         field_label, path = path.split(self._PATH_SEPARATOR, 1)
         if self.fieldLabel() != field_label:
-            return
+            return False
 
         field_label, *_ = path.split(self._PATH_SEPARATOR, 1)
         if (field := self._fields.get(field_label)) is not None:
-            field.restoreField(path, value)
+            return field.restoreField(path, value)
+
+        return False
 
     def triggerUpdateNotification(
         self, field: Optional[UpdateNotifier]

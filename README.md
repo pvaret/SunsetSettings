@@ -120,7 +120,9 @@ checkers will tell you.
 >>> number_of_ponies
 <Key[int]:(0)>
 >>> number_of_ponies.set(6)  # Works!
+True
 >>> number_of_ponies.set("six")  # Type error!
+False
 >>> number_of_ponies.get()  # Value is unchanged.
 6
 >>> from typing import TYPE_CHECKING
@@ -187,6 +189,7 @@ subsections can be arbitrarily deep.
 >>> octopuses.limbs.get()
 4
 >>> octopuses.limbs.set(8)
+True
 >>> octopuses.limbs.get()
 8
 >>> animals.limbs.get()
@@ -211,6 +214,7 @@ Each setting key can be given callbacks to be called when its value changes.
 >>> number_of_ponies.onValueChangeCall(callback)
 >>> number_of_ponies.set(6)
 Pony count updated: 6
+True
 
 ```
 

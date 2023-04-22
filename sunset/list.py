@@ -73,11 +73,13 @@ class List(MutableSequence[ListItemT], ContainableImpl):
     >>> settings.bunch_list
     []
     >>> settings.bunch_list.appendOne().a.set("demo")
+    True
     >>> settings.bunch_list
     [ExampleSettings.ExampleBunch(a=<Key[str]:demo>)]
     >>> settings.key_list
     []
     >>> settings.key_list.appendOne().set(12)
+    True
     >>> settings.key_list
     [<Key[int]:12>]
     """
@@ -331,10 +333,14 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         >>> show = lambda l: [key.get() for key in l]
         >>> parent = List(Key(default=0))
         >>> parent.appendOne().set(1)
+        True
         >>> parent.appendOne().set(2)
+        True
         >>> child = List(Key(default=0))
         >>> child.appendOne().set(3)
+        True
         >>> child.appendOne().set(4)
+        True
         >>> show(parent)
         [1, 2]
         >>> show(child)
@@ -425,17 +431,19 @@ class List(MutableSequence[ListItemT], ContainableImpl):
                 else:
                     yield from item.dumpFields()
 
-    def restoreField(self, path: str, value: Optional[str]) -> None:
+    def restoreField(self, path: str, value: Optional[str]) -> bool:
         """
         Internal.
         """
 
         if self._PATH_SEPARATOR not in path:
-            return
+            return False
 
         field_label, path = path.split(self._PATH_SEPARATOR, 1)
         if self.fieldLabel() != field_label:
-            return
+            return False
+
+        success: bool = False
 
         _update_notification_enabled = self._update_notification_enabled
         self._update_notification_enabled = False
@@ -444,9 +452,11 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         index = self._indexForLabel(field_label)
         if index is not None and index >= 0:
             self._ensureMinimumLength(index + 1)
-            self[index].restoreField(path, value)
+            success = self[index].restoreField(path, value)
 
         self._update_notification_enabled = _update_notification_enabled
+
+        return success
 
     def _ensureMinimumLength(self, length: int) -> None:
         missing_count = length - len(self)
