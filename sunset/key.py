@@ -7,23 +7,23 @@ from typing import (
     Iterable,
     Iterator,
     Optional,
-    Type,
     TypeVar,
     cast,
 )
 
 from .exporter import maybe_escape
 from .lockable import Lockable
-from .protocols import ContainableImpl
+from .protocols import ContainableImpl, Serializer
 from .registry import CallbackRegistry
-from .serializers import AnySerializableType, deserialize, serialize
+from .serializers import lookup
 
 
 # TODO: Replace with typing.Self when mypy finally supports that.
 Self = TypeVar("Self", bound="Key[Any]")
+_T = TypeVar("_T")
 
 
-class Key(Generic[AnySerializableType], ContainableImpl, Lockable):
+class Key(Generic[_T], ContainableImpl, Lockable):
     """
     A single setting key containing a typed value.
 
@@ -31,15 +31,25 @@ class Key(Generic[AnySerializableType], ContainableImpl, Lockable):
     it has a parent, then its value will be that of its parent. Else its value
     if unset is the default value it was instantiated with.
 
-    Keys can call a callback when their value changes, regardless of if its
+    Keys can call a callback when their reported value changes, whether it's
     their own value that changed, or that inherited from a parent. Set this
     callback with the :meth:`onValueChangeCall()` method.
 
     Args:
-        default: (str, int, bool, float, or any type that implements the
-            :class:`~sunset.Serializable` protocol) The value that this Key will
-            return when not otherwise set; the type of this default determines
-            the type of the values that can be set on this Key.
+        default: The value that this Key will return when not otherwise set; the
+            type of this default determines the type of the values that can be
+            set on this Key.
+
+            If the type of the default is not one of bool, int, float, or str,
+            and is also not a class that implements the
+            :class:`~sunset.Serializable` protocol, then a serializer argument
+            must also be passed.
+
+        serializer: An implementation of the :class:`~sunset.Serializer`
+            protocol for the type of this Key's values. This argument must be
+            passed if the type in question is not supported by a native
+            SunsetSettings serializer. If a serializer is passed, it will be
+            used even if SunsetSettings has its own serializer for that type.
 
     Example:
 
@@ -67,27 +77,40 @@ class Key(Generic[AnySerializableType], ContainableImpl, Lockable):
     36
     """
 
-    _default: AnySerializableType
-    _value: Optional[AnySerializableType]
-    _value_change_callbacks: CallbackRegistry[AnySerializableType]
-    _update_notification_callbacks: CallbackRegistry["Key[AnySerializableType]"]
+    _default: _T
+    _value: Optional[_T]
+    _serializer: Serializer[_T]
+    _value_change_callbacks: CallbackRegistry[_T]
+    _update_notification_callbacks: CallbackRegistry["Key[_T]"]
     _update_notification_enabled: bool
-    _parent: Optional[weakref.ref["Key[AnySerializableType]"]]
-    _children: weakref.WeakSet["Key[AnySerializableType]"]
-    _type: Type[AnySerializableType]
+    _parent: Optional[weakref.ref["Key[_T]"]]
+    _children: weakref.WeakSet["Key[_T]"]
+    _type: type[_T]
 
-    def __init__(self, default: AnySerializableType):
-        # serialize() raises an exception if the given value is not
-        # serializable, so this call guarantees that the provided default is of
-        # a type allowed in a Key. In case the user went ahead and ignored the
-        # typechecker error when instantiating their Key with a bad default.
-
-        serialize(default)
-
+    def __init__(
+        self, default: _T, serializer: Optional[Serializer[_T]] = None
+    ) -> None:
         super().__init__()
+
+        # Keep a runtime reference to the practical type contained in this
+        # key.
+
+        self._type = cast(type[_T], default.__class__)
 
         self._default = default
         self._value = None
+
+        if serializer is None:
+            serializer = lookup(self._type)
+            if serializer is None:
+                raise TypeError(
+                    f"Default Key value '{default}' has type"
+                    f" '{self._type.__name__}', which is not"
+                    " supported by a native serializer. Please construct"
+                    " the Key with an explicit serializer argument."
+                )
+
+        self._serializer = serializer
 
         self._value_change_callbacks = CallbackRegistry()
         self._update_notification_callbacks = CallbackRegistry()
@@ -96,12 +119,7 @@ class Key(Generic[AnySerializableType], ContainableImpl, Lockable):
         self._parent = None
         self._children = weakref.WeakSet()
 
-        # Keep a runtime reference to the practical type contained in this
-        # key.
-
-        self._type = cast(Type[AnySerializableType], default.__class__)
-
-    def get(self) -> AnySerializableType:
+    def get(self) -> _T:
         """
         Returns the current value of this Key.
 
@@ -121,7 +139,7 @@ class Key(Generic[AnySerializableType], ContainableImpl, Lockable):
 
         return self._default
 
-    def set(self, value: AnySerializableType) -> None:
+    def set(self, value: _T) -> None:
         """
         Sets the given value on this Key.
 
@@ -174,9 +192,7 @@ class Key(Generic[AnySerializableType], ContainableImpl, Lockable):
         self.triggerUpdateNotification()
 
     @Lockable.with_lock
-    def updateValue(
-        self, updater: Callable[[AnySerializableType], AnySerializableType]
-    ) -> None:
+    def updateValue(self, updater: Callable[[_T], _T]) -> None:
         """
         Atomically updates this Key's value using the given update function. The
         function will be called with the Key's current value, and the value it
@@ -202,9 +218,7 @@ class Key(Generic[AnySerializableType], ContainableImpl, Lockable):
 
         return self._value is not None
 
-    def onValueChangeCall(
-        self, callback: Callable[[AnySerializableType], Any]
-    ) -> None:
+    def onValueChangeCall(self, callback: Callable[[_T], Any]) -> None:
         """
         Adds a callback to be called whenever the value returned by calling
         :meth:`get()` on this Key would change, even if this Key itself was not
@@ -235,9 +249,7 @@ class Key(Generic[AnySerializableType], ContainableImpl, Lockable):
 
         self._value_change_callbacks.add(callback)
 
-    def onUpdateCall(
-        self, callback: Callable[["Key[AnySerializableType]"], Any]
-    ) -> None:
+    def onUpdateCall(self, callback: Callable[["Key[_T]"], Any]) -> None:
         """
         Adds a callback to be called whenever this Key is updated, even if the
         value returned by :meth:`get()` does not end up changing.
@@ -339,7 +351,7 @@ class Key(Generic[AnySerializableType], ContainableImpl, Lockable):
 
     def dumpFields(self) -> Iterable[tuple[str, Optional[str]]]:
         if self.isSet() and not self.isPrivate():
-            yield self.fieldPath(), serialize(self.get())
+            yield self.fieldPath(), self._serializer.toStr(self.get())
 
     def restoreField(self, path: str, value: Optional[str]) -> None:
         if value is None:
@@ -348,7 +360,7 @@ class Key(Generic[AnySerializableType], ContainableImpl, Lockable):
         self._update_notification_enabled = False
 
         if path == self.fieldLabel():
-            if (val := deserialize(self._type, value)) is not None:
+            if (val := self._serializer.fromStr(value)) is not None:
                 self.set(val)
 
         self._update_notification_enabled = True
@@ -383,11 +395,13 @@ class Key(Generic[AnySerializableType], ContainableImpl, Lockable):
             A new Key.
         """
 
-        return self.__class__(default=self._default)
+        return self.__class__(
+            default=self._default, serializer=self._serializer
+        )
 
     def __repr__(self) -> str:
         type_name = self._type.__name__
-        value = maybe_escape(serialize(self.get()))
+        value = maybe_escape(self._serializer.toStr(self.get()))
         if not self.isSet():
             value = f"({value})"
         return f"<Key[{type_name}]:{value}>"

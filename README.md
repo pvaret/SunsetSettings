@@ -133,9 +133,9 @@ checkers will tell you.
 
 ### Extensibility
 
-You can store arbitrary types in your SunsetSettings provided they implement a
-simple serialization protocol. (See [the API
-reference](https://sunsetsettings.rtfd.io/en/stable/api.html#sunset.Serializable).)
+You can store arbitrary types in your SunsetSettings provided that you also
+provide a serializer for that type. (See [the API
+reference](https://sunsetsettings.rtfd.io/en/stable/api.html#sunset.Serializer).)
 
 ```python
 >>> import re
@@ -143,26 +143,28 @@ reference](https://sunsetsettings.rtfd.io/en/stable/api.html#sunset.Serializable
 
 >>> class Coordinates:
 ...     def __init__(self, x: int, y: int) -> None:
-...         self._x = x
-...         self._y = y
+...         self.x = x
+...         self.y = y
+
+>>> class CoordinatesSerializer:
+...     def toStr(self, coord: Coordinates) -> str:
+...         return f"{coord.x},{coord.y}"
 ...
-...     def toStr(self) -> str:
-...         return f"{self._x},{self._y}"
-...
-...     @classmethod
-...     def fromStr(cls, value: str) -> Optional["Coordinates"]:
-...         m = re.match(r"(\d+),(\d+)", value)
-...         if m is None:
+...     def fromStr(self, string: str) -> Optional[Coordinates]:
+...         x, y = string.split(",", 1)
+...         if not x.isdigit() or not y.isdigit():
 ...             return None
-...         x = int(m.group(1))
-...         y = int(m.group(2))
-...         return cls(x, y)
+...         return Coordinates(int(x), int(y))
 
 >>> from sunset import Key
->>> coordinates = Key(default=Coordinates(0, 0))
+>>> coordinates = Key(
+...     default=Coordinates(0, 0), serializer=CoordinatesSerializer()
+... )
 >>> if TYPE_CHECKING:
 ...     reveal_type(coordinates.get())
 >>> # Revealed type is "Coordinates"
+>>> print(repr(coordinates))
+<Key[Coordinates]:(0,0)>
 
 ```
 

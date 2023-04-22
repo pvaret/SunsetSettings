@@ -61,6 +61,12 @@ API Reference
 
     .. automethod:: saveIfNeeded
 
+.. autoclass:: sunset.Serializer
+
+    .. automethod:: toStr
+
+    .. automethod:: fromStr
+
 .. autoclass:: sunset.Serializable
 
     .. automethod:: toStr

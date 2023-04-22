@@ -21,13 +21,7 @@ from .non_hashable_set import WeakNonHashableSet
 from .protocols import Containable, ContainableImpl, UpdateNotifier
 from .registry import CallbackRegistry
 
-ListItemT = TypeVar(
-    "ListItemT",
-    # Note that we match on Key[Any] and not Key[SerializableT], because a
-    # TypeVar cannot be defined in terms of another TypeVar. This is fine,
-    # because Keys can only be created bound to a SerializableT type anyway.
-    bound=Union[Bunch, Key[Any]],
-)
+ListItemT = TypeVar("ListItemT", bound=Union[Bunch, Key[Any]])
 
 
 class IterOrder(Enum):

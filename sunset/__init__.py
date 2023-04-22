@@ -11,7 +11,7 @@ from .autosaver import AutoSaver
 from .bunch import Bunch
 from .key import Key
 from .list import List
-from .protocols import Serializable
+from .protocols import Serializable, Serializer
 from .registry import CallbackRegistry
 from .serializable_enum import (
     SerializableEnum,
@@ -35,6 +35,7 @@ __all__ = [
     "Serializable",
     "SerializableEnum",
     "SerializableFlag",
+    "Serializer",
     "Settings",
     "exporter",
     "non_hashable_set",

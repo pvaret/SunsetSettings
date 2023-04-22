@@ -15,8 +15,8 @@ class ExampleSerializable:
         return self._value
 
     @staticmethod
-    def fromStr(value: str) -> Optional["ExampleSerializable"]:
-        return ExampleSerializable(value)
+    def fromStr(string: str) -> Optional["ExampleSerializable"]:
+        return ExampleSerializable(string)
 
 
 class ExampleEnum(SerializableEnum):
@@ -68,6 +68,45 @@ class TestKey:
         key: Key[ExampleSerializable] = Key(default=value)
 
         assert key.get().toStr() == "dummy"
+
+    def test_missing_serializer(self) -> None:
+        class NotSerializable:
+            pass
+
+        with pytest.raises(TypeError):
+            Key(default=NotSerializable())
+
+    def test_explicit_serializer(self) -> None:
+        class NotSerializable:
+            pass
+
+        class Serializer:
+            def toStr(self, value: NotSerializable) -> str:
+                return "test"
+
+            def fromStr(self, string: str) -> NotSerializable:
+                return NotSerializable()
+
+        key = Key(default=NotSerializable(), serializer=Serializer())
+        key.set(NotSerializable())
+        assert list(key.dumpFields()) == [("", "test")]
+
+    def test_serializer_override(self) -> None:
+        class Serializer:
+            def toStr(self, value: str) -> str:
+                return value + "-TEST"
+
+            def fromStr(self, string: str) -> Optional[str]:
+                if string.endswith("-TEST"):
+                    return string[:-5]
+                return None
+
+        key = Key(default="", serializer=Serializer())
+        key.set("value")
+        assert list(key.dumpFields()) == [("", "value-TEST")]
+
+        key.restoreField("", "other value-TEST")
+        assert key.get() == "other value"
 
     def test_value_change_callback(self, mocker: MockerFixture) -> None:
         callback = mocker.stub()

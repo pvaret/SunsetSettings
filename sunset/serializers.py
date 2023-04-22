@@ -1,69 +1,66 @@
-from typing import Any, Optional, Type, TypeVar, Union, cast
+from typing import Generic, Optional, TypeVar, Union, cast
 
-from .protocols import Serializable
+from .protocols import Serializable, Serializer
 
-_AnySerializableType = Union[int, str, bool, float, Serializable]
+_T = TypeVar("_T")
+_Serializable = TypeVar("_Serializable", bound=Serializable)
+_Castable = TypeVar("_Castable", bound=Union[int, float, str])
 
-AnySerializableType = TypeVar("AnySerializableType", bound=_AnySerializableType)
 
+class StraightCastSerializer(Generic[_Castable]):
+    _type: type[_Castable]
 
-def serialize(value: _AnySerializableType) -> str:
+    def __init__(self, type_: type[_Castable]) -> None:
+        self._type = type_
 
-    if isinstance(value, bool):
-        return "true" if value else "false"
-    elif isinstance(value, int) or isinstance(value, float):
+    def toStr(self, value: _Castable) -> str:
         return str(value)
-    elif isinstance(value, str):
-        return value
-    elif isinstance(cast(Any, value), Serializable):
 
-        # Note the cast above. It's just so that linters don't complain that
-        # we're using an isinstance() check when that's the only type the value
-        # can possibly be, from the typechecker's point of view. But the
-        # TypeError below is explicitly about catching this kind of user error.
-        # So we do in fact want this isinstance() check.
-
-        return value.toStr()
-
-    else:
-        raise TypeError(
-            f"'{repr(value)}' is of type '{value.__class__.__name__}', which is"
-            " not serializable"
-        )
+    def fromStr(self, string: str) -> Optional[_Castable]:
+        try:
+            return cast(_Castable, self._type(string))
+        except ValueError:
+            return None
 
 
-def deserialize(
-    _type: Type[AnySerializableType], string: str
-) -> Optional[AnySerializableType]:
+class BoolSerializer:
+    def toStr(self, value: bool) -> str:
+        return "true" if value else "false"
 
-    if issubclass(_type, bool):
-        if string.strip().lower() in ("true", "yes", "y", "1"):
-            # The cast is unnecessary, but works around a mypy bug.
-            return cast(AnySerializableType, _type(True))
-        if string.strip().lower() in ("false", "no", "n", "0"):
-            # The cast is unnecessary, but works around a mypy bug.
-            return cast(AnySerializableType, _type(False))
+    def fromStr(self, string: str) -> Optional[bool]:
+        string = string.strip().lower()
+        if string in ("true", "yes", "y", "1"):
+            return True
+        if string in ("false", "no", "n", "0"):
+            return False
         return None
 
-    if issubclass(_type, int):
-        try:
-            # The cast is unnecessary, but works around a mypy bug.
-            return cast(AnySerializableType, _type(int(string)))
-        except ValueError:
-            return None
 
-    if issubclass(_type, float):
-        try:
-            # The cast is unnecessary, but works around a mypy bug.
-            return cast(AnySerializableType, _type(float(string)))
-        except ValueError:
-            return None
+class SerializableSerializer(Generic[_Serializable]):
+    _type: type[_Serializable]
 
-    if issubclass(_type, str):
-        # The cast is unnecessary, but works around a mypy bug.
-        return cast(AnySerializableType, _type(string))
+    def __init__(self, type_: type[_Serializable]) -> None:
+        self._type = type_
 
-    assert issubclass(_type, Serializable)
+    def toStr(self, value: _Serializable) -> str:
+        return value.toStr()
 
-    # The cast is unnecessary, but works around a mypy bug.
-    return cast(AnySerializableType, _type.fromStr(string))
+    def fromStr(self, string: str) -> Optional[_Serializable]:
+        return self._type.fromStr(string)
+
+
+def lookup(type_: type[_T]) -> Optional[Serializer[_T]]:
+    # Note the cast on the return values. It's unfortunate, but works around a
+    # mypy limitation where it fails to recognize our serializers as rightful
+    # implementation of the generic Serializer protocol.
+
+    if issubclass(type_, Serializable):
+        return cast(Serializer[_T], SerializableSerializer(type_))
+
+    if type_ is bool:
+        return cast(Serializer[_T], BoolSerializer())
+
+    if type_ is int or type_ is float or type_ is str:
+        return cast(Serializer[_T], StraightCastSerializer(type_))
+
+    return None

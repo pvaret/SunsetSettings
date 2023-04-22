@@ -84,12 +84,12 @@ class _SerializableEnumMixin:
         return members
 
     @classmethod
-    def fromStr(cls: type[Self], value: str) -> Optional[Self]:
+    def fromStr(cls: type[Self], string: str) -> Optional[Self]:
         # value is either a single word, or, in the case of Flag enums, multiple
         # words separated by a pipe. We handle both cases together here.
 
         members = cls._members()
-        names = value.split("|") if "|" in value else [value]
+        names = string.split("|") if "|" in string else [string]
         named_members = [
             members[n] for name in names if (n := name.strip()) in members
         ]

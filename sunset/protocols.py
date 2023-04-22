@@ -3,17 +3,18 @@ import weakref
 from typing import (
     Any,
     Callable,
+    Generic,
     Iterable,
     Iterator,
     Optional,
     Protocol,
-    Type,
     TypeVar,
     runtime_checkable,
 )
 
 
 Self = TypeVar("Self")
+_T = TypeVar("_T")
 
 
 @runtime_checkable
@@ -34,13 +35,42 @@ class Serializable(Protocol):
         ...  # noqa  # Else pylint complains of useless ellipsis.
 
     @classmethod
-    def fromStr(cls: Type[Self], value: str) -> Optional[Self]:
+    def fromStr(cls: type[Self], string: str) -> Optional[Self]:
         """
         Takes a string that represents a serialized instance of this class, and
         returns a newly created instance that corresponds to that
         representation, or None if the string is not a valid serialized
         representation of an instance of this class.
         """
+        ...
+
+
+class Serializer(Generic[_T], Protocol):
+    """
+    A protocol that describes a way to serialize and deserialize an arbitrary
+    type.
+
+    SunsetSettings provides its own serializers for common types (int, float,
+    bool, str). In order to store an arbitrary type in a Key, users need to
+    provide a serializer for that type when instantiating a Key. That serializer
+    should be an implementation of this protocol.
+    """
+
+    def toStr(self, value: _T) -> str:
+        """
+        Returns a string representation of the given value, that can be used by
+        :meth:`fromStr()` to reconstruct a copy of that value.
+        """
+        ...
+
+    def fromStr(self, string: str) -> Optional[_T]:
+        """
+        Takes a string that represents a serialized instance of a value, and
+        returns a newly created instance that corresponds to that string, or
+        None if the string is not a valid representation of a value for this
+        serializer's type.
+        """
+        ...
 
 
 @runtime_checkable

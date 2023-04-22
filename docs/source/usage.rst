@@ -59,20 +59,13 @@ declaration of intention for what the Keys will hold, and will cause a type
 error if a given default does not match the intended type of its Key.
 
 By default, a Key can contain a `str`, an `int`, a `float`, or a `bool`. But
-Keys can also contain any type that implements the
-:class:`~sunset.Serializable` protocol. See
-:ref:`storing-custom-types`.
+Keys can also contain any arbitrary type, so long as they are instantiated with
+a corresponding :class:`~sunset.Serializer` argument. See :ref:`storing-custom-types`.
 
 As a convenience, SunsetSettings provides the :class:`~sunset.SerializableEnum`
 and :class:`~sunset.SerializableFlag` classes, which are subclasses of
-respectively `enum.Enum` and `enum.Flag` that implement the
-:class:`~sunset.Serializable` protocol. 
-
-.. note::
-
-    Key values are limited to `str`, `int`, `float` and `bool` and types that
-    implement the `Serializable` protocol, because SunsetSettings needs to know
-    how to safely and reliably load them from and save them to text.
+respectively `enum.Enum` and `enum.Flag` that SunsetSettings knows how to
+serialize. 
 
 Related keys can be grouped together with the :class:`~sunset.Bunch` class.
 
@@ -91,7 +84,7 @@ For example:
 
     >>> from sunset import Bunch, Key, Settings
 
-    >>> class UI(Bunch):
+    >>> class Font(Bunch):
     ...     font_name: Key[str] = Key(default="Arial")
     ...     font_size: Key[int] = Key(default=14)
 
@@ -101,7 +94,7 @@ For example:
     ...     ssl: Key[bool]   = Key(default=False)
 
     >>> class MySettings(Settings):
-    ...     ui      = UI()
+    ...     font    = Font()
     ...     network = Network()
 
 Here too, type annotations are optional, but can be used, and are a good idea:
@@ -109,7 +102,7 @@ Here too, type annotations are optional, but can be used, and are a good idea:
 .. code-block:: python
 
     >>> class MySettings(Settings):
-    ...     ui:      UI      = UI()
+    ...     font: Font       = Font()
     ...     network: Network = Network()
 
 .. warning::
@@ -211,12 +204,49 @@ safety by making your intent explicit:
 Storing custom types in Keys
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can also store in a Key any type that implements the
-:class:`~sunset.Serializable` protocol. This protocol requires the
-implementation of only two methods: :meth:`~sunset.Serializable.fromStr()` and
-:meth:`~sunset.Serializable.toStr()`. Note that
-:meth:`~sunset.Serializable.fromStr()` is a class method. SunsetSettings uses
-these methods to save your type to a file and load it again reliably and safely.
+You can store any arbitrary type in a Key. There are two ways to do so.
+
+The first way is to provide a serializer when instantiating the Key. A
+serializer is an object that implements the :class:`~sunset.Serializer` protocol
+for the type you want to store in a Key.
+
+For example:
+
+.. code-block:: python
+
+    >>> from typing import Optional
+    >>> from sunset import Key, Settings
+
+    >>> class Coordinates:
+    ...     def __init__(self, x: int, y: int) -> None:
+    ...         self.x = x
+    ...         self.y = y
+
+    >>> class CoordinatesSerializer:
+    ...     def toStr(self, coord: Coordinates) -> str:
+    ...         return f"{coord.x},{coord.x}"
+    ...
+    ...     def fromStr(self, string: str) -> Optional[Coordinates]:
+    ...         x, y = string.split(",", 1)
+    ...         if not x.isdigit() or not y.isdigit():
+    ...             return None
+    ...         return Coordinates(int(x), int(y))
+
+    >>> class MySettings(Settings):
+    ...     origin: Key[Coordinates] = Key(
+    ...         Coordinates(0, 0), serializer=CoordinatesSerializer()
+    ...     )
+
+    >>> settings = MySettings()
+    >>> print(repr(settings.origin))
+    <Key[Coordinates]:(0,0)>
+
+
+The second way is to have the type you want to store in a Key implement the
+:class:`~sunset.Serializable` protocol. Note that the methods of this protocol
+are pretty similar to that of :class:`~sunset.Serializer`. The difference is
+that in the case of :class:`~sunset.Serializable`, the methods are implemented
+directly on the type that will be stored in the Key.
 
 For example:
 
@@ -229,23 +259,35 @@ For example:
 
     >>> class Coordinates:
     ...     def __init__(self, x: int, y: int) -> None:
-    ...         self._x = x
-    ...         self._y = y
+    ...         self.x = x
+    ...         self.y = y
     ...
     ...     def toStr(self) -> str:
-    ...         return f"{self._x},{self._y}"
+    ...         return f"{self.x},{self.y}"
     ...
     ...     @classmethod
-    ...     def fromStr(cls, value: str) -> Optional["Coordinates"]:
-    ...         m = re.match(r"(\d+),(\d+)", value)
-    ...         if m is None:
+    ...     def fromStr(cls, string: str) -> Optional["Coordinates"]:
+    ...         x, y = string.split(",", 1)
+    ...         if not x.isdigit() or not y.isdigit():
     ...             return None
-    ...         x = int(m.group(1))
-    ...         y = int(m.group(2))
-    ...         return cls(x, y)
+    ...         return cls(int(x), int(y))
 
     >>> class MySettings(Settings):
     ...     origin: Key[Coordinates] = Key(Coordinates(0, 0))
+
+    >>> settings = MySettings()
+    >>> print(repr(settings.origin))
+    <Key[Coordinates]:(0,0)>
+
+
+Note also that in the latter case, :meth:`~sunset.Serializable.fromStr()` must
+be a class method.
+
+Both approaches to providing serialization and deserialization methods for your
+custom types are valid. :class:`~sunset.Serializer` requires a more verbose
+instantiation for your Keys, but allows for the concern of serialization to be
+kept separate from your custom type. If you don't care either way, use
+:class:`~sunset.Serializer`.
 
 
 Using settings
