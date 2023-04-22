@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Latest
-------
+SunsetSettings 0.5.0 (2023-04-22)
+---------------------------------
 
   - Added ability to set a validator on Keys to limit their possible values.
   - Making a typo in a value when editing a settings file manually no longer causes the entry to be deleted on save.
