@@ -1,5 +1,8 @@
+import enum
+
 from typing import Generic, Optional, TypeVar, Union, cast
 
+from .enum_serializer import EnumSerializer
 from .protocols import Serializable, Serializer
 
 _T = TypeVar("_T")
@@ -62,5 +65,8 @@ def lookup(type_: type[_T]) -> Optional[Serializer[_T]]:
 
     if type_ is int or type_ is float or type_ is str:
         return cast(Serializer[_T], StraightCastSerializer(type_))
+
+    if issubclass(type_, enum.Enum):
+        return cast(Serializer[_T], EnumSerializer(type_))
 
     return None

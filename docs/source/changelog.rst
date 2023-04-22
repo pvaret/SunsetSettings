@@ -4,6 +4,8 @@ Changelog
 Latest
 ------
 
+  - Added ability to serialize Enum subclasses natively.
+  - Deprecated now unnecessary SerializableEnum and -Flag classes.
   - Added ability to pass a custom serializer when instantiating a Key.
   - Added ability to store any type in a Key.
   - onUpdateCall() and onValueChangeCall() now accept callbacks with any return value.

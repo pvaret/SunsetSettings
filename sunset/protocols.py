@@ -56,9 +56,9 @@ class Serializer(Generic[_T], Protocol):
     type.
 
     SunsetSettings provides its own serializers for common types (int, float,
-    bool, str). In order to store an arbitrary type in a Key, users need to
-    provide a serializer for that type when instantiating a Key. That serializer
-    should be an implementation of this protocol.
+    bool, str, enum.Enum). In order to store an arbitrary type in a Key, users
+    need to provide a serializer for that type when instantiating a Key. That
+    serializer should be an implementation of this protocol.
     """
 
     def toStr(self, value: _T) -> str:

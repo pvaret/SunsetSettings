@@ -58,14 +58,10 @@ The benefit of using explicit type annotations is that they serve as a
 declaration of intention for what the Keys will hold, and will cause a type
 error if a given default does not match the intended type of its Key.
 
-By default, a Key can contain a `str`, an `int`, a `float`, or a `bool`. But
-Keys can also contain any arbitrary type, so long as they are instantiated with
-a corresponding :class:`~sunset.Serializer` argument. See :ref:`storing-custom-types`.
-
-As a convenience, SunsetSettings provides the :class:`~sunset.SerializableEnum`
-and :class:`~sunset.SerializableFlag` classes, which are subclasses of
-respectively `enum.Enum` and `enum.Flag` that SunsetSettings knows how to
-serialize. 
+By default, a Key can contain a `str`, an `int`, a `float`, a `bool`, or an
+`enum.Enum` subclass. But Keys can also contain any arbitrary type, so long as
+they are instantiated with a :class:`~sunset.Serializer` argument for that type.
+See :ref:`storing-custom-types`.
 
 Related keys can be grouped together with the :class:`~sunset.Bunch` class.
 

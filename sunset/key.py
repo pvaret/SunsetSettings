@@ -40,8 +40,8 @@ class Key(Generic[_T], ContainableImpl, Lockable):
             type of this default determines the type of the values that can be
             set on this Key.
 
-            If the type of the default is not one of bool, int, float, or str,
-            and is also not a class that implements the
+            If the type of the default is not one of bool, int, float, str, or
+            an `enum.Enum` subclass, and is also not a class that implements the
             :class:`~sunset.Serializable` protocol, then a serializer argument
             must also be passed.
 

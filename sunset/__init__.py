@@ -13,7 +13,7 @@ from .key import Key
 from .list import List
 from .protocols import Serializable, Serializer
 from .registry import CallbackRegistry
-from .serializable_enum import (
+from .enum_serializer import (
     SerializableEnum,
     SerializableFlag,
 )
