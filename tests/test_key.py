@@ -529,3 +529,20 @@ class TestKey:
         del level2
         assert level1.parent() is None
         assert len(list(level1.children())) == 0
+
+    def test_new_instance_non_serializable(self) -> None:
+        class NotSerializable:
+            pass
+
+        class Serializer:
+            def toStr(self, value: NotSerializable) -> str:
+                return "test"
+
+            def fromStr(self, string: str) -> NotSerializable:
+                return NotSerializable()
+
+        key = Key(default=NotSerializable(), serializer=Serializer())
+        other_key = key.newInstance()
+        other_key.set(NotSerializable())
+
+        assert list(other_key.dumpFields()) == [("", "test")]
