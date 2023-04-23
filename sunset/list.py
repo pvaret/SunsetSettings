@@ -419,7 +419,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
 
         self._update_notification_callbacks.add(callback)
 
-    def dumpFields(self) -> Iterable[tuple[str, Optional[str]]]:
+    def dumpFields(self) -> Iterator[tuple[str, Optional[str]]]:
         """
         Internal.
         """

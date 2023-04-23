@@ -6,7 +6,6 @@ from typing import (
     Callable,
     ContextManager,
     IO,
-    Iterable,
     Iterator,
     MutableSet,
     Optional,
@@ -431,7 +430,7 @@ class Settings(Bunch, Lockable):
     def isPrivate(self) -> bool:
         return self.sectionName() == ""
 
-    def dumpFields(self) -> Iterable[tuple[str, Optional[str]]]:
+    def dumpFields(self) -> Iterator[tuple[str, Optional[str]]]:
         """
         Internal.
         """

@@ -1,4 +1,4 @@
-from typing import Iterable, Optional, IO
+from typing import Iterable, Iterator, Optional, IO
 
 
 _SECTION_SEPARATOR = "/"
@@ -106,7 +106,7 @@ def save_to_file(
     data: Iterable[tuple[str, Optional[str]]],
     *,
     blanklines: bool,
-):
+) -> None:
     need_space = False
     current_section = ""
 
@@ -143,7 +143,7 @@ def save_to_file(
 
 def load_from_file(
     file: IO[str], main: str
-) -> Iterable[tuple[str, Optional[str]]]:
+) -> Iterator[tuple[str, Optional[str]]]:
     main = normalize(main)
 
     current_section = ""

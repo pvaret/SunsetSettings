@@ -5,7 +5,6 @@ from typing import (
     Any,
     Callable,
     Generic,
-    Iterable,
     Iterator,
     Optional,
     TypeVar,
@@ -409,7 +408,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
         for child in self._children:
             yield cast(Self, child)
 
-    def dumpFields(self) -> Iterable[tuple[str, Optional[str]]]:
+    def dumpFields(self) -> Iterator[tuple[str, Optional[str]]]:
         if not self.isPrivate():
             if self.isSet():
                 yield self.fieldPath(), self._serializer.toStr(self.get())

@@ -5,7 +5,6 @@ import weakref
 from typing import (
     Any,
     Callable,
-    Iterable,
     Iterator,
     MutableSet,
     Optional,
@@ -276,7 +275,7 @@ class Bunch(ContainableImpl):
 
         return any(field.isSet() for field in self._fields.values())
 
-    def dumpFields(self) -> Iterable[tuple[str, Optional[str]]]:
+    def dumpFields(self) -> Iterator[tuple[str, Optional[str]]]:
         """
         Internal.
         """

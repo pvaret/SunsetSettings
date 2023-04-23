@@ -4,7 +4,6 @@ from typing import (
     Any,
     Callable,
     Generic,
-    Iterable,
     Iterator,
     Optional,
     Protocol,
@@ -92,7 +91,7 @@ class Inheriter(Protocol):
 
 @runtime_checkable
 class Dumpable(Protocol):
-    def dumpFields(self) -> Iterable[tuple[str, Optional[str]]]:
+    def dumpFields(self) -> Iterator[tuple[str, Optional[str]]]:
         ...
 
     def restoreField(self, path: str, value: Optional[str]) -> bool:
