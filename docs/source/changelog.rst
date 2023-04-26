@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Latest
-------
+SunsetSettings 0.5.1 (2023-04-26)
+---------------------------------
 
   - Made deserializing an enum case-insensitive when the result is non-ambiguous.
   - Added ability to instantiate Bunches with default value overrides. This is still experimental and undocumented.
