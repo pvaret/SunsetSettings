@@ -63,6 +63,7 @@ class Bunch(ContainableImpl):
     _fields: dict[str, Field]
     _update_notification_callbacks: CallbackRegistry[UpdateNotifier]
     _update_notification_enabled: bool
+    _stored_defaults: dict[str, Any] = {}
 
     def __new__(cls: type[Self], **defaults: Any) -> Self:
         # Build and return a dataclass constructed from this class. Keep a
@@ -139,6 +140,8 @@ class Bunch(ContainableImpl):
     def __init__(self, **defaults: Any) -> None:
         super().__init__()
 
+        self._stored_defaults = {}
+
         # Set up the Bunch fields.
 
         # First, look up internal dataclass attribute names.
@@ -164,6 +167,7 @@ class Bunch(ContainableImpl):
                 and (default := defaults.get(field.name, None)) is not None
             ):
                 new_attr = new_attr.withDefault(default)
+                self._stored_defaults[field.name] = default
 
             setattr(self, field.name, new_attr)
 
@@ -372,10 +376,10 @@ class Bunch(ContainableImpl):
             A Bunch instance.
         """
 
-        new = self.__class__()
+        new = self.__class__(**self._stored_defaults)
         return new
 
     def withDefault(self: Self, default: Any) -> Self:
         # If a valid override was provided, return that override.
 
-        return default if type(default) is type(self) else self
+        return default.newInstance() if type(default) is type(self) else self
