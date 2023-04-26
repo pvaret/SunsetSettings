@@ -113,8 +113,22 @@ class Bunch(ContainableImpl):
                                 f" this field to '{name}_' for instance"
                             )
 
+                    # Create a proper field from the attribute.
+
                     field = dataclasses.field(default_factory=attr.newInstance)
                     dataclasses_fields.append((name, attr.typeHint(), field))
+
+                    # Note that we delete the attribute now that the field is
+                    # created. This helps avoid a hard-to-debug problem if the
+                    # user subclasses a Bunch with a custom __init__() that
+                    # doesn't call super().__init__(). That would seem to work,
+                    # but any updates made to attributes of that bunch would
+                    # really be applied to the attribute of the Bunch *class*,
+                    # not the instance, which would cause 'weird action at a
+                    # distance' bugs. Deleting the original class attribute
+                    # prevents this entirely.
+
+                    delattr(cls, name)
 
             # Create a dataclass based on this class. Note that we will be
             # providing our own __init__() override below.

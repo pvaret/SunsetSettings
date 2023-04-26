@@ -345,3 +345,29 @@ class TestBunch:
         assert bunch.a.get() == 2
         assert bunch.b.get() == 2
         assert bunch.c.get() == 1
+
+    def test_init_properly_called(self) -> None:
+        called: list[Bunch] = []
+
+        class TestBunch(Bunch):
+            a = Key(default=0)
+
+            def __init__(self) -> None:
+                super().__init__()
+                called.append(self)
+
+        bunch = TestBunch()
+        assert bunch in called
+        assert bunch.a.get() == 0
+
+    def test_missing_init_super_causes_attribute_error(self) -> None:
+        class TestBunch(Bunch):
+            a = Key(default=0)
+
+            def __init__(self) -> None:
+                # This incorrectly fails to call super().__init__().
+                pass
+
+        bunch = TestBunch()
+        with pytest.raises(AttributeError):
+            bunch.a
