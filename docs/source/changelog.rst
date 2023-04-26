@@ -4,7 +4,8 @@ Changelog
 Latest
 ------
 
-  - Added ability to instantiate Bunches with value overrides.
+  - Made deserializing an enum case-insensitive when the result is non-ambiguous.
+  - Added ability to instantiate Bunches with default value overrides. This is still experimental and undocumented.
 
 SunsetSettings 0.5.0 (2023-04-22)
 ---------------------------------
