@@ -1,5 +1,6 @@
 import weakref
 
+from types import GenericAlias
 from typing import (
     Any,
     Callable,
@@ -8,6 +9,7 @@ from typing import (
     Optional,
     Protocol,
     TypeVar,
+    Union,
     runtime_checkable,
 )
 
@@ -109,7 +111,13 @@ class UpdateNotifier(Protocol):
 
 @runtime_checkable
 class ItemTemplate(Protocol):
+    def typeHint(self) -> Union[type, GenericAlias]:
+        ...
+
     def newInstance(self: Self) -> Self:
+        ...
+
+    def withDefault(self: Self, default: Any) -> Self:
         ...
 
 

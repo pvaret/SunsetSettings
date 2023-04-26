@@ -1,6 +1,7 @@
 import weakref
 
 from enum import Enum, auto
+from types import GenericAlias
 from typing import (
     Any,
     Callable,
@@ -482,7 +483,10 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         if (container := self.container()) is not None and not self.isPrivate():
             container.triggerUpdateNotification(field)
 
-    def newInstance(self: Self) -> Self:
+    def typeHint(self) -> GenericAlias:
+        return GenericAlias(type(self), type(self._template))
+
+    def newInstance(self: Self, _template: Optional[ListItemT] = None) -> Self:
         """
         Internal. Returns a new instance of this List capable of holding the
         same type.
@@ -491,7 +495,12 @@ class List(MutableSequence[ListItemT], ContainableImpl):
             A new List.
         """
 
-        return self.__class__(template=self._template, order=self._iter_order)
+        template = _template if _template is not None else self._template
+
+        return self.__class__(template=template, order=self._iter_order)
+
+    def withDefault(self: Self, default: Any) -> Self:
+        return self.newInstance(self._template.withDefault(default))
 
     def __repr__(self) -> str:
         parent = self.parent()

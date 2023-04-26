@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Latest
+------
+
+  - Added ability to instantiate Bunches with value overrides.
+
 SunsetSettings 0.5.0 (2023-04-22)
 ---------------------------------
 

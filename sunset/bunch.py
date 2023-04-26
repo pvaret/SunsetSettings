@@ -8,7 +8,6 @@ from typing import (
     Iterator,
     MutableSet,
     Optional,
-    Type,
     TypeVar,
     cast,
 )
@@ -65,70 +64,112 @@ class Bunch(ContainableImpl):
     _update_notification_callbacks: CallbackRegistry[UpdateNotifier]
     _update_notification_enabled: bool
 
-    def __new__(cls: Type[Self]) -> Self:
-        # Automatically promote relevant attributes to dataclass fields.
+    def __new__(cls: type[Self], **defaults: Any) -> Self:
+        # Build and return a dataclass constructed from this class. Keep a
+        # reference to that dataclass as a private class attribute, so that we
+        # only construct it once. This allows type identity checks (as in
+        # "type(a) is type (b)") to work.
 
-        cls_parents = cls.__bases__
+        del defaults  # unused in __new___().
 
-        potential_fields = list(vars(cls).items())
-        for name, attr in potential_fields:
-            if inspect.isclass(attr):
-                if attr.__name__ == name:
-                    # This is probably a class definition that just happens to
-                    # be located inside the containing Bunch definition. This
-                    # is fine.
+        _dataclass_attr = "__DATACLASS_CLASS"
 
-                    continue
+        dataclass_class: Optional[type[Self]] = None
+        if (dataclass_class := getattr(cls, _dataclass_attr, None)) is None:
+            # We haven't yet constructed a dataclass from this class. Construct
+            # one here.
 
-                raise TypeError(
-                    f"Field '{name}' in the definition of '{cls.__name__}'"
-                    " is uninstantiated"
-                )
+            cls_parents = cls.__bases__
 
-            if isinstance(attr, ItemTemplate):
-                # Safety check: make sure the user isn't accidentally overriding
-                # an existing attribute.
+            dataclasses_fields: list[Any] = []
 
-                for cls_parent in cls_parents:
-                    if getattr(cls_parent, name, None) is not None:
-                        raise TypeError(
-                            f"Field '{name}' in the definition of"
-                            f" '{cls.__name__}' overrides attribute of the same"
-                            f" name declared in parent class"
-                            f" '{cls_parent.__name__}'; consider"
-                            f" renaming this field to '{name}_' for instance"
-                        )
+            potential_fields = list(vars(cls).items())
+            for name, attr in potential_fields:
+                if inspect.isclass(attr):
+                    if attr.__name__ == name:
+                        # This is probably a class definition that just happens
+                        # to be located inside the containing Bunch definition.
+                        # This is fine.
 
-                setattr(
-                    cls,
-                    name,
-                    dataclasses.field(default_factory=attr.newInstance),
-                )
+                        continue
 
-                # Dataclass instantiation raises an error if a field does not
-                # have an explicit type annotation. But our Key, List and
-                # Bunch fields are unambiguously typed, so we don't actually
-                # need the annotation. So we just tell the dataclass that the
-                # type of non-explicitly-annotated fields is 'Any'. Turns out,
-                # this works.
+                    raise TypeError(
+                        f"Field '{name}' in the definition of '{cls.__name__}'"
+                        " is uninstantiated"
+                    )
 
-                # Also note the subtle dance here: the annotations need to be on
-                # *this* class, and not inherited from a parent class. So we
-                # make sure that the __annotations__ mapping does exist in this
-                # class' namespace.
+                if isinstance(attr, ItemTemplate):
+                    # Safety check: make sure the user isn't accidentally
+                    # overriding an existing attribute.
 
-                if "__annotations__" not in cls.__dict__:
-                    setattr(cls, "__annotations__", {})
-                cls.__annotations__.setdefault(name, Any)
+                    for cls_parent in cls_parents:
+                        if getattr(cls_parent, name, None) is not None:
+                            raise TypeError(
+                                f"Field '{name}' in the definition of"
+                                f" '{cls.__name__}' overrides attribute of the"
+                                " same name declared in parent class"
+                                f" '{cls_parent.__name__}'; consider renaming"
+                                f" this field to '{name}_' for instance"
+                            )
 
-        # Create a new instance of this class wrapped as a dataclass.
+                    field = dataclasses.field(default_factory=attr.newInstance)
+                    dataclasses_fields.append((name, attr.typeHint(), field))
 
-        wrapped = dataclasses.dataclass()(cls)
-        return super().__new__(wrapped)
+            # Create a dataclass based on this class. Note that we will be
+            # providing our own __init__() override below.
 
-    def __post_init__(self) -> None:
+            dataclass_class = cast(
+                type[Self],
+                dataclasses.make_dataclass(
+                    cls.__qualname__,
+                    dataclasses_fields,
+                    init=False,
+                    bases=(cls,) + cls_parents,
+                ),
+            )
+
+            # And store it on the class itself for later.
+
+            setattr(cls, _dataclass_attr, dataclass_class)
+
+        # And finally, return an instance of the dataclass. Phew.
+
+        return super().__new__(dataclass_class)
+
+    def __init__(self, **defaults: Any) -> None:
         super().__init__()
 
+        # Set up the Bunch fields.
+
+        # First, look up internal dataclass attribute names.
+
+        fields_attr: str = getattr(dataclasses, "_FIELDS")
+        field_type: Any = getattr(dataclasses, "_FIELD")
+        fields: dict[str, dataclasses.Field[Any]] = getattr(
+            self, fields_attr, {}
+        )
+
+        # Then look up the fields stored in the dataclass.
+
+        for field in fields.values():
+            if getattr(field, "_field_type", None) is not field_type:
+                continue
+
+            if field.default_factory is dataclasses.MISSING:
+                continue
+
+            new_attr = field.default_factory()
+            if (
+                isinstance(new_attr, Field)
+                and (default := defaults.get(field.name, None)) is not None
+            ):
+                new_attr = new_attr.withDefault(default)
+
+            setattr(self, field.name, new_attr)
+
+        self.__post_init__()
+
+    def __post_init__(self) -> None:
         self._parent = None
         self._children = WeakNonHashableSet[Bunch]()
         self._fields = {}
@@ -320,6 +361,9 @@ class Bunch(ContainableImpl):
         if (container := self.container()) is not None and not self.isPrivate():
             container.triggerUpdateNotification(field)
 
+    def typeHint(self) -> type:
+        return type(self)
+
     def newInstance(self: Self) -> Self:
         """
         Internal. Returns a new instance of this Bunch with the same fields.
@@ -330,3 +374,8 @@ class Bunch(ContainableImpl):
 
         new = self.__class__()
         return new
+
+    def withDefault(self: Self, default: Any) -> Self:
+        # If a valid override was provided, return that override.
+
+        return default if type(default) is type(self) else self

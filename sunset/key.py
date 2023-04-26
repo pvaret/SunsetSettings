@@ -1,6 +1,7 @@
 import logging
 import weakref
 
+from types import GenericAlias
 from typing import (
     Any,
     Callable,
@@ -473,7 +474,10 @@ class Key(Generic[_T], ContainableImpl, Lockable):
         if (container := self.container()) is not None and not self.isPrivate():
             container.triggerUpdateNotification(self)
 
-    def newInstance(self: Self) -> Self:
+    def typeHint(self) -> GenericAlias:
+        return GenericAlias(type(self), self._type)
+
+    def newInstance(self: Self, _default: Optional[_T] = None) -> Self:
         """
         Internal. Returns a new instance of this Key with the same default
         value.
@@ -482,8 +486,15 @@ class Key(Generic[_T], ContainableImpl, Lockable):
             A new Key.
         """
 
-        return self.__class__(
-            default=self._default, serializer=self._serializer
+        default = _default if _default is not None else self._default
+
+        return self.__class__(default=default, serializer=self._serializer)
+
+    def withDefault(self: Self, default: Any) -> Self:
+        return (
+            self.newInstance(default)
+            if isinstance(default, self._type)
+            else self
         )
 
     def __repr__(self) -> str:

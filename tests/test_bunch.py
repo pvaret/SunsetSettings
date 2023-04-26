@@ -76,6 +76,21 @@ class TestBunch:
         assert child_bunch not in parent_bunch.children()
         assert child_bunch.parent() is None
 
+    def test_bunch_dataclass_mro(self) -> None:
+        # Bunch instantiation is a tad tricky. Here we make sure that attributes
+        # of a Bunch that are not SunsetSetting fields do work as expected.
+
+        class ExampleBunchSubclass(Bunch):
+            a = Key("test a")
+            b = "random attribute"
+
+            def test_a(self) -> str:
+                return self.a.get()
+
+        bunch = ExampleBunchSubclass()
+        assert bunch.test_a() == "test a"
+        assert bunch.b == "random attribute"
+
     def test_parenting(self) -> None:
         parent_bunch = ExampleBunch()
         child_bunch = ExampleBunch()
@@ -304,3 +319,15 @@ class TestBunch:
             return Dummy()
 
         bunch.onUpdateCall(callback)
+
+    def test_with_defaults(self) -> None:
+        bunch = ExampleBunch(
+            a="overridden",
+            inner_bunch=ExampleBunch.InnerBunch(b=101),
+        )
+
+        assert bunch.a.get() == "overridden"
+        assert not bunch.a.isSet()
+        assert bunch.a.parent() is None
+        assert bunch.inner_bunch.b.get() == 101
+        assert not bunch.inner_bunch.b.isSet()

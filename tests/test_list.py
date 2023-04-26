@@ -593,3 +593,17 @@ class TestList:
         assert repr(list_iter_no_parent) == "[<Key[int]:1>]"
         assert repr(list_iter_parent_first) == "[<parent>,<Key[int]:1>]"
         assert repr(list_iter_parent_last) == "[<Key[int]:1>,<parent>]"
+
+    def test_with_default(self) -> None:
+        default_list = List(Key(default=0))
+
+        other_list = default_list.withDefault(1)
+        other_list.appendOne()
+        assert len(other_list) == 1
+        assert other_list[0].get() == 1
+        assert not other_list[0].isSet()
+
+        invalid_default_list = default_list.withDefault("invalid")
+        invalid_default_list.appendOne()
+        assert len(invalid_default_list) == 1
+        assert invalid_default_list[0].get() == 0
