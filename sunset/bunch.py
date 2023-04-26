@@ -368,7 +368,9 @@ class Bunch(ContainableImpl):
     def typeHint(self) -> type:
         return type(self)
 
-    def newInstance(self: Self) -> Self:
+    def newInstance(
+        self: Self, _defaults: Optional[dict[str, Any]] = None
+    ) -> Self:
         """
         Internal. Returns a new instance of this Bunch with the same fields.
 
@@ -376,10 +378,19 @@ class Bunch(ContainableImpl):
             A Bunch instance.
         """
 
-        new = self.__class__(**self._stored_defaults)
+        # Make sure the defaults are carried along to the new instance.
+
+        defaults = _defaults.copy() if _defaults else {}
+        defaults.update(self._stored_defaults)
+
+        new = self.__class__(**defaults)
         return new
 
     def withDefault(self: Self, default: Any) -> Self:
         # If a valid override was provided, return that override.
 
-        return default.newInstance() if type(default) is type(self) else self
+        return (
+            default.newInstance(self._stored_defaults)
+            if type(default) is type(self)
+            else self
+        )
