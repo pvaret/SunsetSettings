@@ -86,3 +86,18 @@ class TestSerializableEnum:
 
         assert serializer.toStr(IntFlagExample.A | IntFlagExample.B) == "A|B"
         assert serializer.fromStr("A|B") == IntFlagExample.A | IntFlagExample.B
+
+    def test_flexible_case_matching(self) -> None:
+        class TestEnum(enum.Enum):
+            TEST1 = enum.auto()
+            test1 = enum.auto()
+            TEST2 = enum.auto()
+
+        serializer = lookup(TestEnum)
+        assert serializer is not None
+        assert serializer.fromStr("TEST1") == TestEnum.TEST1
+        assert serializer.fromStr("test1") == TestEnum.test1
+        assert serializer.fromStr("Test1") is None
+        assert serializer.fromStr("TEST2") == TestEnum.TEST2
+        assert serializer.fromStr("test2") == TestEnum.TEST2
+        assert serializer.fromStr("Test2") == TestEnum.TEST2

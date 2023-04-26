@@ -83,14 +83,33 @@ class EnumSerializer(Generic[_EnumT]):
 
         return members
 
+    def _lookupMember(self, name: str) -> Optional[_EnumT]:
+        candidates: list[_EnumT] = []
+
+        for candidate_name, member in self._members().items():
+            candidate_name = candidate_name.strip()
+
+            if candidate_name == name.strip():
+                return member
+
+            candidate_name = candidate_name.strip().lower()
+            if candidate_name == name.strip().lower():
+                candidates.append(member)
+
+        if len(candidates) == 1:
+            return candidates[0]
+
+        return None
+
     def fromStr(self, string: str) -> Optional[_EnumT]:
         # value is either a single word, or, in the case of Flag enums, multiple
         # words separated by a pipe. We handle both cases together here.
 
-        members = self._members()
         names = string.split("|") if "|" in string else [string]
         named_members = [
-            members[n] for name in names if (n := name.strip()) in members
+            member
+            for name in names
+            if (member := self._lookupMember(name)) is not None
         ]
 
         if not named_members:
