@@ -4,7 +4,6 @@ import pathlib
 from typing import (
     Any,
     Callable,
-    ContextManager,
     IO,
     Iterator,
     MutableSet,
@@ -138,7 +137,7 @@ class Settings(Bunch, Lockable):
 
     _section_name: str
     _children: MutableSet[Bunch]
-    _autosaver: Optional[ContextManager[Any]] = None
+    _autosaver: Optional[AutoSaver] = None
     _autosaver_class: type[AutoSaver]
 
     def __post_init__(self) -> None:
@@ -540,7 +539,7 @@ class Settings(Bunch, Lockable):
         save_on_update: bool = True,
         save_delay: int = 0,
         logger: Optional[logging.Logger] = None,
-    ) -> ContextManager[Any]:
+    ) -> AutoSaver:
         """
         Returns a context manager that loads these Settings from the given file
         path on instantiation and saves them on exit.
