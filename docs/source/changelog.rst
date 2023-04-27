@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Latest
+------
+
+  - Added more logging when AutoSaver loads/saves.
+
+
 SunsetSettings 0.5.1 (2023-04-26)
 ---------------------------------
 

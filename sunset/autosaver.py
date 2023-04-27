@@ -162,8 +162,10 @@ class AutoSaver:
 
         try:
             if (path := self._path).exists():
+                self._logger.debug("Loading settings file '%s'...", path)
                 with open(path, encoding=self._ENCODING) as f:
                     self._settings.load(f)
+                self._logger.debug("Loaded.")
                 return True
 
         except OSError as e:
@@ -203,9 +205,12 @@ class AutoSaver:
                 encoding=self._ENCODING,
                 delete=False,
             ) as tmp:
+                self._logger.debug("Saving settings file '%s'...", self._path)
                 self._settings.save(tmp.file, blanklines=True)
                 os.chmod(tmp.name, self._FILE_MODE)
                 os.rename(tmp.name, self._path)
+                self._logger.debug("Saved.")
+
         except OSError as e:
             self._logger.error("Error while saving to '%s': %s", self._path, e)
             return False
