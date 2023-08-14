@@ -21,7 +21,7 @@ class StraightCastSerializer(Generic[_Castable]):
 
     def fromStr(self, string: str) -> Optional[_Castable]:
         try:
-            return cast(_Castable, self._type(string))
+            return self._type(string)
         except ValueError:
             return None
 

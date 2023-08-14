@@ -59,6 +59,11 @@ class Key(Generic[_T], ContainableImpl, Lockable):
             this Key, else False. This allows you to control what values are
             allowable for this Key. Default: None.
 
+        value_type: If given, the type that will be used by runtime safety
+            checks instead of the type of the default value. This is rarely
+            needed, but can be useful e.g. if the Key is meant to hold values
+            from multiple possible subclasses of a base class.
+
     Example:
 
     >>> from sunset import Key
@@ -105,13 +110,24 @@ class Key(Generic[_T], ContainableImpl, Lockable):
         default: _T,
         serializer: Optional[Serializer[_T]] = None,
         validator: Optional[Callable[[_T], bool]] = None,
+        value_type: Optional[type[_T]] = None,
     ) -> None:
         super().__init__()
 
         # Keep a runtime reference to the practical type contained in this
         # key.
 
-        self._type = cast(type[_T], default.__class__)
+        if value_type is not None:
+            if not isinstance(default, value_type):
+                raise TypeError(
+                    f"Default Key value '{default}' has type"
+                    f" '{default.__class__.__name__}', which is not compatible"
+                    " with explicitly given value type"
+                    f" '{value_type.__name__}'."
+                )
+            self._type = value_type
+        else:
+            self._type = cast(type[_T], default.__class__)
 
         self._default = default
         self._value = None

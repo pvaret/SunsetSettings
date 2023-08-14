@@ -101,7 +101,7 @@ class TestKey:
                     return string[:-5]
                 return None
 
-        key = Key(default="", serializer=Serializer())
+        key: Key[str] = Key(default="", serializer=Serializer())
         key.set("value")
         assert list(key.dumpFields()) == [("", "value-TEST")]
 
@@ -603,3 +603,37 @@ class TestKey:
 
         invalid_key = key.withDefault("invalid")
         assert invalid_key.get() == 0
+
+    def test_complex_key_type_with_subclasses(self) -> None:
+        class BaseClass:
+            def toStr(self, value: "BaseClass") -> str:
+                return ""
+
+            @classmethod
+            def fromStr(cls, string: str) -> "BaseClass":
+                return cls()
+
+        class Derived1(BaseClass):
+            pass
+
+        class Derived2(BaseClass):
+            pass
+
+        d1 = Derived1()
+        key_broken: Key[BaseClass] = Key(default=d1)
+
+        d2 = Derived2()
+        assert not key_broken.set(d2)
+        assert key_broken.get() is d1
+
+        key_working: Key[BaseClass] = Key(default=d1, value_type=BaseClass)
+
+        d2 = Derived2()
+        assert key_working.set(d2)
+        assert key_working.get() is d2
+
+    def test_explicit_value_type_must_be_compatible_with_default(self) -> None:
+        Key(default=0, value_type=int)
+
+        with pytest.raises(TypeError):
+            Key(default=0, value_type=str)

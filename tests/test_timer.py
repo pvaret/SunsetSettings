@@ -13,7 +13,7 @@ class TestPersistentTimer:
         mock = mock_cls.return_value
         monkeypatch.setattr(threading, "Timer", mock_cls)
 
-        def test():
+        def test() -> None:
             pass
 
         timer = PersistentTimer(test)
@@ -36,7 +36,7 @@ class TestPersistentTimer:
         mock = mock_cls.return_value
         monkeypatch.setattr(threading, "Timer", mock_cls)
 
-        def test():
+        def test() -> None:
             pass
 
         timer = PersistentTimer(test)
