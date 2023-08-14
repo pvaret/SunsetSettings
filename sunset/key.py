@@ -504,7 +504,12 @@ class Key(Generic[_T], ContainableImpl, Lockable):
 
         default = _default if _default is not None else self._default
 
-        return self.__class__(default=default, serializer=self._serializer)
+        return self.__class__(
+            default=default,
+            serializer=self._serializer,
+            validator=self._validator,
+            value_type=self._type,
+        )
 
     def withDefault(self: Self, default: Any) -> Self:
         return (

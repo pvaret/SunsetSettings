@@ -606,7 +606,7 @@ class TestKey:
 
     def test_complex_key_type_with_subclasses(self) -> None:
         class BaseClass:
-            def toStr(self, value: "BaseClass") -> str:
+            def toStr(self) -> str:
                 return ""
 
             @classmethod
@@ -637,3 +637,25 @@ class TestKey:
 
         with pytest.raises(TypeError):
             Key(default=0, value_type=str)
+
+    def test_explicit_key_type_transmitted_to_new_instances(self) -> None:
+        class BaseClass:
+            def toStr(self) -> str:
+                return ""
+
+            @classmethod
+            def fromStr(cls, string: str) -> "BaseClass":
+                return cls()
+
+        class Derived1(BaseClass):
+            pass
+
+        class Derived2(BaseClass):
+            pass
+
+        key1: Key[BaseClass] = Key(default=Derived1(), value_type=BaseClass)
+
+        key2 = key1.newInstance()
+        d2 = Derived2()
+        assert key2.set(d2)
+        assert key2.get() is d2
