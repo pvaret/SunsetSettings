@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Latest
-------
+SunsetSettings 0.5.2 (2023-08-14)
+---------------------------------
 
   - Added more logging when AutoSaver loads/saves.
   - Added ability to create Keys with an explicit runtime type.
