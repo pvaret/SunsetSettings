@@ -63,15 +63,12 @@ class Bunch(ContainableImpl):
     _fields: dict[str, Field]
     _update_notification_callbacks: CallbackRegistry[UpdateNotifier]
     _update_notification_enabled: bool
-    _stored_defaults: dict[str, Any] = {}
 
-    def __new__(cls: type[Self], **defaults: Any) -> Self:
+    def __new__(cls: type[Self]) -> Self:
         # Build and return a dataclass constructed from this class. Keep a
         # reference to that dataclass as a private class attribute, so that we
         # only construct it once. This allows type identity checks (as in
         # "type(a) is type (b)") to work.
-
-        del defaults  # unused in __new___().
 
         _dataclass_attr = "__DATACLASS_CLASS"
 
@@ -151,10 +148,8 @@ class Bunch(ContainableImpl):
 
         return super().__new__(dataclass_class)
 
-    def __init__(self, **defaults: Any) -> None:
+    def __init__(self) -> None:
         super().__init__()
-
-        self._stored_defaults = {}
 
         # Set up the Bunch fields.
 
@@ -175,15 +170,7 @@ class Bunch(ContainableImpl):
             if field.default_factory is dataclasses.MISSING:
                 continue
 
-            new_attr = field.default_factory()
-            if (
-                isinstance(new_attr, Field)
-                and (default := defaults.get(field.name, None)) is not None
-            ):
-                new_attr = new_attr.withDefault(default)
-                self._stored_defaults[field.name] = default
-
-            setattr(self, field.name, new_attr)
+            setattr(self, field.name, field.default_factory())
 
         self.__post_init__()
 
@@ -382,9 +369,7 @@ class Bunch(ContainableImpl):
     def typeHint(self) -> type:
         return type(self)
 
-    def newInstance(
-        self: Self, _defaults: Optional[dict[str, Any]] = None
-    ) -> Self:
+    def newInstance(self: Self) -> Self:
         """
         Internal. Returns a new instance of this Bunch with the same fields.
 
@@ -392,19 +377,4 @@ class Bunch(ContainableImpl):
             A Bunch instance.
         """
 
-        # Make sure the defaults are carried along to the new instance.
-
-        defaults = _defaults.copy() if _defaults else {}
-        defaults.update(self._stored_defaults)
-
-        new = self.__class__(**defaults)
-        return new
-
-    def withDefault(self: Self, default: Any) -> Self:
-        # If a valid override was provided, return that override.
-
-        return (
-            default.newInstance(self._stored_defaults)
-            if type(default) is type(self)
-            else self
-        )
+        return self.__class__()

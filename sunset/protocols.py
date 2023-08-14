@@ -117,9 +117,6 @@ class ItemTemplate(Protocol):
     def newInstance(self: Self) -> Self:
         ...
 
-    def withDefault(self: Self, default: Any) -> Self:
-        ...
-
 
 @runtime_checkable
 class Containable(Protocol):

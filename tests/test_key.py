@@ -593,17 +593,6 @@ class TestKey:
 
         assert list(other_key.dumpFields()) == [("", "test")]
 
-    def test_with_default(self) -> None:
-        key = Key(default=0)
-        other_key = key.withDefault(1)
-
-        assert other_key.get() == 1
-        assert not other_key.isSet()
-        assert other_key.parent() is None
-
-        invalid_key = key.withDefault("invalid")
-        assert invalid_key.get() == 0
-
     def test_complex_key_type_with_subclasses(self) -> None:
         class BaseClass:
             def toStr(self) -> str:

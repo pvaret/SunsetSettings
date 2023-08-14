@@ -320,32 +320,6 @@ class TestBunch:
 
         bunch.onUpdateCall(callback)
 
-    def test_with_defaults(self) -> None:
-        bunch = ExampleBunch(
-            a="overridden",
-            inner_bunch=ExampleBunch.InnerBunch(b=101),
-        )
-
-        assert bunch.a.get() == "overridden"
-        assert not bunch.a.isSet()
-        assert bunch.a.parent() is None
-        assert bunch.inner_bunch.b.get() == 101
-        assert not bunch.inner_bunch.b.isSet()
-
-    def test_defaults_persist_to_new_instances(self) -> None:
-        class TestBunch(Bunch):
-            a = Key(default=0)
-            b = Key(default=0)
-            c = Key(default=0)
-
-        bunch = TestBunch(a=1, b=1).withDefault(
-            TestBunch(b=2).withDefault(TestBunch(a=2, c=1))
-        )
-
-        assert bunch.a.get() == 2
-        assert bunch.b.get() == 2
-        assert bunch.c.get() == 1
-
     def test_init_properly_called(self) -> None:
         called: list[Bunch] = []
 

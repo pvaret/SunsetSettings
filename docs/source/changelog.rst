@@ -6,7 +6,7 @@ Latest
 
   - Added more logging when AutoSaver loads/saves.
   - Added ability to create Keys with an explicit runtime type.
-
+  - Rolled back undocumented Bunch default value override feature. It's not dependable.
 
 SunsetSettings 0.5.1 (2023-04-26)
 ---------------------------------

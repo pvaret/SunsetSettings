@@ -493,7 +493,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
     def typeHint(self) -> GenericAlias:
         return GenericAlias(type(self), self._type)
 
-    def newInstance(self: Self, _default: Optional[_T] = None) -> Self:
+    def newInstance(self: Self) -> Self:
         """
         Internal. Returns a new instance of this Key with the same default
         value.
@@ -502,20 +502,11 @@ class Key(Generic[_T], ContainableImpl, Lockable):
             A new Key.
         """
 
-        default = _default if _default is not None else self._default
-
         return self.__class__(
-            default=default,
+            default=self._default,
             serializer=self._serializer,
             validator=self._validator,
             value_type=self._type,
-        )
-
-    def withDefault(self: Self, default: Any) -> Self:
-        return (
-            self.newInstance(default)
-            if isinstance(default, self._type)
-            else self
         )
 
     def __repr__(self) -> str:

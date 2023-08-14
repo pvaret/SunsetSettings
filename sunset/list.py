@@ -486,7 +486,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
     def typeHint(self) -> GenericAlias:
         return GenericAlias(type(self), type(self._template))
 
-    def newInstance(self: Self, _template: Optional[ListItemT] = None) -> Self:
+    def newInstance(self: Self) -> Self:
         """
         Internal. Returns a new instance of this List capable of holding the
         same type.
@@ -495,12 +495,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
             A new List.
         """
 
-        template = _template if _template is not None else self._template
-
-        return self.__class__(template=template, order=self._iter_order)
-
-    def withDefault(self: Self, default: Any) -> Self:
-        return self.newInstance(self._template.withDefault(default))
+        return self.__class__(template=self._template, order=self._iter_order)
 
     def __repr__(self) -> str:
         parent = self.parent()
