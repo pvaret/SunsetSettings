@@ -81,13 +81,13 @@ class Serializer(Generic[_T], Protocol):
 
 @runtime_checkable
 class Inheriter(Protocol):
-    def setParent(self: Self, parent: Optional[Self]) -> None:
+    def _setParent(self: Self, parent: Optional[Self]) -> None:
         ...
 
-    def parent(self: Self) -> Optional[Self]:
+    def _parent(self: Self) -> Optional[Self]:
         ...
 
-    def children(self: Self) -> Iterator[Self]:
+    def _children(self: Self) -> Iterator[Self]:
         ...
 
 
@@ -111,10 +111,10 @@ class UpdateNotifier(Protocol):
 
 @runtime_checkable
 class ItemTemplate(Protocol):
-    def typeHint(self) -> Union[type, GenericAlias]:
+    def _typeHint(self) -> Union[type, GenericAlias]:
         ...
 
-    def newInstance(self: Self) -> Self:
+    def _newInstance(self: Self) -> Self:
         ...
 
 
@@ -122,30 +122,30 @@ class ItemTemplate(Protocol):
 class Containable(Protocol):
     _PATH_SEPARATOR: str
 
-    def setContainer(
+    def _setContainer(
         self, label: str, container: Optional["Container"]
     ) -> None:
         ...
 
-    def container(self) -> Optional["Container"]:
+    def _container(self) -> Optional["Container"]:
         ...
 
-    def fieldLabel(self) -> str:
+    def _fieldLabel(self) -> str:
         ...
 
-    def fieldPath(self) -> str:
+    def _fieldPath(self) -> str:
         ...
 
-    def isPrivate(self) -> bool:
+    def _isPrivate(self) -> bool:
         ...
 
 
 @runtime_checkable
 class Container(Containable, UpdateNotifier, Protocol):
-    def containsFieldWithLabel(self, label: str, field: "Containable") -> bool:
+    def _containsFieldWithLabel(self, label: str, field: "Containable") -> bool:
         ...
 
-    def triggerUpdateNotification(
+    def _triggerUpdateNotification(
         self, field: "Optional[UpdateNotifier]"
     ) -> None:
         ...
@@ -158,77 +158,71 @@ class ContainableImpl:
 
     _PATH_SEPARATOR: str = "."
 
-    _field_label: str
-    _container: Optional[weakref.ref[Container]]
+    _field_label: str = ""
+    _container_ref: Optional[weakref.ref[Container]] = None
 
-    def __init__(self) -> None:
-        super().__init__()
-
-        self._field_label = ""
-        self._container = None
-
-    def setContainer(self, label: str, container: Optional[Container]) -> None:
+    def _setContainer(self, label: str, container: Optional[Container]) -> None:
         """
         Internal.
         """
 
         if container is None:
-            self._container = None
+            self._container_ref = None
             self._field_label = ""
         else:
-            self._container = weakref.ref(container)
+            self._container_ref = weakref.ref(container)
             self._field_label = label
 
-    def container(self) -> Optional[Container]:
+    def _container(self) -> Optional[Container]:
         """
         Internal.
         """
 
-        if self._container is None:
+        if self._container_ref is None:
             return None
 
-        container = self._container()
+        container = self._container_ref()
         if container is None:
             return None
 
         # Make sure this Containable is in fact still held in its supposed
         # Container. Else update the situation.
 
-        if not container.containsFieldWithLabel(self._field_label, self):
-            self.setContainer("", None)
+        if not container._containsFieldWithLabel(self._field_label, self):
+            self._setContainer("", None)
             return None
 
         return container
 
-    def fieldLabel(self) -> str:
+    def _fieldLabel(self) -> str:
         """
         Internal.
         """
 
-        if self.container() is None:
+        if self._container() is None:
             self._field_label = ""
 
         return self._field_label
 
-    def fieldPath(self) -> str:
+    def _fieldPath(self) -> str:
         """
         Internal.
         """
 
         path = (
             ""
-            if (container := self.container()) is None
-            else container.fieldPath()
+            if (container := self._container()) is None
+            else container._fieldPath()
         )
 
-        return path + self.fieldLabel()
+        return path + self._fieldLabel()
 
-    def isPrivate(self) -> bool:
+    def _isPrivate(self) -> bool:
         """
         Internal.
         """
 
-        return self.fieldLabel().startswith("_")
+        return self._fieldLabel().startswith("_")
 
 
 assert isinstance(ContainableImpl, Containable)

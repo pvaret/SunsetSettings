@@ -90,8 +90,8 @@ class List(MutableSequence[ListItemT], ContainableImpl):
     PARENT_LAST = IterOrder.PARENT_LAST
 
     _contents: list[ListItemT]
-    _parent: Optional[weakref.ref["List[ListItemT]"]]
-    _children: WeakNonHashableSet["List[ListItemT]"]
+    _parent_ref: Optional[weakref.ref["List[ListItemT]"]]
+    _children_ref: WeakNonHashableSet["List[ListItemT]"]
     _iter_order: IterOrder
     _update_notification_callbacks: CallbackRegistry[Any]
     _update_notification_enabled: bool
@@ -104,8 +104,8 @@ class List(MutableSequence[ListItemT], ContainableImpl):
 
         self._contents = []
 
-        self._parent = None
-        self._children = WeakNonHashableSet()
+        self._parent_ref = None
+        self._children_ref = WeakNonHashableSet()
         self._iter_order = order
         self._update_notification_callbacks = CallbackRegistry()
         self._update_notification_enabled = True
@@ -114,7 +114,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
     def insert(self, index: SupportsIndex, value: ListItemT) -> None:
         self._contents.insert(index, value)
         self._relabelItems()
-        self.triggerUpdateNotification(self)
+        self._triggerUpdateNotification(self)
 
     @overload
     def __getitem__(self, index: SupportsIndex) -> ListItemT:
@@ -152,17 +152,17 @@ class List(MutableSequence[ListItemT], ContainableImpl):
             self._contents[index] = value
 
         self._relabelItems()
-        self.triggerUpdateNotification(self)
+        self._triggerUpdateNotification(self)
 
     def __delitem__(self, index: Union[SupportsIndex, slice]) -> None:
         del self._contents[index]
         self._relabelItems()
-        self.triggerUpdateNotification(self)
+        self._triggerUpdateNotification(self)
 
     def extend(self, values: Iterable[ListItemT]) -> None:
         self._contents.extend(values)
         self._relabelItems()
-        self.triggerUpdateNotification(self)
+        self._triggerUpdateNotification(self)
 
     def append(self, value: ListItemT) -> None:
         self.extend((value,))
@@ -174,13 +174,13 @@ class List(MutableSequence[ListItemT], ContainableImpl):
     def clear(self) -> None:
         self._contents.clear()
         self._relabelItems()
-        self.triggerUpdateNotification(self)
+        self._triggerUpdateNotification(self)
 
     def __len__(self) -> int:
         return len(self._contents)
 
     def _newItem(self) -> ListItemT:
-        item = self._template.newInstance()
+        item = self._template._newInstance()
 
         # WORKAROUND: This lets mypy properly typecheck the return type.
 
@@ -225,14 +225,14 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         self.insert(index, item)
         return item
 
-    def fieldPath(self) -> str:
+    def _fieldPath(self) -> str:
         """
         Internal.
         """
 
-        return super().fieldPath() + self._PATH_SEPARATOR
+        return super()._fieldPath() + self._PATH_SEPARATOR
 
-    def containsFieldWithLabel(self, label: str, field: Containable) -> bool:
+    def _containsFieldWithLabel(self, label: str, field: Containable) -> bool:
         """
         Internal.
         """
@@ -248,7 +248,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
 
     def _relabelItems(self) -> None:
         for i, item in enumerate(self._contents):
-            item.setContainer(self._labelForIndex(i), self)
+            item._setContainer(self._labelForIndex(i), self)
 
     @staticmethod
     def _labelForIndex(index: SupportsIndex) -> str:
@@ -260,7 +260,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
             return None
         return int(label) - 1
 
-    def setParent(self, parent: Optional[Self]):
+    def _setParent(self, parent: Optional[Self]) -> None:
         """
         Makes the given List the parent of this one. If None, remove this List's
         parent, if any.
@@ -289,17 +289,15 @@ class List(MutableSequence[ListItemT], ContainableImpl):
             if type(self) is not type(parent):
                 return
 
-        # pylint: disable=protected-access
-
-        old_parent = self.parent()
+        old_parent = self._parent()
         if old_parent is not None:
-            old_parent._children.discard(self)
+            old_parent._children_ref.discard(self)
 
         if parent is None:
-            self._parent = None
+            self._parent_ref = None
         else:
-            self._parent = weakref.ref(parent)
-            parent._children.add(self)
+            self._parent_ref = weakref.ref(parent)
+            parent._children_ref.add(self)
 
     def iter(self, order: Optional[IterOrder] = None) -> Iterator[ListItemT]:
         """
@@ -346,7 +344,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         [1, 2]
         >>> show(child)
         [3, 4]
-        >>> child.setParent(parent)
+        >>> child._setParent(parent)
         >>> show(child.iter())
         [3, 4]
         >>> show(child.iter(order=List.PARENT_FIRST))
@@ -355,7 +353,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         [3, 4, 1, 2]
         """
 
-        parent = self.parent()
+        parent = self._parent()
 
         if order is None:
             order = self._iter_order
@@ -368,7 +366,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         if parent is not None and order == IterOrder.PARENT_LAST:
             yield from parent.iter(order)
 
-    def parent(self: Self) -> Optional[Self]:
+    def _parent(self: Self) -> Optional[Self]:
         """
         Returns the parent of this List, if any.
 
@@ -376,13 +374,13 @@ class List(MutableSequence[ListItemT], ContainableImpl):
             A List instance of the same type as this one, or None.
         """
 
-        # Make the type of self._parent more specific for the purpose of type
-        # checking.
+        # Make the type of self._parent_ref more specific for the purpose of
+        # type checking.
 
-        _parent = cast(Optional[weakref.ref[Self]], self._parent)
-        return _parent() if _parent is not None else None
+        parent = cast(Optional[weakref.ref[Self]], self._parent_ref)
+        return parent() if parent is not None else None
 
-    def children(self: Self) -> Iterator[Self]:
+    def _children(self: Self) -> Iterator[Self]:
         """
         Returns an iterator over the List instances that have this List
         as their parent.
@@ -391,7 +389,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
             An iterator over List instances of the same type as this one.
         """
 
-        for child in self._children:
+        for child in self._children_ref:
             yield cast(Self, child)
 
     def onUpdateCall(self, callback: Callable[[Any], Any]) -> None:
@@ -425,10 +423,10 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         Internal.
         """
 
-        if not self.isPrivate():
+        if not self._isPrivate():
             for item in self._contents:
                 if not item.isSet():
-                    yield self.fieldPath() + item.fieldLabel(), None
+                    yield self._fieldPath() + item._fieldLabel(), None
                 else:
                     yield from item.dumpFields()
 
@@ -441,7 +439,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
             return False
 
         field_label, path = path.split(self._PATH_SEPARATOR, 1)
-        if self.fieldLabel() != field_label:
+        if self._fieldLabel() != field_label:
             return False
 
         success: bool = False
@@ -465,7 +463,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         if missing_count > 0:
             self.extend((self._newItem() for _ in range(missing_count)))
 
-    def triggerUpdateNotification(
+    def _triggerUpdateNotification(
         self, field: Optional[UpdateNotifier]
     ) -> None:
         """
@@ -480,13 +478,14 @@ class List(MutableSequence[ListItemT], ContainableImpl):
 
         self._update_notification_callbacks.callAll(field)
 
-        if (container := self.container()) is not None and not self.isPrivate():
-            container.triggerUpdateNotification(field)
+        container = self._container()
+        if container is not None and not self._isPrivate():
+            container._triggerUpdateNotification(field)
 
-    def typeHint(self) -> GenericAlias:
+    def _typeHint(self) -> GenericAlias:
         return GenericAlias(type(self), type(self._template))
 
-    def newInstance(self: Self) -> Self:
+    def _newInstance(self: Self) -> Self:
         """
         Internal. Returns a new instance of this List capable of holding the
         same type.
@@ -498,7 +497,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         return self.__class__(template=self._template, order=self._iter_order)
 
     def __repr__(self) -> str:
-        parent = self.parent()
+        parent = self._parent()
         items = [repr(item) for item in self.iter(order=IterOrder.NO_PARENT)]
         if parent is not None and self._iter_order == IterOrder.PARENT_FIRST:
             items.insert(0, "<parent>")

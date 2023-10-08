@@ -174,10 +174,10 @@ class TestKey:
         sub_child1_key = Key(default="default")
         sub_child2_key = Key(default="default")
 
-        child1_key.setParent(parent_key)
-        child2_key.setParent(parent_key)
-        sub_child1_key.setParent(child1_key)
-        sub_child2_key.setParent(child2_key)
+        child1_key._setParent(parent_key)
+        child2_key._setParent(parent_key)
+        sub_child1_key._setParent(child1_key)
+        sub_child2_key._setParent(child2_key)
 
         # Set up callbacks on the grandchildren keys.
 
@@ -281,9 +281,9 @@ class TestKey:
         parent_key = Key(default="default a")
         child_key = Key(default="")
 
-        assert child_key not in parent_key.children()
-        child_key.setParent(parent_key)
-        assert child_key in parent_key.children()
+        assert child_key not in parent_key._children()
+        child_key._setParent(parent_key)
+        assert child_key in parent_key._children()
 
         assert child_key.get() == "default a"
 
@@ -305,26 +305,26 @@ class TestKey:
 
         # Ignore the type error, as it's the whole point of the test.
 
-        child_key.setParent(parent_key)  # type: ignore
+        child_key._setParent(parent_key)  # type: ignore
 
-        assert child_key.parent() is None
+        assert child_key._parent() is None
 
     def test_inherit_revert(self) -> None:
         parent_key = Key(default="default a")
         child_key = Key(default="default b")
 
-        assert child_key not in parent_key.children()
-        assert child_key.parent() is None
+        assert child_key not in parent_key._children()
+        assert child_key._parent() is None
 
-        child_key.setParent(parent_key)
+        child_key._setParent(parent_key)
 
-        assert child_key in parent_key.children()
-        assert child_key.parent() is parent_key
+        assert child_key in parent_key._children()
+        assert child_key._parent() is parent_key
 
-        child_key.setParent(None)
+        child_key._setParent(None)
 
-        assert child_key not in parent_key.children()
-        assert child_key.parent() is None
+        assert child_key not in parent_key._children()
+        assert child_key._parent() is None
 
     def test_repr(self) -> None:
         key1 = Key(default="test")
@@ -348,20 +348,20 @@ class TestKey:
         key2 = Key(default="default b")
         child_key = Key(default="default c")
 
-        assert child_key not in key1.children()
-        assert child_key not in key2.children()
+        assert child_key not in key1._children()
+        assert child_key not in key2._children()
 
-        child_key.setParent(key1)
-        assert child_key in key1.children()
-        assert child_key not in key2.children()
+        child_key._setParent(key1)
+        assert child_key in key1._children()
+        assert child_key not in key2._children()
 
-        child_key.setParent(key2)
-        assert child_key not in key1.children()
-        assert child_key in key2.children()
+        child_key._setParent(key2)
+        assert child_key not in key1._children()
+        assert child_key in key2._children()
 
-        child_key.setParent(None)
-        assert child_key not in key1.children()
-        assert child_key not in key2.children()
+        child_key._setParent(None)
+        assert child_key not in key1._children()
+        assert child_key not in key2._children()
 
     def test_callback_triggered_on_parent_value_change(
         self, mocker: MockerFixture
@@ -370,7 +370,7 @@ class TestKey:
 
         parent_key = Key(default="default a")
         child_key = Key(default="default b")
-        child_key.setParent(parent_key)
+        child_key._setParent(parent_key)
 
         child_key.onValueChangeCall(stub)
 
@@ -395,22 +395,22 @@ class TestKey:
             key2 = Key("test")
 
         bunch = TestBunch()
-        assert bunch.key1.fieldLabel() == "key1"
-        assert bunch.key2.fieldLabel() == "key2"
+        assert bunch.key1._fieldLabel() == "key1"
+        assert bunch.key2._fieldLabel() == "key2"
 
         key = Key("test")
-        assert key.fieldLabel() == ""
+        assert key._fieldLabel() == ""
 
     def test_field_path(self) -> None:
-        assert Key("").fieldPath() == ""
+        assert Key("")._fieldPath() == ""
 
         class TestBunch(Bunch):
             key1 = Key("test")
             key2 = Key("test")
 
         bunch = TestBunch()
-        assert bunch.key1.fieldPath() == ".key1"
-        assert bunch.key2.fieldPath() == ".key2"
+        assert bunch.key1._fieldPath() == ".key1"
+        assert bunch.key2._fieldPath() == ".key2"
 
     def test_dump_fields(self) -> None:
         # An unattached Key should get dumped. It just doesn't have a label.
@@ -443,9 +443,9 @@ class TestKey:
 
         # A Key with a private label should not get dumped.
 
-        assert list(bunch._private.dumpFields()) == []  # type: ignore
-        bunch._private.set(111)  # type: ignore
-        assert list(bunch._private.dumpFields()) == []  # type: ignore
+        assert list(bunch._private.dumpFields()) == []
+        bunch._private.set(111)
+        assert list(bunch._private.dumpFields()) == []
 
     def test_restore_field(self, mocker: MockerFixture) -> None:
         key: Key[int] = Key(0)
@@ -564,17 +564,17 @@ class TestKey:
 
         key: Key[str] = Key(default="")
         level1: Key[str] = Key(default="")
-        level1.setParent(key)
+        level1._setParent(key)
         level2: Key[str] = Key(default="")
-        level2.setParent(level1)
+        level2._setParent(level1)
 
-        assert level1.parent() is not None
-        assert len(list(level1.children())) == 1
+        assert level1._parent() is not None
+        assert len(list(level1._children())) == 1
 
         del key
         del level2
-        assert level1.parent() is None
-        assert len(list(level1.children())) == 0
+        assert level1._parent() is None
+        assert len(list(level1._children())) == 0
 
     def test_new_instance_non_serializable(self) -> None:
         class NotSerializable:
@@ -588,7 +588,7 @@ class TestKey:
                 return NotSerializable()
 
         key = Key(default=NotSerializable(), serializer=Serializer())
-        other_key = key.newInstance()
+        other_key = key._newInstance()
         other_key.set(NotSerializable())
 
         assert list(other_key.dumpFields()) == [("", "test")]
@@ -644,7 +644,7 @@ class TestKey:
 
         key1: Key[BaseClass] = Key(default=Derived1(), value_type=BaseClass)
 
-        key2 = key1.newInstance()
+        key2 = key1._newInstance()
         d2 = Derived2()
         assert key2.set(d2)
         assert key2.get() is d2

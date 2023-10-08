@@ -65,16 +65,16 @@ class TestBunch:
         parent_bunch = ExampleBunch()
         child_bunch = ExampleBunch()
 
-        assert child_bunch not in parent_bunch.children()
-        assert child_bunch.parent() is None
+        assert child_bunch not in parent_bunch._children()
+        assert child_bunch._parent() is None
 
-        child_bunch.setParent(parent_bunch)
-        assert child_bunch in parent_bunch.children()
-        assert child_bunch.parent() is parent_bunch
+        child_bunch._setParent(parent_bunch)
+        assert child_bunch in parent_bunch._children()
+        assert child_bunch._parent() is parent_bunch
 
-        child_bunch.setParent(None)
-        assert child_bunch not in parent_bunch.children()
-        assert child_bunch.parent() is None
+        child_bunch._setParent(None)
+        assert child_bunch not in parent_bunch._children()
+        assert child_bunch._parent() is None
 
     def test_bunch_dataclass_mro(self) -> None:
         # Bunch instantiation is a tad tricky. Here we make sure that attributes
@@ -94,49 +94,49 @@ class TestBunch:
     def test_parenting(self) -> None:
         parent_bunch = ExampleBunch()
         child_bunch = ExampleBunch()
-        child_bunch.setParent(parent_bunch)
+        child_bunch._setParent(parent_bunch)
 
-        assert child_bunch.parent() is parent_bunch
-        assert child_bunch in parent_bunch.children()
+        assert child_bunch._parent() is parent_bunch
+        assert child_bunch in parent_bunch._children()
 
     def test_reparenting(self) -> None:
         bunch1 = ExampleBunch()
         bunch2 = ExampleBunch()
         child_bunch = ExampleBunch()
 
-        assert child_bunch not in bunch1.children()
-        assert child_bunch not in bunch2.children()
-        assert child_bunch.parent() is None
+        assert child_bunch not in bunch1._children()
+        assert child_bunch not in bunch2._children()
+        assert child_bunch._parent() is None
 
-        child_bunch.setParent(bunch1)
-        assert child_bunch in bunch1.children()
-        assert child_bunch not in bunch2.children()
-        assert child_bunch.parent() is bunch1
+        child_bunch._setParent(bunch1)
+        assert child_bunch in bunch1._children()
+        assert child_bunch not in bunch2._children()
+        assert child_bunch._parent() is bunch1
 
-        child_bunch.setParent(bunch2)
-        assert child_bunch not in bunch1.children()
-        assert child_bunch in bunch2.children()
-        assert child_bunch.parent() is bunch2
+        child_bunch._setParent(bunch2)
+        assert child_bunch not in bunch1._children()
+        assert child_bunch in bunch2._children()
+        assert child_bunch._parent() is bunch2
 
-        child_bunch.setParent(None)
-        assert child_bunch not in bunch1.children()
-        assert child_bunch not in bunch2.children()
-        assert child_bunch.parent() is None
+        child_bunch._setParent(None)
+        assert child_bunch not in bunch1._children()
+        assert child_bunch not in bunch2._children()
+        assert child_bunch._parent() is None
 
     def test_inheritance_propagation(self) -> None:
         parent_bunch = ExampleBunch()
         child_bunch = ExampleBunch()
-        child_bunch.setParent(parent_bunch)
+        child_bunch._setParent(parent_bunch)
 
-        assert child_bunch.a.parent() is parent_bunch.a
-        assert child_bunch.inner_bunch.parent() is parent_bunch.inner_bunch
-        assert child_bunch.inner_bunch.b.parent() is parent_bunch.inner_bunch.b
-        assert child_bunch.list.parent() is parent_bunch.list
+        assert child_bunch.a._parent() is parent_bunch.a
+        assert child_bunch.inner_bunch._parent() is parent_bunch.inner_bunch
+        assert child_bunch.inner_bunch.b._parent() is parent_bunch.inner_bunch.b
+        assert child_bunch.list._parent() is parent_bunch.list
 
     def test_inheritance_values(self) -> None:
         parent_bunch = ExampleBunch()
         child_bunch = ExampleBunch()
-        child_bunch.setParent(parent_bunch)
+        child_bunch._setParent(parent_bunch)
 
         parent_bunch.a.set("test parent")
         assert child_bunch.a.get() == "test parent"
@@ -174,20 +174,20 @@ class TestBunch:
     def test_field_label(self) -> None:
         bunch = ExampleBunch()
 
-        assert bunch.fieldLabel() == ""
-        assert bunch.inner_bunch.fieldLabel() == "inner_bunch"
+        assert bunch._fieldLabel() == ""
+        assert bunch.inner_bunch._fieldLabel() == "inner_bunch"
 
     def test_field_path(self) -> None:
         bunch = ExampleBunch()
-        assert bunch.fieldPath() == "."
-        assert bunch.a.fieldPath() == ".a"
-        assert bunch.inner_bunch.fieldPath() == ".inner_bunch."
-        assert bunch.inner_bunch.b.fieldPath() == ".inner_bunch.b"
-        assert bunch.inner_bunch.b.fieldPath() == ".inner_bunch.b"
-        assert bunch.list.fieldPath() == ".list."
+        assert bunch._fieldPath() == "."
+        assert bunch.a._fieldPath() == ".a"
+        assert bunch.inner_bunch._fieldPath() == ".inner_bunch."
+        assert bunch.inner_bunch.b._fieldPath() == ".inner_bunch.b"
+        assert bunch.inner_bunch.b._fieldPath() == ".inner_bunch.b"
+        assert bunch.list._fieldPath() == ".list."
         bunch.list.appendOne()
-        assert bunch.list[0].fieldPath() == ".list.1."
-        assert bunch.list[0].c.fieldPath() == ".list.1.c"
+        assert bunch.list[0]._fieldPath() == ".list.1."
+        assert bunch.list[0].c._fieldPath() == ".list.1.c"
 
     def test_dump_fields(self) -> None:
         bunch = ExampleBunch()
@@ -198,7 +198,7 @@ class TestBunch:
         bunch.list.appendOne().c.set("test dump c 1")
         bunch.list.appendOne()
         bunch.list.appendOne().c.set("test dump c 3")
-        bunch._private.set("test private")  # type: ignore
+        bunch._private.set("test private")
 
         assert list(bunch.dumpFields()) == [
             (".a", "test dump a"),
@@ -269,16 +269,16 @@ class TestBunch:
         bunch = ExampleBunch()
         level1 = ExampleBunch()
         level2 = ExampleBunch()
-        level1.setParent(bunch)
-        level2.setParent(level1)
+        level1._setParent(bunch)
+        level2._setParent(level1)
 
-        assert level1.parent() is not None
-        assert len(list(level1.children())) == 1
+        assert level1._parent() is not None
+        assert len(list(level1._children())) == 1
 
         del bunch
         del level2
-        assert level1.parent() is None
-        assert len(list(level1.children())) == 0
+        assert level1._parent() is None
+        assert len(list(level1._children())) == 0
 
     def test_key_updated_notification(self, mocker: MockerFixture) -> None:
         callback = mocker.stub()
@@ -287,7 +287,7 @@ class TestBunch:
         bunch.onUpdateCall(callback)
 
         child = ExampleBunch()
-        child.setParent(bunch)
+        child._setParent(bunch)
 
         bunch.a.set("test 1")
         callback.assert_called_once_with(bunch.a)

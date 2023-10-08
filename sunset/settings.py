@@ -136,7 +136,7 @@ class Settings(Bunch, Lockable):
     _SECTION_SEPARATOR = "/"
 
     _section_name: str
-    _children: MutableSet[Bunch]
+    _children_set: MutableSet[Bunch]
     _autosaver: Optional[AutoSaver] = None
     _autosaver_class: type[AutoSaver]
 
@@ -149,7 +149,7 @@ class Settings(Bunch, Lockable):
         # class. In the parent class, the set does not keep references to its
         # items; in this class, it does.
 
-        self._children = NonHashableSet()
+        self._children_set = NonHashableSet()
         self._autosaver_class = AutoSaver
 
     @Lockable.with_lock
@@ -178,8 +178,8 @@ class Settings(Bunch, Lockable):
             An instance of the same type as self.
         """
 
-        new = self.newInstance()
-        new.setParent(self)
+        new = self._newInstance()
+        new._setParent(self)
 
         if name:
             # Note that this will trigger an update notification.
@@ -244,7 +244,7 @@ class Settings(Bunch, Lockable):
             An iterator over Settings instances of the same type as this one.
         """
 
-        yield from sorted(self.children())
+        yield from sorted(self._children())
 
     def setSectionName(self, name: str) -> str:
         """
@@ -293,15 +293,14 @@ class Settings(Bunch, Lockable):
         if name == previous_name:
             return name
 
-        if (parent := self.parent()) is None:
+        if (parent := self._parent()) is None:
             self._section_name = name
 
         else:
-            # pylint: disable-next=protected-access
             parent._setUniqueNameForSection(name, self)
 
         if self.sectionName() != previous_name:
-            self.triggerUpdateNotification(self)
+            self._triggerUpdateNotification(self)
 
         return self.sectionName()
 
@@ -311,7 +310,7 @@ class Settings(Bunch, Lockable):
 
         if candidate:
             other_names = set(
-                s.sectionName() for s in self.children() if s is not section
+                s.sectionName() for s in self._children() if s is not section
             )
 
             i = 0
@@ -319,7 +318,6 @@ class Settings(Bunch, Lockable):
                 i += 1
                 candidate = f"{name}_{i}"
 
-        # pylint: disable=protected-access
         section._section_name = candidate
 
     def sectionName(self) -> str:
@@ -334,10 +332,10 @@ class Settings(Bunch, Lockable):
         if name := self._section_name:
             return name
 
-        return name if self.parent() is not None else self.MAIN
+        return name if self._parent() is not None else self.MAIN
 
     @Lockable.with_lock
-    def setParent(self: Self, parent: Optional[Self]) -> None:  # type: ignore
+    def _setParent(self: Self, parent: Optional[Self]) -> None:  # type: ignore
         """
         Makes the given Settings instance the parent of this one. If None,
         remove this instance's parent, if any.
@@ -358,12 +356,11 @@ class Settings(Bunch, Lockable):
             None.
         """
 
-        super().setParent(parent)
+        super()._setParent(parent)
 
         # Ensure that this section's name is unique in its parent.
 
         if parent is not None:
-            # pylint: disable=protected-access
             parent._setUniqueNameForSection(self._section_name, self)
 
     # Not actually useless. This lets us override the docstring with
@@ -393,7 +390,7 @@ class Settings(Bunch, Lockable):
 
         super().onUpdateCall(callback)
 
-    def triggerUpdateNotification(
+    def _triggerUpdateNotification(
         self, field: Optional[UpdateNotifier]
     ) -> None:
         if not self._update_notification_enabled:
@@ -402,31 +399,31 @@ class Settings(Bunch, Lockable):
         if field is None:
             field = self
 
-        super().triggerUpdateNotification(field)
+        super()._triggerUpdateNotification(field)
 
         # Note that we always propagate notifications when the concerned field
         # is self. This allows section name changes to be propagated even if the
         # new name is no longer public -- the parent sections may be interested
         # about that name change!
 
-        if (parent := self.parent()) is not None:
-            if not self.isPrivate() or field is self:
-                parent.triggerUpdateNotification(field)
+        if (parent := self._parent()) is not None:
+            if not self._isPrivate() or field is self:
+                parent._triggerUpdateNotification(field)
 
-    def fieldPath(self) -> str:
+    def _fieldPath(self) -> str:
         """
         Internal.
         """
 
-        path = "" if (parent := self.parent()) is None else parent.fieldPath()
+        path = "" if (parent := self._parent()) is None else parent._fieldPath()
 
         return (
             path
-            + ("?" if self.isPrivate() else self.sectionName())
+            + ("?" if self._isPrivate() else self.sectionName())
             + self._SECTION_SEPARATOR
         )
 
-    def isPrivate(self) -> bool:
+    def _isPrivate(self) -> bool:
         return self.sectionName() == ""
 
     def dumpFields(self) -> Iterator[tuple[str, Optional[str]]]:
@@ -434,12 +431,12 @@ class Settings(Bunch, Lockable):
         Internal.
         """
 
-        if not self.isPrivate():
+        if not self._isPrivate():
             # Ensure the section is dumped event if empty. Dumping an empty
             # section is valid.
 
             if not self.isSet():
-                yield self.fieldPath(), None
+                yield self._fieldPath(), None
             else:
                 yield from super().dumpFields()
 
@@ -492,7 +489,7 @@ class Settings(Bunch, Lockable):
             None.
         """
 
-        if self.isPrivate():
+        if self._isPrivate():
             # This is an anonymous instance, actually. There is therefore
             # nothing to save.
 

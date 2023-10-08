@@ -58,8 +58,8 @@ class Bunch(ContainableImpl):
     'Calibri'
     """
 
-    _parent: Optional[weakref.ref["Bunch"]]
-    _children: MutableSet["Bunch"]
+    _parent_ref: Optional[weakref.ref["Bunch"]]
+    _children_set: MutableSet["Bunch"]
     _fields: dict[str, Field]
     _update_notification_callbacks: CallbackRegistry[UpdateNotifier]
     _update_notification_enabled: bool
@@ -112,8 +112,8 @@ class Bunch(ContainableImpl):
 
                     # Create a proper field from the attribute.
 
-                    field = dataclasses.field(default_factory=attr.newInstance)
-                    dataclasses_fields.append((name, attr.typeHint(), field))
+                    field = dataclasses.field(default_factory=attr._newInstance)
+                    dataclasses_fields.append((name, attr._typeHint(), field))
 
                     # Note that we delete the attribute now that the field is
                     # created. This helps avoid a hard-to-debug problem if the
@@ -175,8 +175,8 @@ class Bunch(ContainableImpl):
         self.__post_init__()
 
     def __post_init__(self) -> None:
-        self._parent = None
-        self._children = WeakNonHashableSet[Bunch]()
+        self._parent_ref = None
+        self._children_set = WeakNonHashableSet[Bunch]()
         self._fields = {}
         self._update_notification_callbacks = CallbackRegistry()
         self._update_notification_enabled = True
@@ -184,23 +184,23 @@ class Bunch(ContainableImpl):
         for label, field in vars(self).items():
             if isinstance(field, Field):
                 self._fields[label] = field
-                field.setContainer(label, self)
+                field._setContainer(label, self)
 
-    def fieldPath(self) -> str:
+    def _fieldPath(self) -> str:
         """
         Internal.
         """
 
-        return super().fieldPath() + self._PATH_SEPARATOR
+        return super()._fieldPath() + self._PATH_SEPARATOR
 
-    def containsFieldWithLabel(self, label: str, field: Containable) -> bool:
+    def _containsFieldWithLabel(self, label: str, field: Containable) -> bool:
         """
         Internal.
         """
 
         return self._fields.get(label) is field
 
-    def setParent(self: Self, parent: Optional[Self]) -> None:
+    def _setParent(self: Self, parent: Optional[Self]) -> None:
         """
         Makes the given Bunch the parent of this one. If None, remove this
         Bunch's parent, if any.
@@ -231,21 +231,19 @@ class Bunch(ContainableImpl):
             if type(self) is not type(parent):
                 return
 
-        old_parent = self.parent()
+        old_parent = self._parent()
         if old_parent is not None:
-            # pylint: disable=protected-access
-            old_parent._children.discard(self)
+            old_parent._children_set.discard(self)
 
         if parent is None:
-            self._parent = None
+            self._parent_ref = None
         else:
-            self._parent = weakref.ref(parent)
-            # pylint: disable=protected-access
-            parent._children.add(self)
+            self._parent_ref = weakref.ref(parent)
+            parent._children_set.add(self)
 
         for label, field in self._fields.items():
             if parent is None:
-                field.setParent(None)
+                field._setParent(None)
                 continue
 
             parent_field = parent._fields.get(label)
@@ -257,9 +255,9 @@ class Bunch(ContainableImpl):
                 continue
 
             assert type(field) is type(parent_field)
-            field.setParent(parent_field)
+            field._setParent(parent_field)
 
-    def parent(self: Self) -> Optional[Self]:
+    def _parent(self: Self) -> Optional[Self]:
         """
         Returns the parent of this Bunch, if any.
 
@@ -267,13 +265,13 @@ class Bunch(ContainableImpl):
             A Bunch instance of the same type as this one, or None.
         """
 
-        # Make the type of self._parent more specific for the purpose of type
-        # checking.
+        # Make the type of self._parent_ref more specific for the purpose of
+        # type checking.
 
-        _parent = cast(Optional[weakref.ref[Self]], self._parent)
-        return _parent() if _parent is not None else None
+        parent = cast(Optional[weakref.ref[Self]], self._parent_ref)
+        return parent() if parent is not None else None
 
-    def children(self: Self) -> Iterator[Self]:
+    def _children(self: Self) -> Iterator[Self]:
         """
         Returns an iterator over the Bunch instances that have this Bunch
         as their parent.
@@ -285,7 +283,7 @@ class Bunch(ContainableImpl):
         # Note that we iterate on a copy so that this will not break if a
         # different thread updates the contents during the iteration.
 
-        for child in list(self._children):
+        for child in list(self._children_set):
             yield cast(Self, child)
 
     def onUpdateCall(self, callback: Callable[[Any], Any]) -> None:
@@ -326,7 +324,7 @@ class Bunch(ContainableImpl):
         Internal.
         """
 
-        if not self.isPrivate():
+        if not self._isPrivate():
             for _, field in sorted(self._fields.items()):
                 yield from field.dumpFields()
 
@@ -339,7 +337,7 @@ class Bunch(ContainableImpl):
             return False
 
         field_label, path = path.split(self._PATH_SEPARATOR, 1)
-        if self.fieldLabel() != field_label:
+        if self._fieldLabel() != field_label:
             return False
 
         field_label, *_ = path.split(self._PATH_SEPARATOR, 1)
@@ -348,7 +346,7 @@ class Bunch(ContainableImpl):
 
         return False
 
-    def triggerUpdateNotification(
+    def _triggerUpdateNotification(
         self, field: Optional[UpdateNotifier]
     ) -> None:
         """
@@ -363,13 +361,14 @@ class Bunch(ContainableImpl):
 
         self._update_notification_callbacks.callAll(field)
 
-        if (container := self.container()) is not None and not self.isPrivate():
-            container.triggerUpdateNotification(field)
+        container = self._container()
+        if container is not None and not self._isPrivate():
+            container._triggerUpdateNotification(field)
 
-    def typeHint(self) -> type:
+    def _typeHint(self) -> type:
         return type(self)
 
-    def newInstance(self: Self) -> Self:
+    def _newInstance(self: Self) -> Self:
         """
         Internal. Returns a new instance of this Bunch with the same fields.
 

@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Latest
+------
+
+  - Made internal methods private to reduce API clutter.
+
 SunsetSettings 0.5.2 (2023-08-14)
 ---------------------------------
 

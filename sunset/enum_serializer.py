@@ -68,7 +68,6 @@ class EnumSerializer(Generic[_EnumT]):
                 final_name = "|".join(names)
 
         if final_name:
-            # pylint: disable-next=protected-access
             value._name_ = final_name
 
     def _members(self) -> dict[str, _EnumT]:

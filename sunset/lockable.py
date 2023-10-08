@@ -35,7 +35,6 @@ class Lockable:
         def locked_method(
             self: _Self, *args: _P.args, **kwargs: _P.kwargs
         ) -> _R:
-            # pylint: disable-next=protected-access
             with self._lock:
                 return method(self, *args, **kwargs)
 

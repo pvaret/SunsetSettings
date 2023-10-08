@@ -29,25 +29,25 @@ class ExampleSettings(Settings):
 class TestSettings:
     def test_new_section(self) -> None:
         settings = ExampleSettings()
-        assert settings.fieldPath() == "main/"
+        assert settings._fieldPath() == "main/"
 
         section1 = settings.newSection(name="One level down")
-        assert section1.fieldPath() == "main/oneleveldown/"
+        assert section1._fieldPath() == "main/oneleveldown/"
 
         section2 = settings.newSection(name="One level down too")
-        assert section2.fieldPath() == "main/oneleveldowntoo/"
+        assert section2._fieldPath() == "main/oneleveldowntoo/"
 
         subsection1 = section1.newSection(name="Two levels down")
-        assert subsection1.fieldPath() == "main/oneleveldown/twolevelsdown/"
+        assert subsection1._fieldPath() == "main/oneleveldown/twolevelsdown/"
 
         anonymous = settings.newSection()
-        assert anonymous.fieldPath() == "main/?/"
+        assert anonymous._fieldPath() == "main/?/"
 
         anonymous2 = anonymous.newSection(
             name="Not anonymous itself but in a anonymous hierachy"
         )
         assert (
-            anonymous2.fieldPath()
+            anonymous2._fieldPath()
             == "main/?/notanonymousitselfbutinaanonymoushierachy/"
         )
 
@@ -67,59 +67,64 @@ class TestSettings:
     def test_field_path(self) -> None:
         settings = ExampleSettings()
 
-        assert settings.fieldPath() == "main/"
-        assert settings.a.fieldPath() == "main/a"
-        assert settings.inner_bunch.fieldPath() == "main/inner_bunch."
-        assert settings.inner_bunch.c.fieldPath() == "main/inner_bunch.c"
+        assert settings._fieldPath() == "main/"
+        assert settings.a._fieldPath() == "main/a"
+        assert settings.inner_bunch._fieldPath() == "main/inner_bunch."
+        assert settings.inner_bunch.c._fieldPath() == "main/inner_bunch.c"
         settings.bunch_list.appendOne()
         settings.bunch_list.appendOne()
-        assert settings.bunch_list.fieldPath() == "main/bunch_list."
-        assert settings.bunch_list[1].fieldPath() == "main/bunch_list.2."
-        assert settings.bunch_list[1].d.fieldPath() == "main/bunch_list.2.d"
+        assert settings.bunch_list._fieldPath() == "main/bunch_list."
+        assert settings.bunch_list[1]._fieldPath() == "main/bunch_list.2."
+        assert settings.bunch_list[1].d._fieldPath() == "main/bunch_list.2.d"
         settings.key_list.appendOne()
         settings.key_list.appendOne()
-        assert settings.key_list.fieldPath() == "main/key_list."
-        assert settings.key_list[1].fieldPath() == "main/key_list.2"
+        assert settings.key_list._fieldPath() == "main/key_list."
+        assert settings.key_list[1]._fieldPath() == "main/key_list.2"
 
         section = settings.newSection("section")
-        assert section.fieldPath() == "main/section/"
-        assert section.a.fieldPath() == "main/section/a"
-        assert section.inner_bunch.fieldPath() == "main/section/inner_bunch."
-        assert section.inner_bunch.c.fieldPath() == "main/section/inner_bunch.c"
-        section.bunch_list.appendOne()
-        section.bunch_list.appendOne()
-        assert section.bunch_list.fieldPath() == "main/section/bunch_list."
-        assert section.bunch_list[1].fieldPath() == "main/section/bunch_list.2."
+        assert section._fieldPath() == "main/section/"
+        assert section.a._fieldPath() == "main/section/a"
+        assert section.inner_bunch._fieldPath() == "main/section/inner_bunch."
         assert (
-            section.bunch_list[1].d.fieldPath() == "main/section/bunch_list.2.d"
+            section.inner_bunch.c._fieldPath() == "main/section/inner_bunch.c"
+        )
+        section.bunch_list.appendOne()
+        section.bunch_list.appendOne()
+        assert section.bunch_list._fieldPath() == "main/section/bunch_list."
+        assert (
+            section.bunch_list[1]._fieldPath() == "main/section/bunch_list.2."
+        )
+        assert (
+            section.bunch_list[1].d._fieldPath()
+            == "main/section/bunch_list.2.d"
         )
         section.key_list.appendOne()
         section.key_list.appendOne()
-        assert section.key_list.fieldPath() == "main/section/key_list."
-        assert section.key_list[1].fieldPath() == "main/section/key_list.2"
+        assert section.key_list._fieldPath() == "main/section/key_list."
+        assert section.key_list[1]._fieldPath() == "main/section/key_list.2"
 
         anonymous = settings.newSection()
-        assert anonymous.fieldPath() == "main/?/"
-        assert anonymous.a.fieldPath() == "main/?/a"
-        assert anonymous.inner_bunch.fieldPath() == "main/?/inner_bunch."
-        assert anonymous.inner_bunch.c.fieldPath() == "main/?/inner_bunch.c"
+        assert anonymous._fieldPath() == "main/?/"
+        assert anonymous.a._fieldPath() == "main/?/a"
+        assert anonymous.inner_bunch._fieldPath() == "main/?/inner_bunch."
+        assert anonymous.inner_bunch.c._fieldPath() == "main/?/inner_bunch.c"
         anonymous.bunch_list.appendOne()
         anonymous.bunch_list.appendOne()
-        assert anonymous.bunch_list.fieldPath() == "main/?/bunch_list."
-        assert anonymous.bunch_list[1].fieldPath() == "main/?/bunch_list.2."
-        assert anonymous.bunch_list[1].d.fieldPath() == "main/?/bunch_list.2.d"
+        assert anonymous.bunch_list._fieldPath() == "main/?/bunch_list."
+        assert anonymous.bunch_list[1]._fieldPath() == "main/?/bunch_list.2."
+        assert anonymous.bunch_list[1].d._fieldPath() == "main/?/bunch_list.2.d"
         anonymous.key_list.appendOne()
         anonymous.key_list.appendOne()
-        assert anonymous.key_list.fieldPath() == "main/?/key_list."
-        assert anonymous.key_list[1].fieldPath() == "main/?/key_list.2"
+        assert anonymous.key_list._fieldPath() == "main/?/key_list."
+        assert anonymous.key_list[1]._fieldPath() == "main/?/key_list.2"
 
         settings.setSectionName("renamed")
-        assert settings.fieldPath() == "renamed/"
-        assert settings.a.fieldPath() == "renamed/a"
+        assert settings._fieldPath() == "renamed/"
+        assert settings.a._fieldPath() == "renamed/a"
 
         settings.setSectionName("")
-        assert settings.fieldPath() == "main/"
-        assert settings.a.fieldPath() == "main/a"
+        assert settings._fieldPath() == "main/"
+        assert settings.a._fieldPath() == "main/a"
 
     def test_dump_fields(self) -> None:
         # When no field is set, the name of the section should still be dumped.
@@ -310,12 +315,12 @@ class TestSettings:
         level1 = settings.newSection(name="level 1")
         level2 = level1.newSection(name="level 2")
 
-        assert level1.parent() is not None
+        assert level1._parent() is not None
         assert len(list(level1.sections())) == 1
 
         del settings
         del level2
-        assert level1.parent() is None
+        assert level1._parent() is None
         assert len(list(level1.sections())) == 1
 
     def test_save(self) -> None:
@@ -790,8 +795,8 @@ a = value
         for section in sections:
             section.setSectionName("test")
 
-        assert len(list(parent.children())) == len(
-            set(child.sectionName() for child in parent.children())
+        assert len(list(parent._children())) == len(
+            set(child.sectionName() for child in parent._children())
         )
 
     def test_anonymous_name_not_unique(self) -> None:

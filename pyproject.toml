@@ -4,9 +4,9 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "SunsetSettings"
-authors = [{name = "P. Varet", email = "p.varet@gmail.com"}]
+authors = [{ name = "P. Varet", email = "p.varet@gmail.com" }]
 readme = "README.md"
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -19,34 +19,29 @@ classifiers = [
 dynamic = ["version", "description"]
 requires-python = ">=3.9"
 
-dependencies = [
-    "typing_extensions",
-]
+dependencies = ["typing_extensions"]
 
 [project.urls]
 Home = "https://github.com/pvaret/SunsetSettings"
 Documentation = "https://sunsetsettings.readthedocs.io/"
 
 [project.optional-dependencies]
-test = [
-    "bandit[toml]",
-    "pytest",
-    "pytest-cov",
-    "pytest-mock",
-]
-docs = [
-    "sphinx",
-    "sphinx_rtd_theme",
-]
+test = ["bandit[toml]", "pytest", "pytest-cov", "pytest-mock"]
+docs = ["sphinx", "sphinx_rtd_theme"]
 
 [tool.flit.module]
 name = "sunset"
+
+[tool.pylint.'MESSAGES CONTROL']
+# Silence errors about protected member access. We use protected members so as
+# to not pollute the API namespace that users will see.
+disable = "protected-access"
 
 [tool.mypy]
 show_error_codes = true
 
 [tool.pytest.ini_options]
-addopts = "--doctest-modules --doctest-glob=README.md --doctest-glob=docs/*.rst"
+addopts = "-vv --doctest-modules --doctest-glob=README.md --doctest-glob=docs/*.rst"
 
 [tool.coverage.run]
 source = ["sunset"]
@@ -55,5 +50,5 @@ branch = true
 [tool.bandit]
 exclude_dirs = ["tests"]
 skips = [
-    "B101",  # Disable alerting on 'assert' usage.
+    "B101", # Disable alerting on 'assert' usage.
 ]
