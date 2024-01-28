@@ -127,7 +127,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
                 )
             self._type = value_type
         else:
-            self._type = cast(type[_T], default.__class__)
+            self._type = default.__class__
 
         self._default = default
         self._value = None

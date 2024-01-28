@@ -41,6 +41,15 @@ def test_serialize_float() -> None:
     assert serializer.toStr(2.34e-56) == "2.34e-56"
 
 
+def test_serialize_base_type_subclass() -> None:
+    class TestInt(int):
+        pass
+
+    serializer = serializers.lookup(TestInt)
+    assert serializer is not None
+    assert serializer.toStr(TestInt(1)) == "1"
+
+
 def test_serialize_serializable() -> None:
     t = ExampleSerializable("serializable")
     serializer = serializers.lookup(type(t))
@@ -82,6 +91,16 @@ def test_deserialize_bool() -> None:
     assert not serializer.fromStr("false")
 
     assert serializer.fromStr("garbage") is None
+
+
+def test_deserialize_base_type_subclass() -> None:
+    class TestInt(int):
+        pass
+
+    serializer = serializers.lookup(TestInt)
+    assert serializer is not None
+    assert serializer.fromStr("1") == TestInt(1)
+    assert type(serializer.fromStr("1")) is TestInt
 
 
 def test_deserialize_serializable() -> None:

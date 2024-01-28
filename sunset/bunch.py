@@ -146,7 +146,7 @@ class Bunch(ContainableImpl):
 
         # And finally, return an instance of the dataclass. Phew.
 
-        return super().__new__(dataclass_class)
+        return super().__new__(dataclass_class)  # type: ignore
 
     def __init__(self) -> None:
         super().__init__()

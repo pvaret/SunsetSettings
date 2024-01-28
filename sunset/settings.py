@@ -356,7 +356,7 @@ class Settings(Bunch, Lockable):
             None.
         """
 
-        super()._setParent(parent)
+        super()._setParent(parent)  # type:ignore
 
         # Ensure that this section's name is unique in its parent.
 

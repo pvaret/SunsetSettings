@@ -1,13 +1,13 @@
 import enum
 
-from typing import Generic, Optional, TypeVar, Union, cast
+from typing import Generic, Optional, TypeVar, cast
 
 from .enum_serializer import EnumSerializer
 from .protocols import Serializable, Serializer
 
 _T = TypeVar("_T")
 _Serializable = TypeVar("_Serializable", bound=Serializable)
-_Castable = TypeVar("_Castable", bound=Union[int, float, str])
+_Castable = TypeVar("_Castable", int, float, str)
 
 
 class StraightCastSerializer(Generic[_Castable]):
@@ -63,10 +63,17 @@ def lookup(type_: type[_T]) -> Optional[Serializer[_T]]:
     if type_ is bool:
         return cast(Serializer[_T], BoolSerializer())
 
-    if type_ is int or type_ is float or type_ is str:
-        return cast(Serializer[_T], StraightCastSerializer(type_))
-
     if issubclass(type_, enum.Enum):
         return cast(Serializer[_T], EnumSerializer(type_))
+
+    # Note: these need to come after the Enum case, because Enum can be a
+    # subclass of these.
+
+    if (
+        issubclass(type_, int)
+        or issubclass(type_, float)
+        or issubclass(type_, str)
+    ):
+        return cast(Serializer[_T], StraightCastSerializer(type_))
 
     return None
