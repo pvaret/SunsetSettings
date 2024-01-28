@@ -81,13 +81,13 @@ class Serializer(Generic[_T], Protocol):
 
 @runtime_checkable
 class Inheriter(Protocol):
-    def _setParent(self: Self, parent: Optional[Self]) -> None:
+    def setParent(self: Self, parent: Optional[Self]) -> None:
         ...
 
-    def _parent(self: Self) -> Optional[Self]:
+    def parent(self: Self) -> Optional[Self]:
         ...
 
-    def _children(self: Self) -> Iterator[Self]:
+    def children(self: Self) -> Iterator[Self]:
         ...
 
 
@@ -130,13 +130,13 @@ class Containable(Protocol):
     def _container(self) -> Optional["Container"]:
         ...
 
-    def _fieldLabel(self) -> str:
+    def fieldLabel(self) -> str:
         ...
 
-    def _fieldPath(self) -> str:
+    def fieldPath(self) -> str:
         ...
 
-    def _isPrivate(self) -> bool:
+    def skipOnSave(self) -> bool:
         ...
 
 
@@ -194,9 +194,29 @@ class ContainableImpl:
 
         return container
 
-    def _fieldLabel(self) -> str:
+    def fieldLabel(self) -> str:
         """
         Internal.
+
+        Returns the label under which this entity was created in whatever entity
+        contains it, if any. For a class-type entity, the label would be e.g.
+        the attribute name. For a list-type entity, an index into the list.
+
+        Returns:
+            An opaque identifier. Don't rely on it not changing between
+            SunsetSettings releases.
+
+        Example:
+
+        >>> from sunset import Settings, Key
+
+        >>> class TestSettings(Settings):
+        ...    a_key: Key[str] = Key(default="")
+
+        >>> settings = TestSettings()
+
+        >>> print(settings.a_key.fieldLabel())
+        a_key
         """
 
         if self._container() is None:
@@ -204,25 +224,58 @@ class ContainableImpl:
 
         return self._field_label
 
-    def _fieldPath(self) -> str:
+    def fieldPath(self) -> str:
         """
         Internal.
+
+        Returns an opaque string that uniquely identifies this element in the
+        settings hierarchy.
+
+        Returns:
+            An opaque identifier. Don't rely on it not changing between
+            SunsetSettings releases.
+
+        Example:
+
+        >>> from sunset import Bunch, Key, Settings
+
+        >>> class TestSettings(Settings):
+        ...   class TestBunch(Bunch):
+        ...     a_key: Key[str] = Key(default="")
+        ...   a_bunch: TestBunch = TestBunch()
+
+        >>> settings = TestSettings()
+        >>> section = settings.newSection("A section")
+
+        >>> print(section.a_bunch.a_key.fieldPath())
+        main/asection/a_bunch.a_key
         """
 
         path = (
             ""
             if (container := self._container()) is None
-            else container._fieldPath()
+            else container.fieldPath()
         )
 
-        return path + self._fieldLabel()
+        return path + self.fieldLabel()
 
-    def _isPrivate(self) -> bool:
+    def skipOnSave(self) -> bool:
         """
         Internal.
+
+        Returns whether this entity should be disregarded when saving these
+        settings. For entities with an attribute name, it's equivalent to
+        checking if the attribute is private (its name starts with an
+        underscore). For entities with a section name, it's equivalent to
+        checking if the section name is empty.
+
+        Can be overridden in subclasses.
+
+        Returns:
+           A bool used internally by the settings saving logic.
         """
 
-        return self._fieldLabel().startswith("_")
+        return self.fieldLabel().startswith("_")
 
 
 assert isinstance(ContainableImpl, Containable)

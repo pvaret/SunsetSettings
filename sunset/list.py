@@ -225,12 +225,8 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         self.insert(index, item)
         return item
 
-    def _fieldPath(self) -> str:
-        """
-        Internal.
-        """
-
-        return super()._fieldPath() + self._PATH_SEPARATOR
+    def fieldPath(self) -> str:
+        return super().fieldPath() + self._PATH_SEPARATOR
 
     def _containsFieldWithLabel(self, label: str, field: Containable) -> bool:
         """
@@ -260,13 +256,13 @@ class List(MutableSequence[ListItemT], ContainableImpl):
             return None
         return int(label) - 1
 
-    def _setParent(self, parent: Optional[Self]) -> None:
+    def setParent(self, parent: Optional[Self]) -> None:
         """
         Makes the given List the parent of this one. If None, remove this List's
         parent, if any.
 
         Having a parent does not affect a List's behavior outside of the
-        :meth:`iterAll()` method.
+        :meth:`iter()` method.
 
         This method is for internal purposes and you will typically not need to
         call it directly.
@@ -289,7 +285,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
             if type(self) is not type(parent):
                 return
 
-        old_parent = self._parent()
+        old_parent = self.parent()
         if old_parent is not None:
             old_parent._children_ref.discard(self)
 
@@ -344,7 +340,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         [1, 2]
         >>> show(child)
         [3, 4]
-        >>> child._setParent(parent)
+        >>> child.setParent(parent)
         >>> show(child.iter())
         [3, 4]
         >>> show(child.iter(order=List.PARENT_FIRST))
@@ -353,7 +349,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         [3, 4, 1, 2]
         """
 
-        parent = self._parent()
+        parent = self.parent()
 
         if order is None:
             order = self._iter_order
@@ -366,7 +362,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         if parent is not None and order == IterOrder.PARENT_LAST:
             yield from parent.iter(order)
 
-    def _parent(self: Self) -> Optional[Self]:
+    def parent(self: Self) -> Optional[Self]:
         """
         Returns the parent of this List, if any.
 
@@ -380,7 +376,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         parent = cast(Optional[weakref.ref[Self]], self._parent_ref)
         return parent() if parent is not None else None
 
-    def _children(self: Self) -> Iterator[Self]:
+    def children(self: Self) -> Iterator[Self]:
         """
         Returns an iterator over the List instances that have this List
         as their parent.
@@ -423,10 +419,10 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         Internal.
         """
 
-        if not self._isPrivate():
+        if not self.skipOnSave():
             for item in self._contents:
                 if not item.isSet():
-                    yield self._fieldPath() + item._fieldLabel(), None
+                    yield self.fieldPath() + item.fieldLabel(), None
                 else:
                     yield from item.dumpFields()
 
@@ -439,7 +435,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
             return False
 
         field_label, path = path.split(self._PATH_SEPARATOR, 1)
-        if self._fieldLabel() != field_label:
+        if self.fieldLabel() != field_label:
             return False
 
         success: bool = False
@@ -479,7 +475,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         self._update_notification_callbacks.callAll(field)
 
         container = self._container()
-        if container is not None and not self._isPrivate():
+        if container is not None and not self.skipOnSave():
             container._triggerUpdateNotification(field)
 
     def _typeHint(self) -> GenericAlias:
@@ -497,7 +493,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         return self.__class__(template=self._template, order=self._iter_order)
 
     def __repr__(self) -> str:
-        parent = self._parent()
+        parent = self.parent()
         items = [repr(item) for item in self.iter(order=IterOrder.NO_PARENT)]
         if parent is not None and self._iter_order == IterOrder.PARENT_FIRST:
             items.insert(0, "<parent>")

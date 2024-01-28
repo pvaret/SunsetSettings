@@ -75,7 +75,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
     >>> key.get()
     42
     >>> child_key: Key[int] = Key(default=0)
-    >>> child_key._setParent(key)
+    >>> child_key.setParent(key)
     >>> child_key.get()
     42
     >>> child_key.set(101)
@@ -172,7 +172,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
         if (value := self._value) is not None:
             return value
 
-        if (parent := self._parent()) is not None:
+        if (parent := self.parent()) is not None:
             return parent.get()
 
         return self._default
@@ -199,7 +199,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
         if not self._validator(value):
             logging.debug(
                 "Validator rejected value for Key %s: %r",
-                self._fieldPath(),
+                self.fieldPath(),
                 value,
             )
             return False
@@ -215,7 +215,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
 
         if prev_value != self.get():
             self._value_change_callbacks.callAll(self.get())
-            for child in self._children():
+            for child in self.children():
                 child._notifyParentValueChanged()
 
         if not previously_set or prev_value != self.get():
@@ -243,7 +243,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
 
         if prev_value != self.get():
             self._value_change_callbacks.callAll(self.get())
-            for child in self._children():
+            for child in self.children():
                 child._notifyParentValueChanged()
 
         self._triggerUpdateNotification()
@@ -349,7 +349,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
 
         self._validator = validator
 
-    def _setParent(self: Self, parent: Optional[Self]) -> None:
+    def setParent(self: Self, parent: Optional[Self]) -> None:
         """
         Makes the given Key the parent of this one. If None, remove this
         Key's parent, if any.
@@ -379,7 +379,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
             if type(self) is not type(parent):
                 return
 
-        old_parent = self._parent()
+        old_parent = self.parent()
         if old_parent is not None:
             old_parent._children_ref.discard(self)
 
@@ -396,7 +396,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
         parent._children_ref.add(self)
         self._parent_ref = weakref.ref(parent)
 
-    def _parent(self: Self) -> Optional[Self]:
+    def parent(self: Self) -> Optional[Self]:
         """
         Returns the parent of this Key, if any.
 
@@ -410,7 +410,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
         parent = cast(Optional[weakref.ref[Self]], self._parent_ref)
         return parent() if parent is not None else None
 
-    def _children(self: Self) -> Iterator[Self]:
+    def children(self: Self) -> Iterator[Self]:
         """
         Returns an iterator over the Keys that have this Key as their parent.
 
@@ -422,9 +422,9 @@ class Key(Generic[_T], ContainableImpl, Lockable):
             yield cast(Self, child)
 
     def dumpFields(self) -> Iterator[tuple[str, Optional[str]]]:
-        if not self._isPrivate():
+        if not self.skipOnSave():
             if self.isSet():
-                yield self._fieldPath(), self._serializer.toStr(self.get())
+                yield self.fieldPath(), self._serializer.toStr(self.get())
 
             elif self._bad_value_string is not None:
                 # If a bad value was set in the settings file for this Key, and
@@ -432,7 +432,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
                 # This way, typos in the settings file don't outright destroy
                 # the entry.
 
-                yield self._fieldPath(), self._bad_value_string
+                yield self.fieldPath(), self._bad_value_string
 
     def restoreField(self, path: str, value: Optional[str]) -> bool:
         if value is None:
@@ -445,7 +445,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
 
         self._update_notification_enabled = False
 
-        if path == self._fieldLabel():
+        if path == self.fieldLabel():
             if (val := self._serializer.fromStr(value)) is not None:
                 success = self.set(val)
 
@@ -456,7 +456,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
                 # entirely lost when we save.
 
                 logging.error(
-                    "Invalid value for Key %s: %s", self._fieldPath(), value
+                    "Invalid value for Key %s: %s", self.fieldPath(), value
                 )
                 self._bad_value_string = value
 
@@ -469,7 +469,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
             return
 
         self._value_change_callbacks.callAll(self.get())
-        for child in self._children():
+        for child in self.children():
             child._notifyParentValueChanged()
 
     def _triggerUpdateNotification(self) -> None:
@@ -483,7 +483,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
         self._update_notification_callbacks.callAll(self)
 
         container = self._container()
-        if container is not None and not self._isPrivate():
+        if container is not None and not self.skipOnSave():
             container._triggerUpdateNotification(self)
 
     def _typeHint(self) -> GenericAlias:

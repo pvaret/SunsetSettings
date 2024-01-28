@@ -186,12 +186,8 @@ class Bunch(ContainableImpl):
                 self._fields[label] = field
                 field._setContainer(label, self)
 
-    def _fieldPath(self) -> str:
-        """
-        Internal.
-        """
-
-        return super()._fieldPath() + self._PATH_SEPARATOR
+    def fieldPath(self) -> str:
+        return super().fieldPath() + self._PATH_SEPARATOR
 
     def _containsFieldWithLabel(self, label: str, field: Containable) -> bool:
         """
@@ -200,7 +196,7 @@ class Bunch(ContainableImpl):
 
         return self._fields.get(label) is field
 
-    def _setParent(self: Self, parent: Optional[Self]) -> None:
+    def setParent(self: Self, parent: Optional[Self]) -> None:
         """
         Makes the given Bunch the parent of this one. If None, remove this
         Bunch's parent, if any.
@@ -231,7 +227,7 @@ class Bunch(ContainableImpl):
             if type(self) is not type(parent):
                 return
 
-        old_parent = self._parent()
+        old_parent = self.parent()
         if old_parent is not None:
             old_parent._children_set.discard(self)
 
@@ -243,7 +239,7 @@ class Bunch(ContainableImpl):
 
         for label, field in self._fields.items():
             if parent is None:
-                field._setParent(None)
+                field.setParent(None)
                 continue
 
             parent_field = parent._fields.get(label)
@@ -255,9 +251,9 @@ class Bunch(ContainableImpl):
                 continue
 
             assert type(field) is type(parent_field)
-            field._setParent(parent_field)
+            field.setParent(parent_field)
 
-    def _parent(self: Self) -> Optional[Self]:
+    def parent(self: Self) -> Optional[Self]:
         """
         Returns the parent of this Bunch, if any.
 
@@ -271,7 +267,7 @@ class Bunch(ContainableImpl):
         parent = cast(Optional[weakref.ref[Self]], self._parent_ref)
         return parent() if parent is not None else None
 
-    def _children(self: Self) -> Iterator[Self]:
+    def children(self: Self) -> Iterator[Self]:
         """
         Returns an iterator over the Bunch instances that have this Bunch
         as their parent.
@@ -324,7 +320,7 @@ class Bunch(ContainableImpl):
         Internal.
         """
 
-        if not self._isPrivate():
+        if not self.skipOnSave():
             for _, field in sorted(self._fields.items()):
                 yield from field.dumpFields()
 
@@ -337,7 +333,7 @@ class Bunch(ContainableImpl):
             return False
 
         field_label, path = path.split(self._PATH_SEPARATOR, 1)
-        if self._fieldLabel() != field_label:
+        if self.fieldLabel() != field_label:
             return False
 
         field_label, *_ = path.split(self._PATH_SEPARATOR, 1)
@@ -362,7 +358,7 @@ class Bunch(ContainableImpl):
         self._update_notification_callbacks.callAll(field)
 
         container = self._container()
-        if container is not None and not self._isPrivate():
+        if container is not None and not self.skipOnSave():
             container._triggerUpdateNotification(field)
 
     def _typeHint(self) -> type:

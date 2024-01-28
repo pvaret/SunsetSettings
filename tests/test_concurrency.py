@@ -94,13 +94,13 @@ class TestKeyConcurrency:
         str_key = Key("")
 
         def set_parent(thread_id: int) -> None:
-            str_key._setParent(None)
-            str_key._setParent(parent_key)
+            str_key.setParent(None)
+            str_key.setParent(parent_key)
 
         for _ in range(_ATTEMPTS):
             run_threaded(set_parent)
 
-            assert str_key._parent() is parent_key
+            assert str_key.parent() is parent_key
             assert str_key.get() == "parent"
 
 
@@ -137,7 +137,7 @@ class TestListConcurrency:
             for i, item in enumerate(key_list):
                 assert item._container() is key_list
                 expected_label = key_list._labelForIndex(i)
-                assert item._fieldLabel() == expected_label
+                assert item.fieldLabel() == expected_label
 
 
 class TestSettingsConcurrency:

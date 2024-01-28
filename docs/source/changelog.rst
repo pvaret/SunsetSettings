@@ -4,7 +4,9 @@ Changelog
 Latest
 ------
 
-  - Made internal methods private to reduce API clutter.
+  - Made some internal methods private to de-clutter the API namespace.
+  - Documented some internal methods where it may make to expose them publically.
+  - Renamed internal method isPrivate() into skipOnSave().
 
 SunsetSettings 0.5.2 (2023-08-14)
 ---------------------------------

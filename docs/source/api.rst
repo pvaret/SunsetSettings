@@ -22,6 +22,14 @@ API Reference
     .. automethod:: setSectionName
 
     .. automethod:: onUpdateCall
+    
+    .. automethod:: skipOnSave
+
+    .. automethod:: setParent
+
+    .. automethod:: parent
+
+    .. automethod:: children
 
 .. autoclass:: sunset.Key
 
@@ -40,10 +48,26 @@ API Reference
     .. automethod:: onValueChangeCall
 
     .. automethod:: onUpdateCall
+    
+    .. automethod:: skipOnSave
+
+    .. automethod:: setParent
+
+    .. automethod:: parent
+
+    .. automethod:: children
 
 .. autoclass:: sunset.Bunch
 
     .. automethod:: onUpdateCall
+    
+    .. automethod:: skipOnSave
+
+    .. automethod:: setParent
+
+    .. automethod:: parent
+
+    .. automethod:: children
 
 .. autoclass:: sunset.List
 
@@ -54,6 +78,14 @@ API Reference
     .. automethod:: insertOne
 
     .. automethod:: onUpdateCall
+    
+    .. automethod:: skipOnSave
+
+    .. automethod:: setParent
+
+    .. automethod:: parent
+
+    .. automethod:: children
 
 .. autoclass:: sunset.AutoSaver
 

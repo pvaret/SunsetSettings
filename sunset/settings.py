@@ -179,7 +179,7 @@ class Settings(Bunch, Lockable):
         """
 
         new = self._newInstance()
-        new._setParent(self)
+        new.setParent(self)
 
         if name:
             # Note that this will trigger an update notification.
@@ -244,7 +244,7 @@ class Settings(Bunch, Lockable):
             An iterator over Settings instances of the same type as this one.
         """
 
-        yield from sorted(self._children())
+        yield from sorted(self.children())
 
     def setSectionName(self, name: str) -> str:
         """
@@ -293,7 +293,7 @@ class Settings(Bunch, Lockable):
         if name == previous_name:
             return name
 
-        if (parent := self._parent()) is None:
+        if (parent := self.parent()) is None:
             self._section_name = name
 
         else:
@@ -310,7 +310,7 @@ class Settings(Bunch, Lockable):
 
         if candidate:
             other_names = set(
-                s.sectionName() for s in self._children() if s is not section
+                s.sectionName() for s in self.children() if s is not section
             )
 
             i = 0
@@ -332,10 +332,10 @@ class Settings(Bunch, Lockable):
         if name := self._section_name:
             return name
 
-        return name if self._parent() is not None else self.MAIN
+        return name if self.parent() is not None else self.MAIN
 
     @Lockable.with_lock
-    def _setParent(self: Self, parent: Optional[Self]) -> None:  # type: ignore
+    def setParent(self: Self, parent: Optional[Self]) -> None:  # type: ignore
         """
         Makes the given Settings instance the parent of this one. If None,
         remove this instance's parent, if any.
@@ -356,7 +356,7 @@ class Settings(Bunch, Lockable):
             None.
         """
 
-        super()._setParent(parent)  # type:ignore
+        super().setParent(parent)  # type:ignore
 
         # Ensure that this section's name is unique in its parent.
 
@@ -406,24 +406,20 @@ class Settings(Bunch, Lockable):
         # new name is no longer public -- the parent sections may be interested
         # about that name change!
 
-        if (parent := self._parent()) is not None:
-            if not self._isPrivate() or field is self:
+        if (parent := self.parent()) is not None:
+            if not self.skipOnSave() or field is self:
                 parent._triggerUpdateNotification(field)
 
-    def _fieldPath(self) -> str:
-        """
-        Internal.
-        """
-
-        path = "" if (parent := self._parent()) is None else parent._fieldPath()
+    def fieldPath(self) -> str:
+        path = "" if (parent := self.parent()) is None else parent.fieldPath()
 
         return (
             path
-            + ("?" if self._isPrivate() else self.sectionName())
+            + ("?" if self.skipOnSave() else self.sectionName())
             + self._SECTION_SEPARATOR
         )
 
-    def _isPrivate(self) -> bool:
+    def skipOnSave(self) -> bool:
         return self.sectionName() == ""
 
     def dumpFields(self) -> Iterator[tuple[str, Optional[str]]]:
@@ -431,12 +427,12 @@ class Settings(Bunch, Lockable):
         Internal.
         """
 
-        if not self._isPrivate():
+        if not self.skipOnSave():
             # Ensure the section is dumped event if empty. Dumping an empty
             # section is valid.
 
             if not self.isSet():
-                yield self._fieldPath(), None
+                yield self.fieldPath(), None
             else:
                 yield from super().dumpFields()
 
@@ -489,7 +485,7 @@ class Settings(Bunch, Lockable):
             None.
         """
 
-        if self._isPrivate():
+        if self.skipOnSave():
             # This is an anonymous instance, actually. There is therefore
             # nothing to save.
 
