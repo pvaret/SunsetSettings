@@ -475,7 +475,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         self._update_notification_callbacks.callAll(field)
 
         container = self._container()
-        if container is not None and not self.skipOnSave():
+        if container is not None:
             container._triggerUpdateNotification(field)
 
     def _typeHint(self) -> GenericAlias:

@@ -750,7 +750,7 @@ a = value
         callback.reset_mock()
 
         section = settings.newSection(name="section")
-        callback.assert_called_once_with(section)
+        callback.assert_called_once_with(settings)
         callback.reset_mock()
 
         section.a.set("test 2")
@@ -758,30 +758,92 @@ a = value
         callback.reset_mock()
 
         anonymous = settings.newSection()
-        callback.assert_not_called()
+        callback.assert_called_once_with(settings)
         callback.reset_mock()
 
         anonymous.a.set("test 3")
-        callback.assert_not_called()
+        callback.assert_called_once_with(anonymous.a)
         callback.reset_mock()
 
         anonymoussection = anonymous.newSection(name="other section")
-        callback.assert_not_called()
+        callback.assert_called_once_with(anonymous)
         callback.reset_mock()
 
         anonymoussection.a.set("test 4")
-        callback.assert_not_called()
+        callback.assert_called_once_with(anonymoussection.a)
         callback.reset_mock()
 
         anonymous.setSectionName("no longer anonymous")
         callback.assert_called_once_with(anonymous)
         callback.reset_mock()
 
-        anonymoussection.a.set("test 5")
-        callback.assert_called_once_with(anonymoussection.a)
-        callback.reset_mock()
+    def test_reparenting_notifications(self, mocker: MockerFixture) -> None:
+        class TestSettings(Settings):
+            pass
 
-    def test_name_unicity(self) -> None:
+        parent1 = TestSettings()
+        parent2 = TestSettings()
+
+        parent1.onUpdateCall(callback1 := mocker.stub())
+        parent2.onUpdateCall(callback2 := mocker.stub())
+
+        section = TestSettings()
+
+        section.setParent(parent1)
+        callback1.assert_called_once_with(parent1)
+        callback2.assert_not_called()
+
+        callback1.reset_mock()
+        callback2.reset_mock()
+
+        section.setParent(parent2)
+        callback1.assert_called_once_with(parent1)
+        callback2.assert_called_once_with(parent2)
+
+        callback1.reset_mock()
+        callback2.reset_mock()
+
+        # When there is no change, no notification should fire.
+
+        section.setParent(parent2)
+        callback1.assert_not_called()
+        callback2.assert_not_called()
+
+        callback1.reset_mock()
+        callback2.reset_mock()
+
+        section.setParent(None)
+        callback1.assert_not_called()
+        callback2.assert_called_once_with(parent2)
+
+    def test_reparenting_renaming_notifications(
+        self, mocker: MockerFixture
+    ) -> None:
+        class TestSettings(Settings):
+            pass
+
+        parent = TestSettings()
+        parent.newSection("test")
+        parent.onUpdateCall(parent_callback := mocker.stub())
+
+        section = TestSettings()
+        section.onUpdateCall(section_callback := mocker.stub())
+
+        section.setSectionName("test")
+        parent_callback.assert_not_called()
+        section_callback.assert_called_once_with(section)
+
+        parent_callback.reset_mock()
+        section_callback.reset_mock()
+
+        # This call adds the section to the parent AND renames the section.
+        # Therefore both callbacks should be invoked.
+
+        section.setParent(parent)
+        parent_callback.assert_called_once_with(parent)
+        section_callback.assert_called_once_with(section)
+
+    def test_section_name_unicity(self) -> None:
         class TestSettings(Settings):
             pass
 
@@ -793,6 +855,22 @@ a = value
         assert len(list(parent.children())) == len(
             set(child.sectionName() for child in parent.children())
         )
+
+    def test_section_name_made_unique_when_changing_parent(self) -> None:
+        class TestSettings(Settings):
+            pass
+
+        parent = TestSettings()
+        parent.newSection("test")
+
+        section = TestSettings()
+        section.setSectionName("test")
+
+        assert section.sectionName() == "test"
+
+        section.setParent(parent)
+
+        assert section.sectionName() != "test"
 
     def test_anonymous_name_not_unique(self) -> None:
         class TestSettings(Settings):

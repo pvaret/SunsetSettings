@@ -135,15 +135,13 @@ class Settings(Bunch, Lockable):
 
     _SECTION_SEPARATOR = "/"
 
-    _section_name: str
+    _section_name: str = ""
     _children_set: MutableSet[Bunch]
     _autosaver: Optional[AutoSaver] = None
     _autosaver_class: type[AutoSaver]
 
     def __post_init__(self) -> None:
         super().__post_init__()
-
-        self._section_name = ""
 
         # Note that this overrides the similarly named attribute from the parent
         # class. In the parent class, the set does not keep references to its
@@ -153,7 +151,7 @@ class Settings(Bunch, Lockable):
         self._autosaver_class = AutoSaver
 
     @Lockable.with_lock
-    def newSection(self: Self, name: Optional[str] = None) -> Self:
+    def newSection(self: Self, name: str = "") -> Self:
         """
         Creates and returns a new instance of this class. Each key of the new
         instance will inherit from the key of the same name on the parent
@@ -179,12 +177,11 @@ class Settings(Bunch, Lockable):
         """
 
         new = self._newInstance()
+        new.setSectionName(name)
+
+        # Note that this will trigger an update notification.
+
         new.setParent(self)
-
-        if name:
-            # Note that this will trigger an update notification.
-
-            new.setSectionName(name)
 
         return new
 
@@ -289,18 +286,17 @@ class Settings(Bunch, Lockable):
         """
 
         name = normalize(name)
-        previous_name = self.sectionName()
-        if name == previous_name:
-            return name
 
         if (parent := self.parent()) is None:
-            self._section_name = name
+            if name != self._section_name:
+                self._section_name = name
+                self._triggerUpdateNotification(self)
 
         else:
-            parent._setUniqueNameForSection(name, self)
+            # Note that this triggers a notification if the unique name is
+            # different from the current name.
 
-        if self.sectionName() != previous_name:
-            self._triggerUpdateNotification(self)
+            parent._setUniqueNameForSection(name, self)
 
         return self.sectionName()
 
@@ -318,7 +314,9 @@ class Settings(Bunch, Lockable):
                 i += 1
                 candidate = f"{name}_{i}"
 
-        section._section_name = candidate
+        if candidate != self._section_name:
+            section._section_name = candidate
+            section._triggerUpdateNotification(section)
 
     def sectionName(self) -> str:
         """
@@ -356,12 +354,23 @@ class Settings(Bunch, Lockable):
             None.
         """
 
-        super().setParent(parent)  # type:ignore
+        if parent is (previous_parent := self.parent()):
+            return
 
         # Ensure that this section's name is unique in its parent.
 
         if parent is not None:
+            # May trigger an update notification if the name is changed.
+
             parent._setUniqueNameForSection(self._section_name, self)
+
+        super().setParent(parent)  # type:ignore
+
+        if parent is not None:
+            parent._triggerUpdateNotification(parent)
+
+        if previous_parent is not None:
+            previous_parent._triggerUpdateNotification(previous_parent)
 
     # Not actually useless. This lets us override the docstring with
     # Settings-specific info.
@@ -401,14 +410,8 @@ class Settings(Bunch, Lockable):
 
         super()._triggerUpdateNotification(field)
 
-        # Note that we always propagate notifications when the concerned field
-        # is self. This allows section name changes to be propagated even if the
-        # new name is no longer public -- the parent sections may be interested
-        # about that name change!
-
         if (parent := self.parent()) is not None:
-            if not self.skipOnSave() or field is self:
-                parent._triggerUpdateNotification(field)
+            parent._triggerUpdateNotification(field)
 
     def fieldPath(self) -> str:
         path = "" if (parent := self.parent()) is None else parent.fieldPath()

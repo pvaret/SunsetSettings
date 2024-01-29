@@ -483,7 +483,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
         self._update_notification_callbacks.callAll(self)
 
         container = self._container()
-        if container is not None and not self.skipOnSave():
+        if container is not None:
             container._triggerUpdateNotification(self)
 
     def _typeHint(self) -> GenericAlias:
