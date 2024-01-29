@@ -161,21 +161,28 @@ class Key(Generic[_T], ContainableImpl, Lockable):
         """
         Returns the current value of this Key.
 
-        If this Key does not currently have a value set on it, return that of
-        its parent if any. If it does not have a parent, return the default
-        value for this Key.
+        If this Key does not currently have a value set on it, return its
+        fallback value, that being, the value of its parent if it has one, else
+        the default.
 
         Returns:
-            This Key's current value.
+            This Key's apparent value.
         """
 
-        if (value := self._value) is not None:
-            return value
+        return self.fallback() if (value := self._value) is None else value
 
-        if (parent := self.parent()) is not None:
-            return parent.get()
+    def fallback(self) -> _T:
+        """
+        Returns the value that this Key will fall back to when it does not have
+        a value currently set.
 
-        return self._default
+        That value is the value of its parent if it has one, or the default
+        value for the Key if not.
+        """
+
+        return (
+            self._default if (parent := self.parent()) is None else parent.get()
+        )
 
     def set(self, value: _T) -> bool:
         """

@@ -9,6 +9,7 @@ Latest
   - Renamed internal method isPrivate() into skipOnSave().
   - onUpdateCall() callbacks are now called for entities for which skipOnSave() is true.
   - Improved notification logic when a section is renamed or reparented.
+  - Added fallback() method to Key.
 
 SunsetSettings 0.5.2 (2023-08-14)
 ---------------------------------

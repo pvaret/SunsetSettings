@@ -62,6 +62,24 @@ class TestKey:
         key.clear()
         assert key.get() == "default"
 
+    def test_fallback(self) -> None:
+        key = Key(default=0)
+        child_key = Key(default=0)
+        child_key.setParent(key)
+
+        assert key.fallback() == 0
+        assert child_key.fallback() == 0
+
+        child_key.set(1)
+
+        assert key.fallback() == 0
+        assert child_key.fallback() == 0
+
+        key.set(2)
+
+        assert key.fallback() == 0
+        assert child_key.fallback() == 2
+
     def test_serializable_type(self) -> None:
         value = ExampleSerializable.fromStr("dummy")
         assert value is not None

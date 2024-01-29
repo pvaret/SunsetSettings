@@ -38,6 +38,8 @@ API Reference
     .. automethod:: get
 
     .. automethod:: isSet
+    
+    .. automethod:: fallback
 
     .. automethod:: updateValue
 
