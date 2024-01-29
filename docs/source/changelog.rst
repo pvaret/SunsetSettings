@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Latest
+------
+
+ - Nothing yet.
+
 SunsetSettings 0.5.3 (2024-01-29)
 ---------------------------------
 
