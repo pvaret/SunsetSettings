@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Latest
-------
+SunsetSettings 0.5.3 (2024-01-29)
+---------------------------------
 
   - Made some internal methods private to de-clutter the API namespace.
   - Documented some internal methods where it may make to expose them publically.
