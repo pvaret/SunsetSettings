@@ -4,6 +4,7 @@ Changelog
 Latest
 ------
 
+ - Added Python 3.12 to officially supported versions.
  - Fixed regression where changing a section's name might fail to be applied.
 
 SunsetSettings 0.5.3 (2024-01-29)
