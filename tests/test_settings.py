@@ -777,6 +777,28 @@ a = value
         callback.assert_called_once_with(anonymous)
         callback.reset_mock()
 
+    def test_setting_same_section_name_doesnt_notify(
+        self, mocker: MockerFixture
+    ) -> None:
+        class TestSettings(Settings):
+            pass
+
+        parent = TestSettings()
+
+        section = parent.newSection("test")
+
+        section.onUpdateCall(callback := mocker.stub())
+
+        section.setSectionName("test")
+        callback.assert_not_called()
+
+        section.setSectionName("")
+        callback.assert_called_once_with(section)
+        callback.reset_mock()
+
+        section.setSectionName("")
+        callback.assert_not_called()
+
     def test_reparenting_notifications(self, mocker: MockerFixture) -> None:
         class TestSettings(Settings):
             pass

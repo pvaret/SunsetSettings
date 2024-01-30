@@ -314,7 +314,7 @@ class Settings(Bunch, Lockable):
                 i += 1
                 candidate = f"{name}_{i}"
 
-        if candidate != self._section_name:
+        if candidate != section._section_name:
             section._section_name = candidate
             section._triggerUpdateNotification(section)
 
