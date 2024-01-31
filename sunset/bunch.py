@@ -320,9 +320,13 @@ class Bunch(ContainableImpl):
         Internal.
         """
 
+        sep = self._PATH_SEPARATOR
         if not self.skipOnSave():
-            for _, field in sorted(self._fields.items()):
-                yield from field.dumpFields()
+            for label, field in sorted(self._fields.items()):
+                yield from (
+                    (label + sep + path if path else label, item)
+                    for path, item in field.dumpFields()
+                )
 
     def restoreField(self, path: str, value: Optional[str]) -> bool:
         """

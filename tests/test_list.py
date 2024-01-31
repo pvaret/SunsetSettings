@@ -116,9 +116,9 @@ class TestList:
         key_list.appendOne()
         key_list.appendOne().set("test 3")
         assert list(key_list.dumpFields()) == [
-            (".1", "test 1"),
-            (".2", None),
-            (".3", "test 3"),
+            ("1", "test 1"),
+            ("2", None),
+            ("3", "test 3"),
         ]
 
         bunch_list = List(ExampleBunch())
@@ -127,10 +127,10 @@ class TestList:
         bunch_list.appendOne().test.set("test 3")
         bunch_list.appendOne()
         assert list(bunch_list.dumpFields()) == [
-            (".1.test", "test 1"),
-            (".2", None),
-            (".3.test", "test 3"),
-            (".4", None),
+            ("1.test", "test 1"),
+            ("2", None),
+            ("3.test", "test 3"),
+            ("4", None),
         ]
 
         key_list = List(Key(""))
@@ -138,9 +138,9 @@ class TestList:
         key_list.appendOne().set("")
         key_list.appendOne()
         assert list(key_list.dumpFields()) == [
-            (".1", None),
-            (".2", ""),
-            (".3", None),
+            ("1", None),
+            ("2", ""),
+            ("3", None),
         ]
 
         class TestBunch(Bunch):
@@ -151,7 +151,7 @@ class TestList:
         bunch.key_list.appendOne().set("test public")
         bunch._private.appendOne().set("test private")
         assert list(bunch.dumpFields()) == [
-            (".key_list.1", "test public"),
+            ("key_list.1", "test public"),
         ]
 
     def test_restore_field(self, mocker: MockerFixture) -> None:

@@ -177,18 +177,6 @@ class TestBunch:
         assert bunch.fieldLabel() == ""
         assert bunch.inner_bunch.fieldLabel() == "inner_bunch"
 
-    def test_field_path(self) -> None:
-        bunch = ExampleBunch()
-        assert bunch.fieldPath() == "."
-        assert bunch.a.fieldPath() == ".a"
-        assert bunch.inner_bunch.fieldPath() == ".inner_bunch."
-        assert bunch.inner_bunch.b.fieldPath() == ".inner_bunch.b"
-        assert bunch.inner_bunch.b.fieldPath() == ".inner_bunch.b"
-        assert bunch.list.fieldPath() == ".list."
-        bunch.list.appendOne()
-        assert bunch.list[0].fieldPath() == ".list.1."
-        assert bunch.list[0].c.fieldPath() == ".list.1.c"
-
     def test_dump_fields(self) -> None:
         bunch = ExampleBunch()
         assert list(bunch.dumpFields()) == []
@@ -201,11 +189,11 @@ class TestBunch:
         bunch._private.set("test private")
 
         assert list(bunch.dumpFields()) == [
-            (".a", "test dump a"),
-            (".inner_bunch.b", "101"),
-            (".list.1.c", "test dump c 1"),
-            (".list.2", None),
-            (".list.3.c", "test dump c 3"),
+            ("a", "test dump a"),
+            ("inner_bunch.b", "101"),
+            ("list.1.c", "test dump c 1"),
+            ("list.2", None),
+            ("list.3.c", "test dump c 3"),
         ]
 
     def test_restore_field(self, mocker: MockerFixture) -> None:

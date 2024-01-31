@@ -434,13 +434,19 @@ class Settings(Bunch, Lockable):
             # Ensure the section is dumped event if empty. Dumping an empty
             # section is valid.
 
-            if not self.isSet():
-                yield self.fieldPath(), None
-            else:
-                yield from super().dumpFields()
+            label = (self.sectionName() or "?") + self._SECTION_SEPARATOR
 
-            for section in sorted(self.sections()):
-                yield from section.dumpFields()
+            if not self.isSet():
+                yield label, None
+            else:
+                yield from (
+                    (label + path, item) for path, item in super().dumpFields()
+                )
+
+            for section in self.sections():
+                yield from (
+                    (label + path, item) for path, item in section.dumpFields()
+                )
 
     def restoreField(self, path: str, value: Optional[str]) -> bool:
         """

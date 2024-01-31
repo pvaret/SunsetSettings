@@ -419,12 +419,17 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         Internal.
         """
 
+        sep = self._PATH_SEPARATOR
         if not self.skipOnSave():
-            for item in self._contents:
+            for i, item in enumerate(self._contents, start=1):
+                label = str(i)
                 if not item.isSet():
-                    yield self.fieldPath() + item.fieldLabel(), None
+                    yield label, None
                 else:
-                    yield from item.dumpFields()
+                    yield from (
+                        (label + sep + path if path else label, child_item)
+                        for path, child_item in item.dumpFields()
+                    )
 
     def restoreField(self, path: str, value: Optional[str]) -> bool:
         """

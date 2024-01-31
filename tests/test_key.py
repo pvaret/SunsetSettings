@@ -419,19 +419,8 @@ class TestKey:
         key = Key("test")
         assert key.fieldLabel() == ""
 
-    def test_field_path(self) -> None:
-        assert Key("").fieldPath() == ""
-
-        class TestBunch(Bunch):
-            key1 = Key("test")
-            key2 = Key("test")
-
-        bunch = TestBunch()
-        assert bunch.key1.fieldPath() == ".key1"
-        assert bunch.key2.fieldPath() == ".key2"
-
     def test_dump_fields(self) -> None:
-        # An unattached Key should get dumped. It just doesn't have a label.
+        # An unattached Key should get dumped.
 
         key = Key("")
         assert list(key.dumpFields()) == []
@@ -449,15 +438,13 @@ class TestKey:
 
         assert list(bunch.str_key.dumpFields()) == []
         bunch.str_key.set("test")
-        assert list(bunch.str_key.dumpFields()) == [(".str_key", "test")]
+        assert list(bunch.str_key.dumpFields()) == [("", "test")]
 
         # A Key's value should be serialized in its dump.
 
         assert list(bunch.serializable_key.dumpFields()) == []
         bunch.serializable_key.set(ExampleSerializable("not empty"))
-        assert list(bunch.serializable_key.dumpFields()) == [
-            (".serializable_key", "not empty")
-        ]
+        assert list(bunch.serializable_key.dumpFields()) == [("", "not empty")]
 
         # A Key with a private label should not get dumped.
 

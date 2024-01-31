@@ -431,7 +431,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
     def dumpFields(self) -> Iterator[tuple[str, Optional[str]]]:
         if not self.skipOnSave():
             if self.isSet():
-                yield self.fieldPath(), self._serializer.toStr(self.get())
+                yield "", self._serializer.toStr(self.get())
 
             elif self._bad_value_string is not None:
                 # If a bad value was set in the settings file for this Key, and
@@ -439,7 +439,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
                 # This way, typos in the settings file don't outright destroy
                 # the entry.
 
-                yield self.fieldPath(), self._bad_value_string
+                yield "", self._bad_value_string
 
     def restoreField(self, path: str, value: Optional[str]) -> bool:
         if value is None:
