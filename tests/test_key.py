@@ -505,25 +505,6 @@ class TestKey:
         assert not key.isSet()
         callback.assert_not_called()
 
-        class TestBunch(Bunch):
-            str_key = Key("")
-
-        # Same as the above when the Key has a non-empty label.
-
-        bunch = TestBunch()
-        assert not bunch.str_key.restoreField("", "test")
-        assert not bunch.str_key.isSet()
-        assert not bunch.str_key.restoreField("test", "test")
-        assert not bunch.str_key.isSet()
-        assert not bunch.str_key.restoreField(".str_key", "test")
-        assert not bunch.str_key.isSet()
-        assert not bunch.str_key.restoreField("str_key.", "test")
-        assert not bunch.str_key.isSet()
-
-        assert bunch.str_key.restoreField("str_key", "test")
-        assert bunch.str_key.isSet()
-        assert bunch.str_key.get() == "test"
-
     def test_restore_field_serialization(self) -> None:
         key_str: Key[str] = Key(default="")
         assert key_str.restoreField("", "test")

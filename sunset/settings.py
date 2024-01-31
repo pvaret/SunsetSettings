@@ -472,9 +472,7 @@ class Settings(Bunch, Lockable):
                 success = section.restoreField(path, value)
 
         else:
-            field_label, *_ = path.split(self._PATH_SEPARATOR, 1)
-            if (field := self._fields.get(field_label)) is not None:
-                success = field.restoreField(path, value)
+            success = super().restoreField(path, value)
 
         self._update_notification_enabled = _update_notification_enabled
 

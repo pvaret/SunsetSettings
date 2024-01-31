@@ -333,14 +333,11 @@ class Bunch(ContainableImpl):
         Internal.
         """
 
-        if self._PATH_SEPARATOR not in path:
-            return False
+        if self._PATH_SEPARATOR in path:
+            field_label, path = path.split(self._PATH_SEPARATOR, 1)
+        else:
+            field_label, path = path, ""
 
-        field_label, path = path.split(self._PATH_SEPARATOR, 1)
-        if self.fieldLabel() != field_label:
-            return False
-
-        field_label, *_ = path.split(self._PATH_SEPARATOR, 1)
         if (field := self._fields.get(field_label)) is not None:
             return field.restoreField(path, value)
 

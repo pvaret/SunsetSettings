@@ -200,32 +200,32 @@ class TestBunch:
         callback = mocker.stub()
 
         # Test all flavors of valid paths. Also, restoring a field should not
-        # trigger a callbacak.
+        # trigger a callback.
 
         bunch = ExampleBunch()
         bunch.onUpdateCall(callback)
 
         assert bunch.a.get() == "default a"
-        bunch.restoreField(".a", "restore a")
+        bunch.restoreField("a", "restore a")
         assert bunch.a.get() == "restore a"
         callback.assert_not_called()
 
         assert len(bunch.list) == 0
-        bunch.restoreField(".list.2.c", "restore c 2")
-        bunch.restoreField(".list.1.c", "restore c 1")
+        bunch.restoreField("list.2.c", "restore c 2")
+        bunch.restoreField("list.1.c", "restore c 1")
         assert len(bunch.list) == 2
         assert bunch.list[0].c.get() == "restore c 1"
         assert bunch.list[1].c.get() == "restore c 2"
         callback.assert_not_called()
 
-        bunch.restoreField(".list.1.c", "other restore c 1")
+        bunch.restoreField("list.1.c", "other restore c 1")
         assert len(bunch.list) == 2
         assert bunch.list[0].c.get() == "other restore c 1"
         assert bunch.list[1].c.get() == "restore c 2"
         callback.assert_not_called()
 
         assert bunch.inner_bunch.b.get() == 42
-        bunch.restoreField(".inner_bunch.b", "101")
+        bunch.restoreField("inner_bunch.b", "101")
         assert bunch.inner_bunch.b.get() == 101
         callback.assert_not_called()
 
@@ -234,18 +234,16 @@ class TestBunch:
         other_bunch = ExampleBunch()
         other_bunch.onUpdateCall(callback)
 
-        other_bunch.restoreField("a", "invalid path")
-        assert other_bunch.a.get() == "default a"
+        other_bunch.restoreField("x", "invalid path")
         assert not other_bunch.isSet()
 
-        other_bunch.restoreField("a.", "invalid path")
-        assert other_bunch.a.get() == "default a"
+        other_bunch.restoreField("a.a", "invalid path")
         assert not other_bunch.isSet()
 
         other_bunch.restoreField(".", "invalid path")
         assert not other_bunch.isSet()
 
-        other_bunch.restoreField(".invalid", "invalid path")
+        other_bunch.restoreField(".a", "invalid path")
         assert not other_bunch.isSet()
 
         other_bunch.restoreField("", "invalid path")

@@ -452,7 +452,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
 
         self._update_notification_enabled = False
 
-        if path == self.fieldLabel():
+        if path == "":
             if (val := self._serializer.fromStr(value)) is not None:
                 success = self.set(val)
 
@@ -462,9 +462,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
                 # while editing the settings file, the faulty entry is not
                 # entirely lost when we save.
 
-                logging.error(
-                    "Invalid value for Key %s: %s", self.fieldPath(), value
-                )
+                logging.error("Invalid value for Key %r: %s", self, value)
                 self._bad_value_string = value
 
         self._update_notification_enabled = True

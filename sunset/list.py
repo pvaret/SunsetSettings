@@ -436,19 +436,16 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         Internal.
         """
 
-        if self._PATH_SEPARATOR not in path:
-            return False
-
-        field_label, path = path.split(self._PATH_SEPARATOR, 1)
-        if self.fieldLabel() != field_label:
-            return False
+        if self._PATH_SEPARATOR in path:
+            field_label, path = path.split(self._PATH_SEPARATOR, 1)
+        else:
+            field_label, path = path, ""
 
         success: bool = False
 
         _update_notification_enabled = self._update_notification_enabled
         self._update_notification_enabled = False
 
-        field_label, *_ = path.split(self._PATH_SEPARATOR, 1)
         index = self._indexForLabel(field_label)
         if index is not None and index >= 0:
             self._ensureMinimumLength(index + 1)
