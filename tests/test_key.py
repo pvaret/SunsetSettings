@@ -413,11 +413,11 @@ class TestKey:
             key2 = Key("test")
 
         bunch = TestBunch()
-        assert bunch.key1.fieldLabel() == "key1"
-        assert bunch.key2.fieldLabel() == "key2"
+        assert bunch.key1._field_label == "key1"
+        assert bunch.key2._field_label == "key2"
 
         key = Key("test")
-        assert key.fieldLabel() == ""
+        assert key._field_label == ""
 
     def test_dump_fields(self) -> None:
         # An unattached Key should get dumped.

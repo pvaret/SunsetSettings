@@ -19,7 +19,7 @@ from typing import (
 from .bunch import Bunch
 from .key import Key
 from .non_hashable_set import WeakNonHashableSet
-from .protocols import Containable, ContainableImpl, UpdateNotifier
+from .protocols import Containable, ContainableImpl, Field, UpdateNotifier
 from .registry import CallbackRegistry
 
 ListItemT = TypeVar("ListItemT", bound=Union[Bunch, Key[Any]])
@@ -142,6 +142,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         index: Union[SupportsIndex, slice],
         value: Union[ListItemT, Iterable[ListItemT]],
     ) -> None:
+        self._delabel(self._contents[index])
         if isinstance(index, slice):
             assert isinstance(value, Iterable)
             self._contents[index] = value
@@ -155,6 +156,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         self._triggerUpdateNotification(self)
 
     def __delitem__(self, index: Union[SupportsIndex, slice]) -> None:
+        self._delabel(self._contents[index])
         del self._contents[index]
         self._relabelItems()
         self._triggerUpdateNotification(self)
@@ -172,9 +174,17 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         return self
 
     def clear(self) -> None:
+        self._delabel(self._contents[:])
         self._contents.clear()
         self._relabelItems()
         self._triggerUpdateNotification(self)
+
+    def _delabel(self, item: Union[ListItemT, list[ListItemT]]) -> None:
+        if isinstance(item, Field):
+            item._field_label = ""
+        else:
+            for element in item:
+                element._field_label = ""
 
     def __len__(self) -> int:
         return len(self._contents)
@@ -224,9 +234,6 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         item = self._newItem()
         self.insert(index, item)
         return item
-
-    def fieldPath(self) -> str:
-        return super().fieldPath() + self._PATH_SEPARATOR
 
     def _containsFieldWithLabel(self, label: str, field: Containable) -> bool:
         """

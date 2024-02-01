@@ -205,9 +205,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
 
         if not self._validator(value):
             logging.debug(
-                "Validator rejected value for Key %s: %r",
-                self.fieldPath(),
-                value,
+                "Validator rejected value for Key %r: %r", self, value
             )
             return False
 

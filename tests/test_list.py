@@ -449,65 +449,65 @@ class TestList:
 
         key_list = List(Key(""))
         key = key_list.appendOne()
-        assert key.fieldLabel() == "1"
+        assert key._field_label == "1"
 
         # Testing List.insertOne()
 
         other_key = key_list.insertOne(0)
-        assert other_key.fieldLabel() == "1"
-        assert key.fieldLabel() == "2"
+        assert other_key._field_label == "1"
+        assert key._field_label == "2"
 
         # Testing List.append()
 
         key = Key("")
-        assert key.fieldLabel() == ""
+        assert key._field_label == ""
         key_list.append(key)
-        assert key.fieldLabel() == "3"
+        assert key._field_label == "3"
 
         # Testing List.extend()
 
         key = Key("")
         last_key = Key("")
         key_list.extend((key, last_key))
-        assert key.fieldLabel() == "4"
-        assert last_key.fieldLabel() == "5"
+        assert key._field_label == "4"
+        assert last_key._field_label == "5"
 
         # Testing List.insert()
 
         key = Key("")
         key_list.insert(3, key)
-        assert key.fieldLabel() == "4"
-        assert last_key.fieldLabel() == "6"
+        assert key._field_label == "4"
+        assert last_key._field_label == "6"
 
         # Testing List.__setitem__(index)
 
         key = Key("")
         key_list[2] = key
-        assert key.fieldLabel() == "3"
-        assert last_key.fieldLabel() == "6"
+        assert key._field_label == "3"
+        assert last_key._field_label == "6"
 
         # Testing List.__setitem__(slice)
 
         key = Key("")
         other_key = Key("")
         key_list[1:4] = [key, other_key]
-        assert key.fieldLabel() == "2"
-        assert other_key.fieldLabel() == "3"
-        assert last_key.fieldLabel() == "5"
+        assert key._field_label == "2"
+        assert other_key._field_label == "3"
+        assert last_key._field_label == "5"
 
         # Testing List.__iadd__()
 
         key = Key("")
         other_key = Key("")
         key_list += [key, other_key]
-        assert key.fieldLabel() == "6"
-        assert other_key.fieldLabel() == "7"
+        assert key._field_label == "6"
+        assert other_key._field_label == "7"
 
         # Testing assignment order
 
         key_list[2], key_list[4] = key_list[4], key_list[2]
-        assert key_list[2].fieldLabel() == "3"
-        assert key_list[4].fieldLabel() == "5"
+        assert key_list[2]._field_label == "3"
+        assert key_list[4]._field_label == "5"
 
     def test_label_unset_on_removed_items(self) -> None:
         key_list = List(Key(""))
@@ -517,60 +517,43 @@ class TestList:
         # Test List.__delitem__(index)
 
         key = key_list[3]
-        assert key.fieldLabel() == "4"
+        assert key._field_label == "4"
         del key_list[3]
-        assert key.fieldLabel() == ""
+        assert key._field_label == ""
 
         # Test List.__delitem__(slice)
 
         keys = key_list[2:5]
-        assert [key.fieldLabel() for key in keys] == ["3", "4", "5"]
+        assert [key._field_label for key in keys] == ["3", "4", "5"]
         del key_list[2:5]
-        assert [key.fieldLabel() for key in keys] == ["", "", ""]
+        assert [key._field_label for key in keys] == ["", "", ""]
 
         # Test List.__setitem__(index)
 
         key = key_list[5]
-        assert key.fieldLabel() == "6"
+        assert key._field_label == "6"
         key_list[5] = Key("")
-        assert key.fieldLabel() == ""
+        assert key._field_label == ""
 
         # Test List.__setitem__(slice)
 
         keys = key_list[4:7]
-        assert [key.fieldLabel() for key in keys] == ["5", "6", "7"]
+        assert [key._field_label for key in keys] == ["5", "6", "7"]
         key_list[4:7] = [Key(""), Key("")]
-        assert [key.fieldLabel() for key in keys] == ["", "", ""]
+        assert [key._field_label for key in keys] == ["", "", ""]
 
         # Test List.pop()
 
         last_key = key_list[9]
-        assert last_key.fieldLabel() == "10"
+        assert last_key._field_label == "10"
         key_list.pop()
-        assert last_key.fieldLabel() == ""
+        assert last_key._field_label == ""
 
         # Test List.clear()
 
         keys = key_list[:]
         key_list.clear()
-        assert all(key.fieldLabel() == "" for key in keys)
-
-    def test_field_path(self) -> None:
-        test_list1 = List(Key(""))
-        assert test_list1.fieldPath() == "."
-        test_list1.appendOne()
-        test_list1.appendOne()
-        assert test_list1[0].fieldPath() == ".1"
-        assert test_list1[1].fieldPath() == ".2"
-
-        test_list2 = List(ExampleBunch())
-        assert test_list2.fieldPath() == "."
-        test_list2.appendOne()
-        test_list2.appendOne()
-        assert test_list2[0].fieldPath() == ".1."
-        assert test_list2[1].fieldPath() == ".2."
-        assert test_list2[0].test.fieldPath() == ".1.test"
-        assert test_list2[1].test.fieldPath() == ".2.test"
+        assert all(key._field_label == "" for key in keys)
 
     def test_repr(self) -> None:
         parent = List(Key(default=0))

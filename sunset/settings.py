@@ -413,15 +413,6 @@ class Settings(Bunch, Lockable):
         if (parent := self.parent()) is not None:
             parent._triggerUpdateNotification(field)
 
-    def fieldPath(self) -> str:
-        path = "" if (parent := self.parent()) is None else parent.fieldPath()
-
-        return (
-            path
-            + ("?" if self.skipOnSave() else self.sectionName())
-            + self._SECTION_SEPARATOR
-        )
-
     def skipOnSave(self) -> bool:
         return self.sectionName() == ""
 
