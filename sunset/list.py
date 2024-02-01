@@ -142,7 +142,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         index: Union[SupportsIndex, slice],
         value: Union[ListItemT, Iterable[ListItemT]],
     ) -> None:
-        self._delabel(self._contents[index])
+        self._clear_metadata(self._contents[index])
         if isinstance(index, slice):
             assert isinstance(value, Iterable)
             self._contents[index] = value
@@ -156,7 +156,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         self._triggerUpdateNotification(self)
 
     def __delitem__(self, index: Union[SupportsIndex, slice]) -> None:
-        self._delabel(self._contents[index])
+        self._clear_metadata(self._contents[index])
         del self._contents[index]
         self._relabelItems()
         self._triggerUpdateNotification(self)
@@ -174,17 +174,16 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         return self
 
     def clear(self) -> None:
-        self._delabel(self._contents[:])
+        self._clear_metadata(self._contents[:])
         self._contents.clear()
         self._relabelItems()
         self._triggerUpdateNotification(self)
 
-    def _delabel(self, item: Union[ListItemT, list[ListItemT]]) -> None:
-        if isinstance(item, Field):
-            item._field_label = ""
-        else:
-            for element in item:
-                element._field_label = ""
+    def _clear_metadata(
+        self, fields: Union[ListItemT, list[ListItemT]]
+    ) -> None:
+        for field in [fields] if isinstance(fields, Field) else fields:
+            field.meta().clear()
 
     def __len__(self) -> int:
         return len(self._contents)

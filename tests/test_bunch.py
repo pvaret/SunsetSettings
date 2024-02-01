@@ -171,12 +171,6 @@ class TestBunch:
             "test child"
         ]
 
-    def test_field_label(self) -> None:
-        bunch = ExampleBunch()
-
-        assert bunch._field_label == ""
-        assert bunch.inner_bunch._field_label == "inner_bunch"
-
     def test_dump_fields(self) -> None:
         bunch = ExampleBunch()
         assert list(bunch.dumpFields()) == []

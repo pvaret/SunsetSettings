@@ -407,18 +407,6 @@ class TestKey:
         parent_key.clear()
         stub.assert_called_once_with("default a")
 
-    def test_field_label(self) -> None:
-        class TestBunch(Bunch):
-            key1 = Key("test")
-            key2 = Key("test")
-
-        bunch = TestBunch()
-        assert bunch.key1._field_label == "key1"
-        assert bunch.key2._field_label == "key2"
-
-        key = Key("test")
-        assert key._field_label == ""
-
     def test_dump_fields(self) -> None:
         # An unattached Key should get dumped.
 

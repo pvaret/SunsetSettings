@@ -1,5 +1,7 @@
 import weakref
 
+from dataclasses import dataclass
+
 from types import GenericAlias
 from typing import (
     Any,
@@ -121,7 +123,6 @@ class ItemTemplate(Protocol):
 @runtime_checkable
 class Containable(Protocol):
     _PATH_SEPARATOR: str
-    _field_label: str
 
     def _setContainer(
         self, label: str, container: Optional["Container"]
@@ -132,6 +133,9 @@ class Containable(Protocol):
         ...
 
     def skipOnSave(self) -> bool:
+        ...
+
+    def meta(self) -> "Metadata":
         ...
 
 
@@ -146,6 +150,28 @@ class Container(Containable, UpdateNotifier, Protocol):
         ...
 
 
+@dataclass
+class Metadata:
+    container: Optional[weakref.ref[Container]] = None
+    label: str = ""
+
+    def clear(self) -> None:
+        self.container = None
+        self.label = ""
+
+    def path(self) -> str:
+        if self.container is None or (container := self.container()) is None:
+            # Should be empty, actually.
+            return self.label
+
+        path = container.meta().path()
+
+        if not path:
+            return self.label
+
+        return path + container._PATH_SEPARATOR + self.label
+
+
 class ContainableImpl:
     """
     A ready-to-use implementation of the Containable protocol.
@@ -153,20 +179,22 @@ class ContainableImpl:
 
     _PATH_SEPARATOR: str = "."
 
-    _field_label: str = ""
     _container_ref: Optional[weakref.ref[Container]] = None
+    _metadata: Optional[Metadata] = None
 
     def _setContainer(self, label: str, container: Optional[Container]) -> None:
         """
         Internal.
         """
 
+        metadata = self.meta()
+        metadata.clear()
         if container is None:
             self._container_ref = None
-            self._field_label = ""
         else:
             self._container_ref = weakref.ref(container)
-            self._field_label = label
+            metadata.label = label
+            metadata.container = weakref.ref(container)
 
     def _container(self) -> Optional[Container]:
         """
@@ -183,7 +211,7 @@ class ContainableImpl:
         # Make sure this Containable is in fact still held in its supposed
         # Container. Else update the situation.
 
-        if not container._containsFieldWithLabel(self._field_label, self):
+        if not container._containsFieldWithLabel(self.meta().label, self):
             self._setContainer("", None)
             return None
 
@@ -205,7 +233,21 @@ class ContainableImpl:
            A bool used internally by the settings saving logic.
         """
 
-        return self._field_label.startswith("_")
+        return self.meta().label.startswith("_")
+
+    def meta(self) -> Metadata:
+        """
+        Internal.
+
+        Get the metadata object associated with this entity.
+
+        Returns:
+            A metadata object.
+        """
+
+        if self._metadata is None:
+            self._metadata = Metadata()
+        return self._metadata
 
 
 assert isinstance(ContainableImpl, Containable)

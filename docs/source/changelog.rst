@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Latest
+------
+
+- Moved some internal field properties into a new metadata attribute.
+
 SunsetSettings 0.5.4 (2024-02-01)
 ---------------------------------
 

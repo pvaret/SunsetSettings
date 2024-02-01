@@ -184,7 +184,6 @@ class Bunch(ContainableImpl):
         for label, field in vars(self).items():
             if isinstance(field, Field):
                 self._fields[label] = field
-                field._field_label = label
                 field._setContainer(label, self)
 
     def _containsFieldWithLabel(self, label: str, field: Containable) -> bool:
