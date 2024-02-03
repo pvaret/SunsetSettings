@@ -18,9 +18,8 @@ from typing import (
 
 from .bunch import Bunch
 from .key import Key
-from .non_hashable_set import WeakNonHashableSet
 from .protocols import Containable, ContainableImpl, Field, UpdateNotifier
-from .registry import CallbackRegistry
+from .sets import WeakCallableSet, WeakNonHashableSet
 
 ListItemT = TypeVar("ListItemT", bound=Union[Bunch, Key[Any]])
 
@@ -93,7 +92,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
     _parent_ref: Optional[weakref.ref["List[ListItemT]"]]
     _children_ref: WeakNonHashableSet["List[ListItemT]"]
     _iter_order: IterOrder
-    _update_notification_callbacks: CallbackRegistry[Any]
+    _update_notification_callbacks: WeakCallableSet[Any, Any]
     _update_notification_enabled: bool
     _template: ListItemT
 
@@ -107,7 +106,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         self._parent_ref = None
         self._children_ref = WeakNonHashableSet()
         self._iter_order = order
-        self._update_notification_callbacks = CallbackRegistry()
+        self._update_notification_callbacks = WeakCallableSet()
         self._update_notification_enabled = True
         self._template = template
 

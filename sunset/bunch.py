@@ -12,7 +12,6 @@ from typing import (
     cast,
 )
 
-from .non_hashable_set import WeakNonHashableSet
 from .protocols import (
     Containable,
     ContainableImpl,
@@ -20,7 +19,7 @@ from .protocols import (
     ItemTemplate,
     UpdateNotifier,
 )
-from .registry import CallbackRegistry
+from .sets import WeakCallableSet, WeakNonHashableSet
 
 
 # TODO: Replace with typing.Self when mypy finally supports that.
@@ -61,7 +60,7 @@ class Bunch(ContainableImpl):
     _parent_ref: Optional[weakref.ref["Bunch"]]
     _children_set: MutableSet["Bunch"]
     _fields: dict[str, Field]
-    _update_notification_callbacks: CallbackRegistry[UpdateNotifier]
+    _update_notification_callbacks: WeakCallableSet[UpdateNotifier, Any]
     _update_notification_enabled: bool
 
     def __new__(cls: type[Self]) -> Self:
@@ -178,7 +177,7 @@ class Bunch(ContainableImpl):
         self._parent_ref = None
         self._children_set = WeakNonHashableSet[Bunch]()
         self._fields = {}
-        self._update_notification_callbacks = CallbackRegistry()
+        self._update_notification_callbacks = WeakCallableSet()
         self._update_notification_enabled = True
 
         for label, field in vars(self).items():

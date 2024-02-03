@@ -1,16 +1,19 @@
 import pytest
 
-from sunset import CallbackRegistry
+from typing import Any
+
+from sunset import sets
 
 
-class TestCallbackRegistry:
+class TestWeakCallableSet:
+
     def test_function(self) -> None:
         call_args: list[str] = []
 
         def test(value: str) -> None:
             call_args.append(value)
 
-        reg: CallbackRegistry[str] = CallbackRegistry()
+        reg: sets.WeakCallableSet[str, Any] = sets.WeakCallableSet()
 
         assert len(reg) == 0
         reg.callAll("not added")
@@ -34,7 +37,7 @@ class TestCallbackRegistry:
             def test(self, value: str) -> None:
                 call_args.append(value)
 
-        reg: CallbackRegistry[str] = CallbackRegistry()
+        reg: sets.WeakCallableSet[str, Any] = sets.WeakCallableSet()
 
         t = Test()
 
@@ -56,7 +59,7 @@ class TestCallbackRegistry:
         def test(_: int) -> None:
             pass
 
-        reg: CallbackRegistry[int] = CallbackRegistry()
+        reg: sets.WeakCallableSet[int, Any] = sets.WeakCallableSet()
 
         reg.add(test)
         assert test in reg
@@ -70,7 +73,7 @@ class TestCallbackRegistry:
 
         t = Test()
 
-        reg: CallbackRegistry[int] = CallbackRegistry()
+        reg: sets.WeakCallableSet[int, Any] = sets.WeakCallableSet()
 
         reg.add(t.test)
         assert t.test in reg
@@ -81,7 +84,7 @@ class TestCallbackRegistry:
         def test(_: bool) -> None:
             pass
 
-        reg: CallbackRegistry[bool] = CallbackRegistry()
+        reg: sets.WeakCallableSet[bool, Any] = sets.WeakCallableSet()
 
         reg.add(test)
         assert test in reg
@@ -95,7 +98,7 @@ class TestCallbackRegistry:
         def test(value: str) -> None:
             call_args.append(value)
 
-        reg: CallbackRegistry[str] = CallbackRegistry()
+        reg: sets.WeakCallableSet[str, Any] = sets.WeakCallableSet()
 
         reg.add(test)
         assert len(reg) == 1
@@ -112,7 +115,7 @@ class TestCallbackRegistry:
             def test(self, value: str) -> None:
                 call_args.append(value)
 
-        reg: CallbackRegistry[str] = CallbackRegistry()
+        reg: sets.WeakCallableSet[str, Any] = sets.WeakCallableSet()
 
         t = Test()
 
@@ -141,7 +144,7 @@ class TestCallbackRegistry:
 
             hash(t)
 
-        reg: CallbackRegistry[int] = CallbackRegistry()
+        reg: sets.WeakCallableSet[int, Any] = sets.WeakCallableSet()
 
         reg.add(t.test)
         reg.callAll(42)
@@ -155,7 +158,7 @@ class TestCallbackRegistry:
             def test(self, value: str) -> None:
                 call_args.append(value)
 
-        reg: CallbackRegistry[str] = CallbackRegistry()
+        reg: sets.WeakCallableSet[str, Any] = sets.WeakCallableSet()
 
         t1 = Test()
         t2 = Test()

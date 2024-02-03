@@ -16,7 +16,7 @@ from .autosaver import AutoSaver
 from .bunch import Bunch
 from .exporter import normalize, load_from_file, save_to_file
 from .lockable import Lockable
-from .non_hashable_set import NonHashableSet
+from .sets import NonHashableSet
 from .protocols import UpdateNotifier
 
 _MAIN = "main"

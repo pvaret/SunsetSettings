@@ -15,8 +15,8 @@ from typing import (
 from .exporter import maybe_escape
 from .lockable import Lockable
 from .protocols import ContainableImpl, Serializer
-from .registry import CallbackRegistry
 from .serializers import lookup
+from .sets import WeakCallableSet
 
 
 # TODO: Replace with typing.Self when mypy finally supports that.
@@ -98,8 +98,8 @@ class Key(Generic[_T], ContainableImpl, Lockable):
     _serializer: Serializer[_T]
     _validator: Callable[[_T], bool]
     _bad_value_string: Optional[str]
-    _value_change_callbacks: CallbackRegistry[_T]
-    _update_notification_callbacks: CallbackRegistry["Key[_T]"]
+    _value_change_callbacks: WeakCallableSet[_T, Any]
+    _update_notification_callbacks: WeakCallableSet["Key[_T]", Any]
     _update_notification_enabled: bool
     _parent_ref: Optional[weakref.ref["Key[_T]"]]
     _children_ref: weakref.WeakSet["Key[_T]"]
@@ -150,8 +150,8 @@ class Key(Generic[_T], ContainableImpl, Lockable):
 
         self._serializer = serializer
 
-        self._value_change_callbacks = CallbackRegistry()
-        self._update_notification_callbacks = CallbackRegistry()
+        self._value_change_callbacks = WeakCallableSet()
+        self._update_notification_callbacks = WeakCallableSet()
         self._update_notification_enabled = True
 
         self._parent_ref = None

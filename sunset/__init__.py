@@ -5,14 +5,13 @@ __version__ = "0.5.4-dev"
 __author__ = "P. Varet"
 __copyright__ = "2022-2024, P. Varet"
 
-from . import exporter, non_hashable_set, serializers
+from . import exporter, serializers, sets
 
 from .autosaver import AutoSaver
 from .bunch import Bunch
 from .key import Key
 from .list import List
 from .protocols import Serializable, Serializer
-from .registry import CallbackRegistry
 from .enum_serializer import (
     SerializableEnum,
     SerializableFlag,
@@ -20,15 +19,14 @@ from .enum_serializer import (
 from .settings import Settings, normalize
 from .timer import PersistentTimer
 
-# Backward compatibility: Bunch used to be called Bundle. Retain compatibility
-# by keeping this name around for a few versions.
+# Backward compatibility: Bunch used to be called Bundle prior to version 0.4.0.
+# Retain compatibility by keeping this name around for a few versions.
 Bundle = Bunch
 
 __all__ = [
     "AutoSaver",
     "Bunch",
     "Bundle",
-    "CallbackRegistry",
     "Key",
     "List",
     "PersistentTimer",
@@ -38,7 +36,7 @@ __all__ = [
     "Serializer",
     "Settings",
     "exporter",
-    "non_hashable_set",
+    "sets",
     "normalize",
     "serializers",
 ]
