@@ -18,8 +18,9 @@ from typing import (
 
 from .bunch import Bunch
 from .key import Key
+from .notifier import Notifier
 from .protocols import Containable, ContainableImpl, Field, UpdateNotifier
-from .sets import WeakCallableSet, WeakNonHashableSet
+from .sets import WeakNonHashableSet
 
 ListItemT = TypeVar("ListItemT", bound=Union[Bunch, Key[Any]])
 
@@ -92,10 +93,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
     _parent_ref: Optional[weakref.ref["List[ListItemT]"]]
     _children_ref: WeakNonHashableSet["List[ListItemT]"]
     _iter_order: IterOrder
-    _update_notification_callbacks: WeakCallableSet[
-        Callable[[UpdateNotifier], Any]
-    ]
-    _update_notification_enabled: bool
+    _update_notifier: Notifier[UpdateNotifier]
     _template: ListItemT
 
     def __init__(
@@ -108,8 +106,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         self._parent_ref = None
         self._children_ref = WeakNonHashableSet()
         self._iter_order = order
-        self._update_notification_callbacks = WeakCallableSet()
-        self._update_notification_enabled = True
+        self._update_notifier = Notifier()
         self._template = template
 
     def insert(self, index: SupportsIndex, value: ListItemT) -> None:
@@ -415,7 +412,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
             callback.
         """
 
-        self._update_notification_callbacks.add(callback)
+        self._update_notifier.add(callback)
 
     def dumpFields(self) -> Iterator[tuple[str, Optional[str]]]:
         """
@@ -444,19 +441,13 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         else:
             field_label, path = path, ""
 
-        success: bool = False
+        with self._update_notifier.inhibit():
+            index = self._indexForLabel(field_label)
+            if index is not None and index >= 0:
+                self._ensureMinimumLength(index + 1)
+                return self[index].restoreField(path, value)
 
-        _update_notification_enabled = self._update_notification_enabled
-        self._update_notification_enabled = False
-
-        index = self._indexForLabel(field_label)
-        if index is not None and index >= 0:
-            self._ensureMinimumLength(index + 1)
-            success = self[index].restoreField(path, value)
-
-        self._update_notification_enabled = _update_notification_enabled
-
-        return success
+        return False
 
     def _ensureMinimumLength(self, length: int) -> None:
         missing_count = length - len(self)
@@ -471,16 +462,12 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         Internal.
         """
 
-        if not self._update_notification_enabled:
-            return
-
         if field is None:
             field = self
 
-        self._update_notification_callbacks.callAll(field)
+        self._update_notifier.trigger(field)
 
-        container = self._container()
-        if container is not None:
+        if (container := self._container()) is not None:
             container._triggerUpdateNotification(field)
 
     def _typeHint(self) -> GenericAlias:

@@ -402,8 +402,6 @@ class Settings(Bunch, Lockable):
     def _triggerUpdateNotification(
         self, field: Optional[UpdateNotifier]
     ) -> None:
-        if not self._update_notification_enabled:
-            return
 
         if field is None:
             field = self
@@ -451,23 +449,17 @@ class Settings(Bunch, Lockable):
         if self.sectionName() != section_name:
             return False
 
-        success: bool = False
+        with self._update_notifier.inhibit():
+            if self._SECTION_SEPARATOR in path:
+                subsection_name, _ = path.split(self._SECTION_SEPARATOR, 1)
+                if subsection_name:
+                    section = self.getOrCreateSection(subsection_name)
+                    return section.restoreField(path, value)
 
-        _update_notification_enabled = self._update_notification_enabled
-        self._update_notification_enabled = False
+            else:
+                return super().restoreField(path, value)
 
-        if self._SECTION_SEPARATOR in path:
-            subsection_name, _ = path.split(self._SECTION_SEPARATOR, 1)
-            if subsection_name:
-                section = self.getOrCreateSection(subsection_name)
-                success = section.restoreField(path, value)
-
-        else:
-            success = super().restoreField(path, value)
-
-        self._update_notification_enabled = _update_notification_enabled
-
-        return success
+        return False
 
     def save(self, file: IO[str], blanklines: bool = False) -> None:
         """

@@ -1,6 +1,6 @@
 import pytest
 
-from typing import Any, Callable
+from typing import Callable
 
 from sunset import sets
 
@@ -8,36 +8,31 @@ from sunset import sets
 class TestWeakCallableSet:
 
     def test_function(self) -> None:
-        call_args: list[str] = []
 
-        def test(value: str) -> None:
-            call_args.append(value)
+        def test(_: str) -> None:
+            pass
 
-        reg: sets.WeakCallableSet[Callable[[str], Any]] = sets.WeakCallableSet()
+        reg: sets.WeakCallableSet[Callable[[str], None]] = (
+            sets.WeakCallableSet()
+        )
 
         assert len(reg) == 0
-        reg.callAll("not added")
-        assert call_args == []
 
         reg.add(test)
         assert len(reg) == 1
         assert test in reg
-        reg.callAll("added")
-        assert call_args == ["added"]
 
         del test
         assert len(reg) == 0
-        reg.callAll("not added either")
-        assert call_args == ["added"]
 
     def test_method(self) -> None:
-        call_args: list[str] = []
-
         class Test:
-            def test(self, value: str) -> None:
-                call_args.append(value)
+            def test(self, _: str) -> None:
+                pass
 
-        reg: sets.WeakCallableSet[Callable[[str], Any]] = sets.WeakCallableSet()
+        reg: sets.WeakCallableSet[Callable[[str], None]] = (
+            sets.WeakCallableSet()
+        )
 
         t = Test()
 
@@ -47,19 +42,17 @@ class TestWeakCallableSet:
         reg.add(t.test)
         assert len(reg) == 1
         assert t.test in reg
-        reg.callAll("added")
-        assert call_args == ["added"]
 
         del t
         assert len(reg) == 0
-        reg.callAll("not added")
-        assert call_args == ["added"]
 
     def test_discard_function(self) -> None:
         def test(_: int) -> None:
             pass
 
-        reg: sets.WeakCallableSet[Callable[[int], Any]] = sets.WeakCallableSet()
+        reg: sets.WeakCallableSet[Callable[[int], None]] = (
+            sets.WeakCallableSet()
+        )
 
         reg.add(test)
         assert test in reg
@@ -73,7 +66,9 @@ class TestWeakCallableSet:
 
         t = Test()
 
-        reg: sets.WeakCallableSet[Callable[[int], Any]] = sets.WeakCallableSet()
+        reg: sets.WeakCallableSet[Callable[[int], None]] = (
+            sets.WeakCallableSet()
+        )
 
         reg.add(t.test)
         assert t.test in reg
@@ -84,7 +79,7 @@ class TestWeakCallableSet:
         def test(_: bool) -> None:
             pass
 
-        reg: sets.WeakCallableSet[Callable[[bool], Any]] = (
+        reg: sets.WeakCallableSet[Callable[[bool], None]] = (
             sets.WeakCallableSet()
         )
 
@@ -95,29 +90,26 @@ class TestWeakCallableSet:
         assert other is test
 
     def test_function_added_once(self) -> None:
-        call_args: list[str] = []
+        def test(_: str) -> None:
+            pass
 
-        def test(value: str) -> None:
-            call_args.append(value)
-
-        reg: sets.WeakCallableSet[Callable[[str], Any]] = sets.WeakCallableSet()
+        reg: sets.WeakCallableSet[Callable[[str], None]] = (
+            sets.WeakCallableSet()
+        )
 
         reg.add(test)
         assert len(reg) == 1
         reg.add(test)
         assert len(reg) == 1
-
-        reg.callAll("once")
-        assert call_args == ["once"]
 
     def test_same_method_added_once(self) -> None:
-        call_args: list[str] = []
-
         class Test:
-            def test(self, value: str) -> None:
-                call_args.append(value)
+            def test(self, _: str) -> None:
+                pass
 
-        reg: sets.WeakCallableSet[Callable[[str], Any]] = sets.WeakCallableSet()
+        reg: sets.WeakCallableSet[Callable[[str], None]] = (
+            sets.WeakCallableSet()
+        )
 
         t = Test()
 
@@ -126,18 +118,11 @@ class TestWeakCallableSet:
         reg.add(t.test)
         assert len(reg) == 1
 
-        reg.callAll("once")
-        assert call_args == ["once"]
-
     def test_non_hashable_element(self) -> None:
         class Test(list[int]):
-            def __init__(self) -> None:
-                super().__init__()
 
-                self.value = 0
-
-            def test(self, value: int) -> None:
-                self.value = value
+            def test(self, _: int) -> None:
+                pass
 
         t = Test()
 
@@ -146,21 +131,21 @@ class TestWeakCallableSet:
 
             hash(t)
 
-        reg: sets.WeakCallableSet[Callable[[int], Any]] = sets.WeakCallableSet()
+        reg: sets.WeakCallableSet[Callable[[int], None]] = (
+            sets.WeakCallableSet()
+        )
 
         reg.add(t.test)
-        reg.callAll(42)
-
-        assert t.value == 42
+        assert t.test in reg
 
     def test_different_method_added_twice(self) -> None:
-        call_args: list[str] = []
-
         class Test:
-            def test(self, value: str) -> None:
-                call_args.append(value)
+            def test(self, _: str) -> None:
+                pass
 
-        reg: sets.WeakCallableSet[Callable[[str], Any]] = sets.WeakCallableSet()
+        reg: sets.WeakCallableSet[Callable[[str], None]] = (
+            sets.WeakCallableSet()
+        )
 
         t1 = Test()
         t2 = Test()
@@ -169,6 +154,3 @@ class TestWeakCallableSet:
         assert len(reg) == 1
         reg.add(t2.test)
         assert len(reg) == 2
-
-        reg.callAll("twice")
-        assert call_args == ["twice", "twice"]

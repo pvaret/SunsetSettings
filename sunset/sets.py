@@ -126,10 +126,6 @@ class WeakCallableSet(MutableSet[_C]):
             if callable_ is not None and self._isSameCallable(callable_, value):
                 self._content.discard(ref)
 
-    def callAll(self, *args: Any, **kwargs: Any) -> None:
-        for callback in self:
-            callback(*args, **kwargs)
-
     @staticmethod
     def _isSameCallable(callable1: _C, callable2: _C) -> bool:
         if isinstance(callable1, MethodType) and isinstance(

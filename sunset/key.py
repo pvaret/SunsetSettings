@@ -14,9 +14,9 @@ from typing import (
 
 from .exporter import maybe_escape
 from .lockable import Lockable
+from .notifier import Notifier
 from .protocols import ContainableImpl, Serializer
 from .serializers import lookup
-from .sets import WeakCallableSet
 
 
 # TODO: Replace with typing.Self when mypy finally supports that.
@@ -98,9 +98,8 @@ class Key(Generic[_T], ContainableImpl, Lockable):
     _serializer: Serializer[_T]
     _validator: Callable[[_T], bool]
     _bad_value_string: Optional[str]
-    _value_change_callbacks: WeakCallableSet[Callable[[_T], Any]]
-    _update_notification_callbacks: WeakCallableSet[Callable[["Key[_T]"], Any]]
-    _update_notification_enabled: bool
+    _value_change_notifier: Notifier[_T]
+    _update_notifier: Notifier["Key[_T]"]
     _parent_ref: Optional[weakref.ref["Key[_T]"]]
     _children_ref: weakref.WeakSet["Key[_T]"]
     _type: type[_T]
@@ -150,9 +149,8 @@ class Key(Generic[_T], ContainableImpl, Lockable):
 
         self._serializer = serializer
 
-        self._value_change_callbacks = WeakCallableSet()
-        self._update_notification_callbacks = WeakCallableSet()
-        self._update_notification_enabled = True
+        self._value_change_notifier = Notifier()
+        self._update_notifier = Notifier()
 
         self._parent_ref = None
         self._children_ref = weakref.WeakSet()
@@ -219,7 +217,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
         self._value = value
 
         if prev_value != self.get():
-            self._value_change_callbacks.callAll(self.get())
+            self._value_change_notifier.trigger(self.get())
             for child in self.children():
                 child._notifyParentValueChanged()
 
@@ -247,7 +245,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
         self._value = None
 
         if prev_value != self.get():
-            self._value_change_callbacks.callAll(self.get())
+            self._value_change_notifier.trigger(self.get())
             for child in self.children():
                 child._notifyParentValueChanged()
 
@@ -309,7 +307,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
             callback.
         """
 
-        self._value_change_callbacks.add(callback)
+        self._value_change_notifier.add(callback)
 
     def onUpdateCall(self, callback: Callable[["Key[_T]"], Any]) -> None:
         """
@@ -337,7 +335,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
             callback.
         """
 
-        self._update_notification_callbacks.add(callback)
+        self._update_notifier.add(callback)
 
     def setValidator(self, validator: Callable[[_T], bool]) -> None:
         """
@@ -446,13 +444,15 @@ class Key(Generic[_T], ContainableImpl, Lockable):
 
             return True
 
-        success: bool = False
+        if path != "":
+            # Keys don't have sub-fields. If a path was given, then the path is
+            # incorrect.
+            return False
 
-        self._update_notification_enabled = False
+        with self._update_notifier.inhibit():
 
-        if path == "":
             if (val := self._serializer.fromStr(value)) is not None:
-                success = self.set(val)
+                return self.set(val)
 
             else:
                 # Keep track of the value that failed to restore, so that we can
@@ -462,16 +462,13 @@ class Key(Generic[_T], ContainableImpl, Lockable):
 
                 logging.error("Invalid value for Key %r: %s", self, value)
                 self._bad_value_string = value
-
-        self._update_notification_enabled = True
-
-        return success
+                return False
 
     def _notifyParentValueChanged(self) -> None:
         if self.isSet():
             return
 
-        self._value_change_callbacks.callAll(self.get())
+        self._value_change_notifier.trigger(self.get())
         for child in self.children():
             child._notifyParentValueChanged()
 
@@ -480,13 +477,9 @@ class Key(Generic[_T], ContainableImpl, Lockable):
         Internal.
         """
 
-        if not self._update_notification_enabled:
-            return
+        self._update_notifier.trigger(self)
 
-        self._update_notification_callbacks.callAll(self)
-
-        container = self._container()
-        if container is not None:
+        if (container := self._container()) is not None:
             container._triggerUpdateNotification(self)
 
     def _typeHint(self) -> GenericAlias:

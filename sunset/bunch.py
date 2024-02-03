@@ -12,6 +12,7 @@ from typing import (
     cast,
 )
 
+from .notifier import Notifier
 from .protocols import (
     Containable,
     ContainableImpl,
@@ -19,7 +20,7 @@ from .protocols import (
     ItemTemplate,
     UpdateNotifier,
 )
-from .sets import WeakCallableSet, WeakNonHashableSet
+from .sets import WeakNonHashableSet
 
 
 # TODO: Replace with typing.Self when mypy finally supports that.
@@ -60,10 +61,7 @@ class Bunch(ContainableImpl):
     _parent_ref: Optional[weakref.ref["Bunch"]]
     _children_set: MutableSet["Bunch"]
     _fields: dict[str, Field]
-    _update_notification_callbacks: WeakCallableSet[
-        Callable[[UpdateNotifier], Any]
-    ]
-    _update_notification_enabled: bool
+    _update_notifier: Notifier[UpdateNotifier]
 
     def __new__(cls: type[Self]) -> Self:
         # Build and return a dataclass constructed from this class. Keep a
@@ -179,8 +177,7 @@ class Bunch(ContainableImpl):
         self._parent_ref = None
         self._children_set = WeakNonHashableSet[Bunch]()
         self._fields = {}
-        self._update_notification_callbacks = WeakCallableSet()
-        self._update_notification_enabled = True
+        self._update_notifier = Notifier()
 
         for label, field in vars(self).items():
             if isinstance(field, Field):
@@ -301,7 +298,7 @@ class Bunch(ContainableImpl):
             callback.
         """
 
-        self._update_notification_callbacks.add(callback)
+        self._update_notifier.add(callback)
 
     def isSet(self) -> bool:
         """
@@ -331,13 +328,14 @@ class Bunch(ContainableImpl):
         Internal.
         """
 
-        if self._PATH_SEPARATOR in path:
-            field_label, path = path.split(self._PATH_SEPARATOR, 1)
-        else:
-            field_label, path = path, ""
+        with self._update_notifier.inhibit():
+            if self._PATH_SEPARATOR in path:
+                field_label, path = path.split(self._PATH_SEPARATOR, 1)
+            else:
+                field_label, path = path, ""
 
-        if (field := self._fields.get(field_label)) is not None:
-            return field.restoreField(path, value)
+            if (field := self._fields.get(field_label)) is not None:
+                return field.restoreField(path, value)
 
         return False
 
@@ -348,13 +346,10 @@ class Bunch(ContainableImpl):
         Internal.
         """
 
-        if not self._update_notification_enabled:
-            return
-
         if field is None:
             field = self
 
-        self._update_notification_callbacks.callAll(field)
+        self._update_notifier.trigger(field)
 
         if (container := self._container()) is not None:
             container._triggerUpdateNotification(field)
