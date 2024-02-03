@@ -2,7 +2,6 @@ import weakref
 
 from collections.abc import MutableSet
 from types import MethodType
-
 from typing import (
     Any,
     Callable,
@@ -14,7 +13,7 @@ from typing import (
 )
 
 _T = TypeVar("_T")
-_R = TypeVar("_R")
+_C = TypeVar("_C", bound=Callable[..., Any])
 
 
 class NonHashableSet(MutableSet[_T]):
@@ -77,14 +76,14 @@ class WeakNonHashableSet(NonHashableSet[_T]):
         super().__init__(mapping_type=weakref.WeakValueDictionary)
 
 
-class WeakCallableSet(MutableSet[Callable[[_T], _R]]):
+class WeakCallableSet(MutableSet[_C]):
     """
     A set-like type that stores callables without keeping references to them.
 
     The callables must have the same argument types and return type.
     """
 
-    _content: NonHashableSet[weakref.ref[Callable[[_T], _R]]]
+    _content: NonHashableSet[weakref.ref[_C]]
 
     def __init__(self) -> None:
         super().__init__()
@@ -96,7 +95,7 @@ class WeakCallableSet(MutableSet[Callable[[_T], _R]]):
 
         self._content = NonHashableSet()
 
-    def add(self, value: Callable[[_T], _R]) -> None:
+    def add(self, value: _C) -> None:
         if isinstance(value, MethodType):
             # Note: WeakMethod has incorrect type annotations, so we have to
             # ignore types here.
@@ -106,12 +105,12 @@ class WeakCallableSet(MutableSet[Callable[[_T], _R]]):
         else:
             r = weakref.ref(value, self._onExpire)
 
-        self._content.add(r)
+        self._content.add(r)  # type: ignore
 
     def __contains__(self, value: Any) -> bool:
         return any(self._isSameCallable(candidate, value) for candidate in self)
 
-    def __iter__(self) -> Iterator[Callable[[_T], _R]]:
+    def __iter__(self) -> Iterator[_C]:
         for ref in self._content:
             value = ref()
             if value is not None:
@@ -120,21 +119,19 @@ class WeakCallableSet(MutableSet[Callable[[_T], _R]]):
     def __len__(self) -> int:
         return len(self._content)
 
-    def discard(self, value: Callable[[_T], _R]) -> None:
+    def discard(self, value: _C) -> None:
         refs = list(self._content)
         for ref in refs:
             callable_ = ref()
             if callable_ is not None and self._isSameCallable(callable_, value):
                 self._content.discard(ref)
 
-    def callAll(self, value: _T) -> None:
+    def callAll(self, *args: Any, **kwargs: Any) -> None:
         for callback in self:
-            callback(value)
+            callback(*args, **kwargs)
 
     @staticmethod
-    def _isSameCallable(
-        callable1: Callable[[_T], _R], callable2: Callable[[_T], _R]
-    ) -> bool:
+    def _isSameCallable(callable1: _C, callable2: _C) -> bool:
         if isinstance(callable1, MethodType) and isinstance(
             callable2, MethodType
         ):
@@ -145,5 +142,5 @@ class WeakCallableSet(MutableSet[Callable[[_T], _R]]):
 
         return callable1 is callable2
 
-    def _onExpire(self, ref: weakref.ref[Callable[[_T], _R]]) -> None:
+    def _onExpire(self, ref: weakref.ref[_C]) -> None:
         self._content.discard(ref)

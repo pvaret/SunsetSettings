@@ -92,7 +92,9 @@ class List(MutableSequence[ListItemT], ContainableImpl):
     _parent_ref: Optional[weakref.ref["List[ListItemT]"]]
     _children_ref: WeakNonHashableSet["List[ListItemT]"]
     _iter_order: IterOrder
-    _update_notification_callbacks: WeakCallableSet[Any, Any]
+    _update_notification_callbacks: WeakCallableSet[
+        Callable[[UpdateNotifier], Any]
+    ]
     _update_notification_enabled: bool
     _template: ListItemT
 

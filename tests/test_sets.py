@@ -1,6 +1,6 @@
 import pytest
 
-from typing import Any
+from typing import Any, Callable
 
 from sunset import sets
 
@@ -13,7 +13,7 @@ class TestWeakCallableSet:
         def test(value: str) -> None:
             call_args.append(value)
 
-        reg: sets.WeakCallableSet[str, Any] = sets.WeakCallableSet()
+        reg: sets.WeakCallableSet[Callable[[str], Any]] = sets.WeakCallableSet()
 
         assert len(reg) == 0
         reg.callAll("not added")
@@ -37,7 +37,7 @@ class TestWeakCallableSet:
             def test(self, value: str) -> None:
                 call_args.append(value)
 
-        reg: sets.WeakCallableSet[str, Any] = sets.WeakCallableSet()
+        reg: sets.WeakCallableSet[Callable[[str], Any]] = sets.WeakCallableSet()
 
         t = Test()
 
@@ -59,7 +59,7 @@ class TestWeakCallableSet:
         def test(_: int) -> None:
             pass
 
-        reg: sets.WeakCallableSet[int, Any] = sets.WeakCallableSet()
+        reg: sets.WeakCallableSet[Callable[[int], Any]] = sets.WeakCallableSet()
 
         reg.add(test)
         assert test in reg
@@ -73,7 +73,7 @@ class TestWeakCallableSet:
 
         t = Test()
 
-        reg: sets.WeakCallableSet[int, Any] = sets.WeakCallableSet()
+        reg: sets.WeakCallableSet[Callable[[int], Any]] = sets.WeakCallableSet()
 
         reg.add(t.test)
         assert t.test in reg
@@ -84,7 +84,9 @@ class TestWeakCallableSet:
         def test(_: bool) -> None:
             pass
 
-        reg: sets.WeakCallableSet[bool, Any] = sets.WeakCallableSet()
+        reg: sets.WeakCallableSet[Callable[[bool], Any]] = (
+            sets.WeakCallableSet()
+        )
 
         reg.add(test)
         assert test in reg
@@ -98,7 +100,7 @@ class TestWeakCallableSet:
         def test(value: str) -> None:
             call_args.append(value)
 
-        reg: sets.WeakCallableSet[str, Any] = sets.WeakCallableSet()
+        reg: sets.WeakCallableSet[Callable[[str], Any]] = sets.WeakCallableSet()
 
         reg.add(test)
         assert len(reg) == 1
@@ -115,7 +117,7 @@ class TestWeakCallableSet:
             def test(self, value: str) -> None:
                 call_args.append(value)
 
-        reg: sets.WeakCallableSet[str, Any] = sets.WeakCallableSet()
+        reg: sets.WeakCallableSet[Callable[[str], Any]] = sets.WeakCallableSet()
 
         t = Test()
 
@@ -144,7 +146,7 @@ class TestWeakCallableSet:
 
             hash(t)
 
-        reg: sets.WeakCallableSet[int, Any] = sets.WeakCallableSet()
+        reg: sets.WeakCallableSet[Callable[[int], Any]] = sets.WeakCallableSet()
 
         reg.add(t.test)
         reg.callAll(42)
@@ -158,7 +160,7 @@ class TestWeakCallableSet:
             def test(self, value: str) -> None:
                 call_args.append(value)
 
-        reg: sets.WeakCallableSet[str, Any] = sets.WeakCallableSet()
+        reg: sets.WeakCallableSet[Callable[[str], Any]] = sets.WeakCallableSet()
 
         t1 = Test()
         t2 = Test()

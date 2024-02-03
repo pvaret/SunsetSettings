@@ -60,7 +60,9 @@ class Bunch(ContainableImpl):
     _parent_ref: Optional[weakref.ref["Bunch"]]
     _children_set: MutableSet["Bunch"]
     _fields: dict[str, Field]
-    _update_notification_callbacks: WeakCallableSet[UpdateNotifier, Any]
+    _update_notification_callbacks: WeakCallableSet[
+        Callable[[UpdateNotifier], Any]
+    ]
     _update_notification_enabled: bool
 
     def __new__(cls: type[Self]) -> Self:

@@ -101,7 +101,9 @@ class Dumpable(Protocol):
 
 @runtime_checkable
 class UpdateNotifier(Protocol):
-    def onUpdateCall(self, callback: Callable[[Any], Any]) -> None: ...
+    def onUpdateCall(
+        self, callback: Callable[["UpdateNotifier"], Any]
+    ) -> None: ...
 
 
 @runtime_checkable

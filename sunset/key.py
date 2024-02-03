@@ -98,8 +98,8 @@ class Key(Generic[_T], ContainableImpl, Lockable):
     _serializer: Serializer[_T]
     _validator: Callable[[_T], bool]
     _bad_value_string: Optional[str]
-    _value_change_callbacks: WeakCallableSet[_T, Any]
-    _update_notification_callbacks: WeakCallableSet["Key[_T]", Any]
+    _value_change_callbacks: WeakCallableSet[Callable[[_T], Any]]
+    _update_notification_callbacks: WeakCallableSet[Callable[["Key[_T]"], Any]]
     _update_notification_enabled: bool
     _parent_ref: Optional[weakref.ref["Key[_T]"]]
     _children_ref: weakref.WeakSet["Key[_T]"]
