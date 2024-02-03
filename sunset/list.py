@@ -117,12 +117,10 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         self._triggerUpdateNotification(self)
 
     @overload
-    def __getitem__(self, index: SupportsIndex) -> ListItemT:
-        ...
+    def __getitem__(self, index: SupportsIndex) -> ListItemT: ...
 
     @overload
-    def __getitem__(self, index: slice) -> list[ListItemT]:
-        ...
+    def __getitem__(self, index: slice) -> list[ListItemT]: ...
 
     def __getitem__(
         self, index: Union[SupportsIndex, slice]
@@ -130,12 +128,10 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         return self._contents[index]
 
     @overload
-    def __setitem__(self, index: SupportsIndex, value: ListItemT) -> None:
-        ...
+    def __setitem__(self, index: SupportsIndex, value: ListItemT) -> None: ...
 
     @overload
-    def __setitem__(self, index: slice, value: Iterable[ListItemT]) -> None:
-        ...
+    def __setitem__(self, index: slice, value: Iterable[ListItemT]) -> None: ...
 
     def __setitem__(
         self,
