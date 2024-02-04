@@ -135,7 +135,7 @@ class TestListConcurrency:
 
             assert len(key_list) == _start_items
             for i, item in enumerate(key_list):
-                assert item._container() is key_list
+                assert item in key_list
                 expected_label = key_list._labelForIndex(i)
                 assert item.meta().label == expected_label
 

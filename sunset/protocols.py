@@ -1,11 +1,8 @@
 import weakref
 
 from dataclasses import dataclass
-
 from types import GenericAlias
 from typing import (
-    Any,
-    Callable,
     Generic,
     Iterator,
     Optional,
@@ -14,6 +11,8 @@ from typing import (
     Union,
     runtime_checkable,
 )
+
+from .notifier import Notifier
 
 
 Self = TypeVar("Self")
@@ -101,9 +100,7 @@ class Dumpable(Protocol):
 
 @runtime_checkable
 class UpdateNotifier(Protocol):
-    def onUpdateCall(
-        self, callback: Callable[["UpdateNotifier"], Any]
-    ) -> None: ...
+    _update_notifier: Notifier["UpdateNotifier"]
 
 
 @runtime_checkable
@@ -117,26 +114,13 @@ class ItemTemplate(Protocol):
 class Containable(Protocol):
     _PATH_SEPARATOR: str
 
-    def _setContainer(
-        self, label: str, container: Optional["Container"]
-    ) -> None: ...
-
-    def _container(self) -> Optional["Container"]: ...
-
     def skipOnSave(self) -> bool: ...
 
     def meta(self) -> "Metadata": ...
 
 
 @runtime_checkable
-class Container(Containable, UpdateNotifier, Protocol):
-    def _containsFieldWithLabel(
-        self, label: str, field: "Containable"
-    ) -> bool: ...
-
-    def _triggerUpdateNotification(
-        self, field: "Optional[UpdateNotifier]"
-    ) -> None: ...
+class Container(Containable, UpdateNotifier, Protocol): ...
 
 
 @dataclass
@@ -148,9 +132,17 @@ class Metadata:
         self.container = None
         self.label = ""
 
+    def update(
+        self, label: Optional[str] = None, container: Optional[Container] = None
+    ) -> None:
+        if container is not None:
+            self.container = weakref.ref(container)
+        if label is not None:
+            self.label = label
+
     def path(self) -> str:
         if self.container is None or (container := self.container()) is None:
-            # Should be empty, actually.
+            # Should be the empty string, in theory.
             return self.label
 
         path = container.meta().path()
@@ -168,43 +160,7 @@ class ContainableImpl:
 
     _PATH_SEPARATOR: str = "."
 
-    _container_ref: Optional[weakref.ref[Container]] = None
     _metadata: Optional[Metadata] = None
-
-    def _setContainer(self, label: str, container: Optional[Container]) -> None:
-        """
-        Internal.
-        """
-
-        metadata = self.meta()
-        metadata.clear()
-        if container is None:
-            self._container_ref = None
-        else:
-            self._container_ref = weakref.ref(container)
-            metadata.label = label
-            metadata.container = weakref.ref(container)
-
-    def _container(self) -> Optional[Container]:
-        """
-        Internal.
-        """
-
-        if self._container_ref is None:
-            return None
-
-        container = self._container_ref()
-        if container is None:
-            return None
-
-        # Make sure this Containable is in fact still held in its supposed
-        # Container. Else update the situation.
-
-        if not container._containsFieldWithLabel(self.meta().label, self):
-            self._setContainer("", None)
-            return None
-
-        return container
 
     def skipOnSave(self) -> bool:
         """

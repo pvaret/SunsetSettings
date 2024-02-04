@@ -17,7 +17,7 @@ from .bunch import Bunch
 from .exporter import normalize, load_from_file, save_to_file
 from .lockable import Lockable
 from .sets import NonHashableSet
-from .protocols import UpdateNotifier
+
 
 _MAIN = "main"
 
@@ -290,7 +290,7 @@ class Settings(Bunch, Lockable):
         if (parent := self.parent()) is None:
             if name != self._section_name:
                 self._section_name = name
-                self._triggerUpdateNotification(self)
+                self._update_notifier.trigger(self)
 
         else:
             # Note that this triggers a notification if the unique name is
@@ -316,7 +316,7 @@ class Settings(Bunch, Lockable):
 
         if candidate != section._section_name:
             section._section_name = candidate
-            section._triggerUpdateNotification(section)
+            section._update_notifier.trigger(section)
 
     def sectionName(self) -> str:
         """
@@ -363,14 +363,18 @@ class Settings(Bunch, Lockable):
             # May trigger an update notification if the name is changed.
 
             parent._setUniqueNameForSection(self._section_name, self)
+            self._update_notifier.add(parent._update_notifier.trigger)
 
         super().setParent(parent)  # type:ignore
 
         if parent is not None:
-            parent._triggerUpdateNotification(parent)
+            parent._update_notifier.trigger(parent)
 
         if previous_parent is not None:
-            previous_parent._triggerUpdateNotification(previous_parent)
+            previous_parent._update_notifier.trigger(previous_parent)
+            self._update_notifier.discard(
+                previous_parent._update_notifier.trigger
+            )
 
     # Not actually useless. This lets us override the docstring with
     # Settings-specific info.
@@ -398,18 +402,6 @@ class Settings(Bunch, Lockable):
         """
 
         super().onUpdateCall(callback)
-
-    def _triggerUpdateNotification(
-        self, field: Optional[UpdateNotifier]
-    ) -> None:
-
-        if field is None:
-            field = self
-
-        super()._triggerUpdateNotification(field)
-
-        if (parent := self.parent()) is not None:
-            parent._triggerUpdateNotification(field)
 
     def skipOnSave(self) -> bool:
         return self.sectionName() == ""

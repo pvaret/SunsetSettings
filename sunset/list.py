@@ -19,7 +19,7 @@ from typing import (
 from .bunch import Bunch
 from .key import Key
 from .notifier import Notifier
-from .protocols import Containable, ContainableImpl, Field, UpdateNotifier
+from .protocols import ContainableImpl, UpdateNotifier
 from .sets import WeakNonHashableSet
 
 ListItemT = TypeVar("ListItemT", bound=Union[Bunch, Key[Any]])
@@ -112,7 +112,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
     def insert(self, index: SupportsIndex, value: ListItemT) -> None:
         self._contents.insert(index, value)
         self._relabelItems()
-        self._triggerUpdateNotification(self)
+        self._update_notifier.trigger(self)
 
     @overload
     def __getitem__(self, index: SupportsIndex) -> ListItemT: ...
@@ -136,7 +136,7 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         index: Union[SupportsIndex, slice],
         value: Union[ListItemT, Iterable[ListItemT]],
     ) -> None:
-        self._clear_metadata(self._contents[index])
+        self._clearMetadata(self._contents[index])
         if isinstance(index, slice):
             assert isinstance(value, Iterable)
             self._contents[index] = value
@@ -147,18 +147,18 @@ class List(MutableSequence[ListItemT], ContainableImpl):
             self._contents[index] = value
 
         self._relabelItems()
-        self._triggerUpdateNotification(self)
+        self._update_notifier.trigger(self)
 
     def __delitem__(self, index: Union[SupportsIndex, slice]) -> None:
-        self._clear_metadata(self._contents[index])
+        self._clearMetadata(self._contents[index])
         del self._contents[index]
         self._relabelItems()
-        self._triggerUpdateNotification(self)
+        self._update_notifier.trigger(self)
 
     def extend(self, values: Iterable[ListItemT]) -> None:
         self._contents.extend(values)
         self._relabelItems()
-        self._triggerUpdateNotification(self)
+        self._update_notifier.trigger(self)
 
     def append(self, value: ListItemT) -> None:
         self.extend((value,))
@@ -168,16 +168,12 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         return self
 
     def clear(self) -> None:
-        self._clear_metadata(self._contents[:])
-        self._contents.clear()
-        self._relabelItems()
-        self._triggerUpdateNotification(self)
+        del self[:]
 
-    def _clear_metadata(
-        self, fields: Union[ListItemT, list[ListItemT]]
-    ) -> None:
-        for field in [fields] if isinstance(fields, Field) else fields:
+    def _clearMetadata(self, fields: Union[ListItemT, list[ListItemT]]) -> None:
+        for field in fields if isinstance(fields, list) else [fields]:
             field.meta().clear()
+            field._update_notifier.discard(self._update_notifier.trigger)
 
     def __len__(self) -> int:
         return len(self._contents)
@@ -228,23 +224,10 @@ class List(MutableSequence[ListItemT], ContainableImpl):
         self.insert(index, item)
         return item
 
-    def _containsFieldWithLabel(self, label: str, field: Containable) -> bool:
-        """
-        Internal.
-        """
-
-        index = self._indexForLabel(label)
-        if index is None:
-            return False
-
-        try:
-            return self._contents[index] is field
-        except IndexError:
-            return False
-
     def _relabelItems(self) -> None:
         for i, item in enumerate(self._contents):
-            item._setContainer(self._labelForIndex(i), self)
+            item.meta().update(label=self._labelForIndex(i), container=self)
+            item._update_notifier.add(self._update_notifier.trigger)
 
     @staticmethod
     def _labelForIndex(index: SupportsIndex) -> str:
@@ -454,21 +437,6 @@ class List(MutableSequence[ListItemT], ContainableImpl):
 
         if missing_count > 0:
             self.extend((self._newItem() for _ in range(missing_count)))
-
-    def _triggerUpdateNotification(
-        self, field: Optional[UpdateNotifier]
-    ) -> None:
-        """
-        Internal.
-        """
-
-        if field is None:
-            field = self
-
-        self._update_notifier.trigger(field)
-
-        if (container := self._container()) is not None:
-            container._triggerUpdateNotification(field)
 
     def _typeHint(self) -> GenericAlias:
         return GenericAlias(type(self), type(self._template))

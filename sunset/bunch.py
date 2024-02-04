@@ -13,13 +13,7 @@ from typing import (
 )
 
 from .notifier import Notifier
-from .protocols import (
-    Containable,
-    ContainableImpl,
-    Field,
-    ItemTemplate,
-    UpdateNotifier,
-)
+from .protocols import ContainableImpl, Field, ItemTemplate, UpdateNotifier
 from .sets import WeakNonHashableSet
 
 
@@ -182,14 +176,8 @@ class Bunch(ContainableImpl):
         for label, field in vars(self).items():
             if isinstance(field, Field):
                 self._fields[label] = field
-                field._setContainer(label, self)
-
-    def _containsFieldWithLabel(self, label: str, field: Containable) -> bool:
-        """
-        Internal.
-        """
-
-        return self._fields.get(label) is field
+                field.meta().update(label=label, container=self)
+                field._update_notifier.add(self._update_notifier.trigger)
 
     def setParent(self: Self, parent: Optional[Self]) -> None:
         """
@@ -338,21 +326,6 @@ class Bunch(ContainableImpl):
                 return field.restoreField(path, value)
 
         return False
-
-    def _triggerUpdateNotification(
-        self, field: Optional[UpdateNotifier]
-    ) -> None:
-        """
-        Internal.
-        """
-
-        if field is None:
-            field = self
-
-        self._update_notifier.trigger(field)
-
-        if (container := self._container()) is not None:
-            container._triggerUpdateNotification(field)
 
     def _typeHint(self) -> type:
         return type(self)

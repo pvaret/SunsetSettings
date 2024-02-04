@@ -15,7 +15,7 @@ from typing import (
 from .exporter import maybe_escape
 from .lockable import Lockable
 from .notifier import Notifier
-from .protocols import ContainableImpl, Serializer
+from .protocols import ContainableImpl, Serializer, UpdateNotifier
 from .serializers import lookup
 
 
@@ -99,7 +99,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
     _validator: Callable[[_T], bool]
     _bad_value_string: Optional[str]
     _value_change_notifier: Notifier[_T]
-    _update_notifier: Notifier["Key[_T]"]
+    _update_notifier: Notifier[UpdateNotifier]
     _parent_ref: Optional[weakref.ref["Key[_T]"]]
     _children_ref: weakref.WeakSet["Key[_T]"]
     _type: type[_T]
@@ -222,7 +222,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
                 child._notifyParentValueChanged()
 
         if not previously_set or prev_value != self.get():
-            self._triggerUpdateNotification()
+            self._update_notifier.trigger(self)
 
         return True
 
@@ -249,7 +249,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
             for child in self.children():
                 child._notifyParentValueChanged()
 
-        self._triggerUpdateNotification()
+        self._update_notifier.trigger(self)
 
     @Lockable.with_lock
     def updateValue(self, updater: Callable[[_T], _T]) -> None:
@@ -335,7 +335,7 @@ class Key(Generic[_T], ContainableImpl, Lockable):
             callback.
         """
 
-        self._update_notifier.add(callback)
+        self._update_notifier.add(callback)  # type: ignore
 
     def setValidator(self, validator: Callable[[_T], bool]) -> None:
         """
@@ -471,16 +471,6 @@ class Key(Generic[_T], ContainableImpl, Lockable):
         self._value_change_notifier.trigger(self.get())
         for child in self.children():
             child._notifyParentValueChanged()
-
-    def _triggerUpdateNotification(self) -> None:
-        """
-        Internal.
-        """
-
-        self._update_notifier.trigger(self)
-
-        if (container := self._container()) is not None:
-            container._triggerUpdateNotification(self)
 
     def _typeHint(self) -> GenericAlias:
         return GenericAlias(type(self), self._type)

@@ -757,6 +757,16 @@ a = value
         callback1.assert_not_called()
         callback2.assert_called_once_with(parent2)
 
+        callback1.reset_mock()
+        callback2.reset_mock()
+
+        # The section is now detached and its update should no longer trigger
+        # callbacks on the previous parents.
+
+        section.setSectionName("dummy")
+        callback1.assert_not_called()
+        callback2.assert_not_called()
+
     def test_reparenting_renaming_notifications(
         self, mocker: MockerFixture
     ) -> None:
