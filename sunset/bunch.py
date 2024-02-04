@@ -14,7 +14,7 @@ from typing import (
 
 from sunset.notifier import Notifier
 from sunset.protocols import (
-    ContainableImpl,
+    BaseField,
     Field,
     ItemTemplate,
     UpdateNotifier,
@@ -26,7 +26,7 @@ from sunset.sets import WeakNonHashableSet
 Self = TypeVar("Self", bound="Bunch")
 
 
-class Bunch(ContainableImpl):
+class Bunch(BaseField):
     """
     A collection of related Keys.
 

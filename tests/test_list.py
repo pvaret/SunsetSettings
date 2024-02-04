@@ -13,7 +13,6 @@ class TestList:
     def test_protocol_implementation(self) -> None:
         list_key: List[Key[int]] = List(Key(default=0))
         assert isinstance(list_key, protocols.Field)
-        assert isinstance(list_key, protocols.Container)
 
     def test_add_pop(self) -> None:
         list_key: List[Key[str]] = List(Key(default=""))

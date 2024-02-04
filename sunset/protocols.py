@@ -111,21 +111,15 @@ class ItemTemplate(Protocol):
 
 
 @runtime_checkable
-class Containable(Protocol):
+class HasMetadata(Protocol):
     _PATH_SEPARATOR: str
-
-    def skipOnSave(self) -> bool: ...
 
     def meta(self) -> "Metadata": ...
 
 
-@runtime_checkable
-class Container(Containable, UpdateNotifier, Protocol): ...
-
-
 @dataclass
 class Metadata:
-    container: Optional[weakref.ref[Container]] = None
+    container: Optional[weakref.ref[HasMetadata]] = None
     label: str = ""
 
     def clear(self) -> None:
@@ -133,7 +127,9 @@ class Metadata:
         self.label = ""
 
     def update(
-        self, label: Optional[str] = None, container: Optional[Container] = None
+        self,
+        label: Optional[str] = None,
+        container: Optional[HasMetadata] = None,
     ) -> None:
         if container is not None:
             self.container = weakref.ref(container)
@@ -153,11 +149,13 @@ class Metadata:
         return path + container._PATH_SEPARATOR + self.label
 
 
-class ContainableImpl:
-    """
-    A ready-to-use implementation of the Containable protocol.
-    """
+@runtime_checkable
+class Field(
+    Dumpable, HasMetadata, Inheriter, ItemTemplate, UpdateNotifier, Protocol
+): ...
 
+
+class BaseField:
     _PATH_SEPARATOR: str = "."
 
     _metadata: Optional[Metadata] = None
@@ -193,17 +191,3 @@ class ContainableImpl:
         if self._metadata is None:
             self._metadata = Metadata()
         return self._metadata
-
-
-assert isinstance(ContainableImpl, Containable)
-
-
-@runtime_checkable
-class Field(
-    Containable,
-    Dumpable,
-    Inheriter,
-    ItemTemplate,
-    UpdateNotifier,
-    Protocol,
-): ...

@@ -15,7 +15,7 @@ from typing import (
 from sunset.exporter import maybe_escape
 from sunset.lockable import Lockable
 from sunset.notifier import Notifier
-from sunset.protocols import ContainableImpl, Serializer, UpdateNotifier
+from sunset.protocols import BaseField, Serializer, UpdateNotifier
 from sunset.serializers import lookup
 
 
@@ -24,7 +24,7 @@ Self = TypeVar("Self", bound="Key[Any]")
 _T = TypeVar("_T")
 
 
-class Key(Generic[_T], ContainableImpl, Lockable):
+class Key(Generic[_T], BaseField, Lockable):
     """
     A single setting key containing a typed value.
 

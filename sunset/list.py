@@ -19,7 +19,7 @@ from typing import (
 from sunset.bunch import Bunch
 from sunset.key import Key
 from sunset.notifier import Notifier
-from sunset.protocols import ContainableImpl, UpdateNotifier
+from sunset.protocols import BaseField, UpdateNotifier
 from sunset.sets import WeakNonHashableSet
 
 ListItemT = TypeVar("ListItemT", bound=Union[Bunch, Key[Any]])
@@ -35,7 +35,7 @@ class IterOrder(Enum):
 Self = TypeVar("Self", bound="List[Any]")
 
 
-class List(MutableSequence[ListItemT], ContainableImpl):
+class List(MutableSequence[ListItemT], BaseField):
     """
     A list-like container for Keys or Bunches of a given type, to be used in a
     Settings' definition.

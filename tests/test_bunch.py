@@ -22,7 +22,6 @@ class TestBunch:
     def test_protocol_implementation(self) -> None:
         bunch = ExampleBunch()
         assert isinstance(bunch, protocols.Field)
-        assert isinstance(bunch, protocols.Container)
 
     def test_creation(self) -> None:
         bunch = ExampleBunch()
