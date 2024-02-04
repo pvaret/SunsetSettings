@@ -12,9 +12,14 @@ from typing import (
     cast,
 )
 
-from .notifier import Notifier
-from .protocols import ContainableImpl, Field, ItemTemplate, UpdateNotifier
-from .sets import WeakNonHashableSet
+from sunset.notifier import Notifier
+from sunset.protocols import (
+    ContainableImpl,
+    Field,
+    ItemTemplate,
+    UpdateNotifier,
+)
+from sunset.sets import WeakNonHashableSet
 
 
 # TODO: Replace with typing.Self when mypy finally supports that.

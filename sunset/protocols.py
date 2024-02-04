@@ -12,7 +12,7 @@ from typing import (
     runtime_checkable,
 )
 
-from .notifier import Notifier
+from sunset.notifier import Notifier
 
 
 Self = TypeVar("Self")

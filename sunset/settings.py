@@ -12,11 +12,11 @@ from typing import (
     Union,
 )
 
-from .autosaver import AutoSaver
-from .bunch import Bunch
-from .exporter import normalize, load_from_file, save_to_file
-from .lockable import Lockable
-from .sets import NonHashableSet
+from sunset.autosaver import AutoSaver
+from sunset.bunch import Bunch
+from sunset.exporter import normalize, load_from_file, save_to_file
+from sunset.lockable import Lockable
+from sunset.sets import NonHashableSet
 
 
 _MAIN = "main"

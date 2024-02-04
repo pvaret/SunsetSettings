@@ -7,7 +7,7 @@ from types import TracebackType
 
 from typing import Any, Callable, IO, Optional, Protocol, TypeVar, Union
 
-from .timer import PersistentTimer, TimerProtocol
+from sunset.timer import PersistentTimer, TimerProtocol
 
 _TimerT = TypeVar("_TimerT", bound=TimerProtocol)
 

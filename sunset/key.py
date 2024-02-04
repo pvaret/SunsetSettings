@@ -12,11 +12,11 @@ from typing import (
     cast,
 )
 
-from .exporter import maybe_escape
-from .lockable import Lockable
-from .notifier import Notifier
-from .protocols import ContainableImpl, Serializer, UpdateNotifier
-from .serializers import lookup
+from sunset.exporter import maybe_escape
+from sunset.lockable import Lockable
+from sunset.notifier import Notifier
+from sunset.protocols import ContainableImpl, Serializer, UpdateNotifier
+from sunset.serializers import lookup
 
 
 # TODO: Replace with typing.Self when mypy finally supports that.

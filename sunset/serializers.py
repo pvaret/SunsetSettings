@@ -2,8 +2,8 @@ import enum
 
 from typing import Generic, Optional, TypeVar, cast
 
-from .enum_serializer import EnumSerializer
-from .protocols import Serializable, Serializer
+from sunset.enum_serializer import EnumSerializer
+from sunset.protocols import Serializable, Serializer
 
 _T = TypeVar("_T")
 _Serializable = TypeVar("_Serializable", bound=Serializable)

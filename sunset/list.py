@@ -16,11 +16,11 @@ from typing import (
     overload,
 )
 
-from .bunch import Bunch
-from .key import Key
-from .notifier import Notifier
-from .protocols import ContainableImpl, UpdateNotifier
-from .sets import WeakNonHashableSet
+from sunset.bunch import Bunch
+from sunset.key import Key
+from sunset.notifier import Notifier
+from sunset.protocols import ContainableImpl, UpdateNotifier
+from sunset.sets import WeakNonHashableSet
 
 ListItemT = TypeVar("ListItemT", bound=Union[Bunch, Key[Any]])
 
