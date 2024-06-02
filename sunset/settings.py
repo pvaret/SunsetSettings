@@ -8,9 +8,14 @@ from typing import (
     Iterator,
     MutableSet,
     Optional,
-    TypeVar,
     Union,
 )
+
+try:
+    from typing import Self
+except ImportError:
+    # TODO: Remove once we deprecate support for Python 3.10.
+    from typing_extensions import Self
 
 from sunset.autosaver import AutoSaver
 from sunset.bunch import Bunch
@@ -20,10 +25,6 @@ from sunset.sets import NonHashableSet
 
 
 _MAIN = "main"
-
-
-# TODO: Replace with typing.Self when mypy finally supports that.
-Self = TypeVar("Self", bound="Settings")
 
 
 class Settings(Bunch, Lockable):
@@ -151,7 +152,7 @@ class Settings(Bunch, Lockable):
         self._autosaver_class = AutoSaver
 
     @Lockable.with_lock
-    def newSection(self: Self, name: str = "") -> Self:
+    def newSection(self, name: str = "") -> Self:
         """
         Creates and returns a new instance of this class. Each key of the new
         instance will inherit from the key of the same name on the parent
@@ -186,7 +187,7 @@ class Settings(Bunch, Lockable):
         return new
 
     @Lockable.with_lock
-    def getOrCreateSection(self: Self, name: str) -> Self:
+    def getOrCreateSection(self, name: str) -> Self:
         """
         Finds and returns the section of these Settings with the given name if
         it exists, and creates it if it doesn't.
@@ -209,7 +210,7 @@ class Settings(Bunch, Lockable):
             else self.newSection(name=name)
         )
 
-    def getSection(self: Self, name: str) -> Optional[Self]:
+    def getSection(self, name: str) -> Optional[Self]:
         """
         Finds and returns a section of this instance with the given name, if it
         exists, else None.
@@ -231,7 +232,7 @@ class Settings(Bunch, Lockable):
 
         return None
 
-    def sections(self: Self) -> Iterator[Self]:
+    def sections(self) -> Iterator[Self]:
         """
         Returns an iterator over the subsections of this Settings instance. Note
         that the subsections are only looked up one level deep, that is to say,
@@ -301,7 +302,7 @@ class Settings(Bunch, Lockable):
         return self.sectionName()
 
     @Lockable.with_lock
-    def _setUniqueNameForSection(self: Self, name: str, section: Self) -> None:
+    def _setUniqueNameForSection(self, name: str, section: Self) -> None:
         candidate = name = normalize(name)
 
         if candidate:
@@ -333,7 +334,7 @@ class Settings(Bunch, Lockable):
         return name if self.parent() is not None else self.MAIN
 
     @Lockable.with_lock
-    def setParent(self: Self, parent: Optional[Self]) -> None:  # type: ignore
+    def setParent(self, parent: Optional[Self]) -> None:  # type: ignore
         """
         Makes the given Settings instance the parent of this one. If None,
         remove this instance's parent, if any.
@@ -559,7 +560,7 @@ class Settings(Bunch, Lockable):
         )
         return self._autosaver
 
-    def __lt__(self: Self, other: Self) -> bool:
+    def __lt__(self, other: Self) -> bool:
         # Giving sections an order lets us easily sort them when dumping.
 
         return self.sectionName() < other.sectionName()

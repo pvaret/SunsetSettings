@@ -16,6 +16,12 @@ from typing import (
     overload,
 )
 
+try:
+    from typing import Self
+except ImportError:
+    # TODO: Remove once we deprecate support for Python 3.10.
+    from typing_extensions import Self
+
 from sunset.bunch import Bunch
 from sunset.key import Key
 from sunset.notifier import Notifier
@@ -29,10 +35,6 @@ class IterOrder(Enum):
     NO_PARENT = auto()
     PARENT_FIRST = auto()
     PARENT_LAST = auto()
-
-
-# TODO: Replace with typing.Self when mypy finally supports that.
-Self = TypeVar("Self", bound="List[Any]")
 
 
 class List(MutableSequence[ListItemT], BaseField):
@@ -163,7 +165,7 @@ class List(MutableSequence[ListItemT], BaseField):
     def append(self, value: ListItemT) -> None:
         self.extend((value,))
 
-    def __iadd__(self: Self, values: Iterable[ListItemT]) -> Self:
+    def __iadd__(self, values: Iterable[ListItemT]) -> Self:
         self.extend(values)
         return self
 
@@ -345,7 +347,7 @@ class List(MutableSequence[ListItemT], BaseField):
         if parent is not None and order == IterOrder.PARENT_LAST:
             yield from parent.iter(order)
 
-    def parent(self: Self) -> Optional[Self]:
+    def parent(self) -> Optional[Self]:
         """
         Returns the parent of this List, if any.
 
@@ -359,7 +361,7 @@ class List(MutableSequence[ListItemT], BaseField):
         parent = cast(Optional[weakref.ref[Self]], self._parent_ref)
         return parent() if parent is not None else None
 
-    def children(self: Self) -> Iterator[Self]:
+    def children(self) -> Iterator[Self]:
         """
         Returns an iterator over the List instances that have this List
         as their parent.
@@ -441,7 +443,7 @@ class List(MutableSequence[ListItemT], BaseField):
     def _typeHint(self) -> GenericAlias:
         return GenericAlias(type(self), type(self._template))
 
-    def _newInstance(self: Self) -> Self:
+    def _newInstance(self) -> Self:
         """
         Internal. Returns a new instance of this List capable of holding the
         same type.

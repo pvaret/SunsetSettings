@@ -8,9 +8,15 @@ from typing import (
     Iterator,
     MutableSet,
     Optional,
-    TypeVar,
     cast,
 )
+
+try:
+    from typing import Self
+except ImportError:
+    # TODO: Remove once we deprecate support for Python 3.10.
+    from typing_extensions import Self
+
 
 from sunset.notifier import Notifier
 from sunset.protocols import (
@@ -20,10 +26,6 @@ from sunset.protocols import (
     UpdateNotifier,
 )
 from sunset.sets import WeakNonHashableSet
-
-
-# TODO: Replace with typing.Self when mypy finally supports that.
-Self = TypeVar("Self", bound="Bunch")
 
 
 class Bunch(BaseField):
@@ -62,7 +64,7 @@ class Bunch(BaseField):
     _fields: dict[str, Field]
     _update_notifier: Notifier[UpdateNotifier]
 
-    def __new__(cls: type[Self]) -> Self:
+    def __new__(cls) -> Self:
         # Build and return a dataclass constructed from this class. Keep a
         # reference to that dataclass as a private class attribute, so that we
         # only construct it once. This allows type identity checks (as in
@@ -184,7 +186,7 @@ class Bunch(BaseField):
                 field.meta().update(label=label, container=self)
                 field._update_notifier.add(self._update_notifier.trigger)
 
-    def setParent(self: Self, parent: Optional[Self]) -> None:
+    def setParent(self, parent: Optional[Self]) -> None:
         """
         Makes the given Bunch the parent of this one. If None, remove this
         Bunch's parent, if any.
@@ -241,7 +243,7 @@ class Bunch(BaseField):
             assert type(field) is type(parent_field)
             field.setParent(parent_field)
 
-    def parent(self: Self) -> Optional[Self]:
+    def parent(self) -> Optional[Self]:
         """
         Returns the parent of this Bunch, if any.
 
@@ -255,7 +257,7 @@ class Bunch(BaseField):
         parent = cast(Optional[weakref.ref[Self]], self._parent_ref)
         return parent() if parent is not None else None
 
-    def children(self: Self) -> Iterator[Self]:
+    def children(self) -> Iterator[Self]:
         """
         Returns an iterator over the Bunch instances that have this Bunch
         as their parent.
@@ -335,7 +337,7 @@ class Bunch(BaseField):
     def _typeHint(self) -> type:
         return type(self)
 
-    def _newInstance(self: Self) -> Self:
+    def _newInstance(self) -> Self:
         """
         Internal. Returns a new instance of this Bunch with the same fields.
 

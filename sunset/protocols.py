@@ -12,10 +12,15 @@ from typing import (
     runtime_checkable,
 )
 
+try:
+    from typing import Self
+except ImportError:
+    # TODO: Remove once we deprecate support for Python 3.10.
+    from typing_extensions import Self
+
 from sunset.notifier import Notifier
 
 
-Self = TypeVar("Self")
 _T = TypeVar("_T")
 
 
@@ -82,11 +87,11 @@ class Serializer(Generic[_T], Protocol):
 
 @runtime_checkable
 class Inheriter(Protocol):
-    def setParent(self: Self, parent: Optional[Self]) -> None: ...
+    def setParent(self, parent: Optional[Self]) -> None: ...
 
-    def parent(self: Self) -> Optional[Self]: ...
+    def parent(self) -> Optional[Self]: ...
 
-    def children(self: Self) -> Iterator[Self]: ...
+    def children(self) -> Iterator[Self]: ...
 
 
 @runtime_checkable
@@ -107,7 +112,7 @@ class UpdateNotifier(Protocol):
 class ItemTemplate(Protocol):
     def _typeHint(self) -> Union[type, GenericAlias]: ...
 
-    def _newInstance(self: Self) -> Self: ...
+    def _newInstance(self) -> Self: ...
 
 
 @runtime_checkable

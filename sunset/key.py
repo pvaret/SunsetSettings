@@ -12,6 +12,12 @@ from typing import (
     cast,
 )
 
+try:
+    from typing import Self
+except ImportError:
+    # TODO: Remove once we deprecate support for Python 3.10.
+    from typing_extensions import Self
+
 from sunset.exporter import maybe_escape
 from sunset.lockable import Lockable
 from sunset.notifier import Notifier
@@ -19,8 +25,6 @@ from sunset.protocols import BaseField, Serializer, UpdateNotifier
 from sunset.serializers import lookup
 
 
-# TODO: Replace with typing.Self when mypy finally supports that.
-Self = TypeVar("Self", bound="Key[Any]")
 _T = TypeVar("_T")
 
 
@@ -352,7 +356,7 @@ class Key(Generic[_T], BaseField, Lockable):
 
         self._validator = validator
 
-    def setParent(self: Self, parent: Optional[Self]) -> None:
+    def setParent(self, parent: Optional[Self]) -> None:
         """
         Makes the given Key the parent of this one. If None, remove this
         Key's parent, if any.
@@ -399,7 +403,7 @@ class Key(Generic[_T], BaseField, Lockable):
         parent._children_ref.add(self)
         self._parent_ref = weakref.ref(parent)
 
-    def parent(self: Self) -> Optional[Self]:
+    def parent(self) -> Optional[Self]:
         """
         Returns the parent of this Key, if any.
 
@@ -413,7 +417,7 @@ class Key(Generic[_T], BaseField, Lockable):
         parent = cast(Optional[weakref.ref[Self]], self._parent_ref)
         return parent() if parent is not None else None
 
-    def children(self: Self) -> Iterator[Self]:
+    def children(self) -> Iterator[Self]:
         """
         Returns an iterator over the Keys that have this Key as their parent.
 
@@ -475,7 +479,7 @@ class Key(Generic[_T], BaseField, Lockable):
     def _typeHint(self) -> GenericAlias:
         return GenericAlias(type(self), self._type)
 
-    def _newInstance(self: Self) -> Self:
+    def _newInstance(self) -> Self:
         """
         Internal. Returns a new instance of this Key with the same default
         value.

@@ -7,18 +7,20 @@ class TestNotifier:
     def test_function_is_called(self, mocker: MockerFixture) -> None:
         callback = mocker.stub()
 
-        notifier = Notifier()
+        # TODO: Make this e.g. Notifier[str, int] once we remove support for
+        # Python 3.9, to exhibit usage of multiple arguments.
+        notifier = Notifier[str]()
 
         notifier.add(callback)
 
         callback.assert_not_called()
-        notifier.trigger("test", 42)
-        callback.assert_called_once_with("test", 42)
+        notifier.trigger("test")
+        callback.assert_called_once_with("test")
 
     def test_function_added_multiple_times_is_called_once(
         self, mocker: MockerFixture
     ) -> None:
-        notifier = Notifier()
+        notifier = Notifier[str]()
 
         callback = mocker.stub()
 
@@ -31,20 +33,22 @@ class TestNotifier:
         callback.assert_called_once_with("test")
 
     def test_all_added_functions_called(self, mocker: MockerFixture) -> None:
-        notifier = Notifier()
+        notifier = Notifier[str]()
 
         callbacks = [mocker.stub() for _ in range(10)]
 
-        [notifier.add(callback) for callback in callbacks]
+        for callback in callbacks:
+            notifier.add(callback)
 
         notifier.trigger("test")
 
-        [callback.assert_called_once_with("test") for callback in callbacks]
+        for callback in callbacks:
+            callback.assert_called_once_with("test")
 
     def test_discarded_function_is_no_longer_called(
         self, mocker: MockerFixture
     ) -> None:
-        notifier = Notifier()
+        notifier = Notifier[str]()
 
         callback1 = mocker.stub()
         callback2 = mocker.stub()
@@ -59,14 +63,14 @@ class TestNotifier:
         callback2.assert_called_once_with("test")
 
     def test_discarding_non_member_is_no_op(self) -> None:
-        notifier = Notifier()
+        notifier = Notifier[str]()
 
-        notifier.discard(lambda: None)
+        notifier.discard(lambda _: None)
 
     def test_notifier_doesnt_keep_reference_to_function(
         self, mocker: MockerFixture
     ) -> None:
-        notifier = Notifier()
+        notifier = Notifier[str]()
 
         test_list: list[str] = []
 
@@ -85,7 +89,7 @@ class TestNotifier:
         assert test_list == []
 
     def test_inhibit(self, mocker: MockerFixture) -> None:
-        notifier = Notifier()
+        notifier = Notifier[str]()
 
         callback = mocker.stub()
 

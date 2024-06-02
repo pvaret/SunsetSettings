@@ -8,8 +8,8 @@ from typing import (
     Iterator,
     MutableMapping,
     MutableSet,
-    Type,
     TypeVar,
+    cast,
 )
 
 _T = TypeVar("_T")
@@ -26,7 +26,7 @@ class NonHashableSet(MutableSet[_T]):
     _contents: MutableMapping[int, _T]
 
     def __init__(
-        self, mapping_type: Type[MutableMapping[int, _T]] = dict
+        self, mapping_type: type[MutableMapping[int, _T]] = dict
     ) -> None:
         super().__init__()
 
@@ -83,7 +83,7 @@ class WeakCallableSet(MutableSet[_C]):
     The callables must have the same argument types and return type.
     """
 
-    _content: NonHashableSet[weakref.ref[_C]]
+    _content: NonHashableSet[weakref.ReferenceType[_C]]
 
     def __init__(self) -> None:
         super().__init__()
@@ -97,15 +97,12 @@ class WeakCallableSet(MutableSet[_C]):
 
     def add(self, value: _C) -> None:
         if isinstance(value, MethodType):
-            # Note: WeakMethod has incorrect type annotations, so we have to
-            # ignore types here.
-
-            r = weakref.WeakMethod(value, self._onExpire)  # type: ignore
+            r: weakref.ReferenceType[_C] = weakref.WeakMethod(cast(_C, value), self._onExpire)
 
         else:
             r = weakref.ref(value, self._onExpire)
 
-        self._content.add(r)  # type: ignore
+        self._content.add(r)
 
     def __contains__(self, value: Any) -> bool:
         return any(self._isSameCallable(candidate, value) for candidate in self)
@@ -138,5 +135,5 @@ class WeakCallableSet(MutableSet[_C]):
 
         return callable1 is callable2
 
-    def _onExpire(self, ref: weakref.ref[_C]) -> None:
+    def _onExpire(self, ref: weakref.ReferenceType[_C]) -> None:
         self._content.discard(ref)
