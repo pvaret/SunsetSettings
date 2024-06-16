@@ -81,7 +81,6 @@ class Notifier(Generic[_P]):
         with self._lock:
             self._inhibited += 1
         try:
-            self._inhibited = True
             yield None
         finally:
             with self._lock:

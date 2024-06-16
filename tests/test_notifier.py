@@ -99,3 +99,22 @@ class TestNotifier:
             notifier.trigger("test")
 
         callback.assert_not_called()
+
+        notifier.trigger("test")
+        callback.assert_called_once_with("test")
+
+    def test_nested_inhibit(self, mocker: MockerFixture) -> None:
+        notifier = Notifier[str]()
+
+        callback = mocker.stub()
+
+        notifier.add(callback)
+
+        with notifier.inhibit():
+            with notifier.inhibit():
+                notifier.trigger("test")
+
+        callback.assert_not_called()
+
+        notifier.trigger("test")
+        callback.assert_called_once_with("test")
