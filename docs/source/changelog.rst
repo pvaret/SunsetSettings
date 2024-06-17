@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Latest
------
+SunsetSettings 0.5.6 (2024-06-17)
+---------------------------------
 
 - Removed Self type workaround now that mypy handles it properly.
 - Fixed notification inhibitation issue that caused update notifications to fail to fire.
