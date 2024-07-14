@@ -1,3 +1,4 @@
+import threading
 import weakref
 
 from collections.abc import MutableSet
@@ -24,6 +25,7 @@ class NonHashableSet(MutableSet[_T]):
     """
 
     _contents: MutableMapping[int, _T]
+    _lock: threading.RLock
 
     def __init__(
         self, mapping_type: type[MutableMapping[int, _T]] = dict
@@ -31,6 +33,7 @@ class NonHashableSet(MutableSet[_T]):
         super().__init__()
 
         self._contents = mapping_type()
+        self._lock = threading.RLock()
 
     def _computeHash(self, value: Any) -> int:
         # Try to return the normal hash for the value if possible. This is
@@ -47,11 +50,13 @@ class NonHashableSet(MutableSet[_T]):
             return id(value)
 
     def add(self, value: _T) -> None:
-        self._contents[self._computeHash(value)] = value
+        with self._lock:
+            self._contents[self._computeHash(value)] = value
 
     def discard(self, value: _T) -> None:
         try:
-            del self._contents[self._computeHash(value)]
+            with self._lock:
+                del self._contents[self._computeHash(value)]
         except KeyError:
             pass
 
@@ -59,7 +64,8 @@ class NonHashableSet(MutableSet[_T]):
         return self._computeHash(obj) in self._contents
 
     def __iter__(self) -> Iterator[_T]:
-        yield from self._contents.values()
+        with self._lock:
+            yield from self._contents.values()
 
     def __len__(self) -> int:
         return len(self._contents)
@@ -97,7 +103,9 @@ class WeakCallableSet(MutableSet[_C]):
 
     def add(self, value: _C) -> None:
         if isinstance(value, MethodType):
-            r: weakref.ReferenceType[_C] = weakref.WeakMethod(cast(_C, value), self._onExpire)
+            r: weakref.ReferenceType[_C] = weakref.WeakMethod(
+                cast(_C, value), self._onExpire
+            )
 
         else:
             r = weakref.ref(value, self._onExpire)
@@ -117,11 +125,14 @@ class WeakCallableSet(MutableSet[_C]):
         return len(self._content)
 
     def discard(self, value: _C) -> None:
-        refs = list(self._content)
-        for ref in refs:
+        to_discard: list[weakref.ReferenceType[_C]] = []
+        for ref in self._content:
             callable_ = ref()
             if callable_ is not None and self._isSameCallable(callable_, value):
-                self._content.discard(ref)
+                to_discard.append(ref)
+
+        for ref in to_discard:
+            self._content.discard(ref)
 
     @staticmethod
     def _isSameCallable(callable1: _C, callable2: _C) -> bool:

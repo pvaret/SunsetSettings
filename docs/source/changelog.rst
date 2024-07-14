@@ -5,6 +5,7 @@ Latest
 ---------------------------------
 
 - Dropped support for Python 3.9.
+- Fixed a race condition in NonHashableSet.
 
 SunsetSettings 0.5.6 (2024-06-17)
 ---------------------------------
