@@ -1,10 +1,7 @@
 import threading
 
 from contextlib import contextmanager
-from typing import Any, Callable, Generic, Iterator
-
-# TODO: Remove when it's time to deprecate Python 3.9 support.
-from typing_extensions import ParamSpec
+from typing import Any, Callable, Generic, Iterator, ParamSpec
 
 from sunset.sets import WeakCallableSet
 

@@ -7,15 +7,13 @@ class TestNotifier:
     def test_function_is_called(self, mocker: MockerFixture) -> None:
         callback = mocker.stub()
 
-        # TODO: Make this e.g. Notifier[str, int] once we remove support for
-        # Python 3.9, to exhibit usage of multiple arguments.
-        notifier = Notifier[str]()
+        notifier = Notifier[str, int]()
 
         notifier.add(callback)
 
         callback.assert_not_called()
-        notifier.trigger("test")
-        callback.assert_called_once_with("test")
+        notifier.trigger("test", 12)
+        callback.assert_called_once_with("test", 12)
 
     def test_function_added_multiple_times_is_called_once(
         self, mocker: MockerFixture

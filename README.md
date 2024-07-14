@@ -221,7 +221,7 @@ True
 
 ## Requirements
 
-- Python 3.9 or later.
+- Python 3.10 or later.
 - If installing from sources:
     - The `flit` build tool.
 

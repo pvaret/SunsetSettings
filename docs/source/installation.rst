@@ -4,7 +4,7 @@ Installation
 Python version
 --------------
 
-SunsetSettings requires Python 3.9 or later.
+SunsetSettings requires Python 3.10 or later.
 
 
 Installing from PyPI (recommended)

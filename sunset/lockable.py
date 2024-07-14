@@ -1,10 +1,7 @@
 import threading
 
 from functools import wraps
-from typing import Callable, TypeVar
-
-# TODO: Remove when it's time to deprecate Python 3.9 support.
-from typing_extensions import Concatenate, ParamSpec
+from typing import Callable, Concatenate, ParamSpec, TypeVar
 
 
 _Self = TypeVar("_Self", bound="Lockable")

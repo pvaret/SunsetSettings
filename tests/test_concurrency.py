@@ -2,12 +2,10 @@ import threading
 import time
 import typing
 
-# TODO: Remove when it's time to deprecate Python 3.9 support.
-import typing_extensions
-
 from sunset import Key, List, Settings
 
-_P = typing_extensions.ParamSpec("_P")
+
+_P = typing.ParamSpec("_P")
 
 _THREAD_COUNT = 16
 _DURATION = 0.1  # seconds
@@ -15,7 +13,7 @@ _ATTEMPTS = 5
 
 
 def run_threaded(
-    func: typing.Callable[typing_extensions.Concatenate[int, _P], None],
+    func: typing.Callable[typing.Concatenate[int, _P], None],
     thread_count: int = _THREAD_COUNT,
     duration: float = _DURATION,
     *args: _P.args,

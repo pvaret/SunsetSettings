@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Latest
+---------------------------------
+
+- Dropped support for Python 3.9.
+
 SunsetSettings 0.5.6 (2024-06-17)
 ---------------------------------
 
