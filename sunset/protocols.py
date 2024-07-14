@@ -3,6 +3,8 @@ import weakref
 from dataclasses import dataclass
 from types import GenericAlias
 from typing import (
+    Any,
+    Callable,
     Generic,
     Iterator,
     Optional,
@@ -105,7 +107,14 @@ class Dumpable(Protocol):
 
 @runtime_checkable
 class UpdateNotifier(Protocol):
-    _update_notifier: Notifier["UpdateNotifier"]
+    _update_notifier: Notifier[["UpdateNotifier"]]
+
+
+@runtime_checkable
+class LoadedNotifier(Protocol):
+    _loaded_notifier: Notifier[[]]
+
+    def onLoadedCall(self, callback: Callable[[], Any]) -> None: ...
 
 
 @runtime_checkable
@@ -156,7 +165,13 @@ class Metadata:
 
 @runtime_checkable
 class Field(
-    Dumpable, HasMetadata, Inheriter, ItemTemplate, UpdateNotifier, Protocol
+    Dumpable,
+    HasMetadata,
+    Inheriter,
+    ItemTemplate,
+    UpdateNotifier,
+    LoadedNotifier,
+    Protocol,
 ): ...
 
 

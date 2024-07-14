@@ -103,7 +103,8 @@ class Key(Generic[_T], BaseField, Lockable):
     _validator: Callable[[_T], bool]
     _bad_value_string: Optional[str]
     _value_change_notifier: Notifier[_T]
-    _update_notifier: Notifier[UpdateNotifier]
+    _update_notifier: Notifier[[UpdateNotifier]]
+    _loaded_notifier: Notifier[[]]
     _parent_ref: Optional[weakref.ref["Key[_T]"]]
     _children_ref: weakref.WeakSet["Key[_T]"]
     _type: type[_T]
@@ -155,6 +156,7 @@ class Key(Generic[_T], BaseField, Lockable):
 
         self._value_change_notifier = Notifier()
         self._update_notifier = Notifier()
+        self._loaded_notifier = Notifier()
 
         self._parent_ref = None
         self._children_ref = weakref.WeakSet()
@@ -233,9 +235,6 @@ class Key(Generic[_T], BaseField, Lockable):
     def clear(self) -> None:
         """
         Clears the value currently set on this Key, if any.
-
-        Returns:
-            None.
         """
 
         # Clearing the Key always resets bad values.
@@ -265,9 +264,6 @@ class Key(Generic[_T], BaseField, Lockable):
         Args:
             updater: A function that takes an argument of the same type held in
                 this key, and returns an argument of the same type.
-
-        Returns:
-            None.
         """
 
         self.set(updater(self.get()))
@@ -303,9 +299,6 @@ class Key(Generic[_T], BaseField, Lockable):
             callback: A callable that takes one argument of the same type as the
                 values held by this Key.
 
-        Returns:
-            None.
-
         Note:
             This method does not increase the reference count of the given
             callback.
@@ -331,15 +324,27 @@ class Key(Generic[_T], BaseField, Lockable):
             callback: A callable that will be called with one argument of type
                 :class:`~sunset.Key`.
 
-        Returns:
-            None.
-
         Note:
             This method does not increase the reference count of the given
             callback.
         """
 
         self._update_notifier.add(callback)  # type: ignore
+
+    def onLoadedCall(self, callback: Callable[[], Any]) -> None:
+        """
+        Adds a callback to be called whenever settings were just loaded. This
+        Key itself may or may not have been modified during the load.
+
+        Args:
+            callback: A callable that takes no argument.
+
+        Note:
+            This method does not increase the reference count of the given
+            callback.
+        """
+
+        self._loaded_notifier.add(callback)
 
     def setValidator(self, validator: Callable[[_T], bool]) -> None:
         """
@@ -349,9 +354,6 @@ class Key(Generic[_T], BaseField, Lockable):
             validator: A function that returns True if the given value can be
                 set on this Key, else False. This allows you to control what
                 values are allowable for this Key.
-
-        Returns:
-            None.
         """
 
         self._validator = validator
@@ -371,9 +373,6 @@ class Key(Generic[_T], BaseField, Lockable):
             parent: Either a Key that will become this Key's parent, or
                 None. The parent Key must have the same type as this
                 Key.
-
-        Returns:
-            None.
 
         Note:
             A Key and its parent, if any, do not increase each other's

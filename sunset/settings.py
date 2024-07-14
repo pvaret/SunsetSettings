@@ -350,9 +350,6 @@ class Settings(Bunch, Lockable):
             parent: Either a Settings instance that will become this instance's
                 parent, or None. The parent Settings instance must have the same
                 type as this instance.
-
-        Returns:
-            None.
         """
 
         if parent is (previous_parent := self.parent()):
@@ -393,9 +390,6 @@ class Settings(Bunch, Lockable):
             callback: A callable that will be called with one argument of type
                 :class:`~sunset.List`, :class:`~sunset.Bunch` or
                 :class:`~sunset.Key`.
-
-        Returns:
-            None.
 
         Note:
             This method does not increase the reference count of the given
@@ -463,9 +457,6 @@ class Settings(Bunch, Lockable):
             file: A text file object where to save this Settings instance.
 
             blanklines: Whether to add a blank line before section headings.
-
-        Returns:
-            None.
         """
 
         if self.skipOnSave():
@@ -495,13 +486,12 @@ class Settings(Bunch, Lockable):
 
         Args:
             file: A text file open in reading mode.
-
-        Returns:
-            None.
         """
 
         for path, dump in load_from_file(file, self.sectionName()):
             self.restoreField(path, dump)
+
+        self._loaded_notifier.trigger()
 
     def setAutosaverClass(self, class_: type[AutoSaver]) -> None:
         """

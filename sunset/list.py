@@ -95,7 +95,8 @@ class List(MutableSequence[ListItemT], BaseField):
     _parent_ref: Optional[weakref.ref["List[ListItemT]"]]
     _children_ref: WeakNonHashableSet["List[ListItemT]"]
     _iter_order: IterOrder
-    _update_notifier: Notifier[UpdateNotifier]
+    _update_notifier: Notifier[[UpdateNotifier]]
+    _loaded_notifier: Notifier[[]]
     _template: ListItemT
 
     def __init__(
@@ -109,6 +110,7 @@ class List(MutableSequence[ListItemT], BaseField):
         self._children_ref = WeakNonHashableSet()
         self._iter_order = order
         self._update_notifier = Notifier()
+        self._loaded_notifier = Notifier()
         self._template = template
 
     def insert(self, index: SupportsIndex, value: ListItemT) -> None:
@@ -176,6 +178,7 @@ class List(MutableSequence[ListItemT], BaseField):
         for field in fields if isinstance(fields, list) else [fields]:
             field.meta().clear()
             field._update_notifier.discard(self._update_notifier.trigger)
+            self._loaded_notifier.discard(field._loaded_notifier.trigger)
 
     def __len__(self) -> int:
         return len(self._contents)
@@ -230,6 +233,7 @@ class List(MutableSequence[ListItemT], BaseField):
         for i, item in enumerate(self._contents):
             item.meta().update(label=self._labelForIndex(i), container=self)
             item._update_notifier.add(self._update_notifier.trigger)
+            self._loaded_notifier.add(item._loaded_notifier.trigger)
 
     @staticmethod
     def _labelForIndex(index: SupportsIndex) -> str:
@@ -255,9 +259,6 @@ class List(MutableSequence[ListItemT], BaseField):
         Args:
             parent: Either a List that will become this List's parent, or
                 None. The parent List must have the same type as this List.
-
-        Returns:
-            None.
 
         Note:
             A List and its parent, if any, do not increase each other's
@@ -389,15 +390,27 @@ class List(MutableSequence[ListItemT], BaseField):
                 :class:`~sunset.List`, :class:`~sunset.Bunch` or
                 :class:`~sunset.Key`.
 
-        Returns:
-            None.
-
         Note:
             This method does not increase the reference count of the given
             callback.
         """
 
         self._update_notifier.add(callback)
+
+    def onLoadedCall(self, callback: Callable[[], Any]) -> None:
+        """
+        Adds a callback to be called whenever settings were just loaded. This
+        List itself may or may not have been modified during the load.
+
+        Args:
+            callback: A callable that takes no argument.
+
+        Note:
+            This method does not increase the reference count of the given
+            callback.
+        """
+
+        self._loaded_notifier.add(callback)
 
     def dumpFields(self) -> Iterator[tuple[str, Optional[str]]]:
         """

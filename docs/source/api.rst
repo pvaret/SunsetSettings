@@ -22,6 +22,8 @@ API Reference
     .. automethod:: setSectionName
 
     .. automethod:: onUpdateCall
+
+    .. automethod:: onLoadedCall
     
     .. automethod:: skipOnSave
 
@@ -50,6 +52,8 @@ API Reference
     .. automethod:: onValueChangeCall
 
     .. automethod:: onUpdateCall
+
+    .. automethod:: onLoadedCall
     
     .. automethod:: skipOnSave
 
@@ -62,6 +66,8 @@ API Reference
 .. autoclass:: sunset.Bunch
 
     .. automethod:: onUpdateCall
+
+    .. automethod:: onLoadedCall
     
     .. automethod:: skipOnSave
 
@@ -80,6 +86,8 @@ API Reference
     .. automethod:: insertOne
 
     .. automethod:: onUpdateCall
+
+    .. automethod:: onLoadedCall
     
     .. automethod:: skipOnSave
 
