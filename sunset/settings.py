@@ -370,9 +370,7 @@ class Settings(Bunch, Lockable):
 
         if previous_parent is not None:
             previous_parent._update_notifier.trigger(previous_parent)
-            self._update_notifier.discard(
-                previous_parent._update_notifier.trigger
-            )
+            self._update_notifier.discard(previous_parent._update_notifier.trigger)
 
     # Not actually useless. This lets us override the docstring with
     # Settings-specific info.
@@ -415,14 +413,10 @@ class Settings(Bunch, Lockable):
             if not self.isSet():
                 yield label, None
             else:
-                yield from (
-                    (label + path, item) for path, item in super().dumpFields()
-                )
+                yield from ((label + path, item) for path, item in super().dumpFields())
 
             for section in self.sections():
-                yield from (
-                    (label + path, item) for path, item in section.dumpFields()
-                )
+                yield from ((label + path, item) for path, item in section.dumpFields())
 
     def restoreField(self, path: str, value: Optional[str]) -> bool:
         """

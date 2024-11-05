@@ -1,7 +1,7 @@
 "SunsetSettings: a type-safe, extensible settings system with inheritance."
 
 __project__ = "SunsetSettings"
-__version__ = "0.6.0"
+__version__ = "0.6.1-dev"
 __author__ = "P. Varet"
 __copyright__ = "2022-2024, P. Varet"
 

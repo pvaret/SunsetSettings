@@ -153,10 +153,7 @@ class TestMetadata:
 
         assert settings.meta().path() == ""
         assert settings.inner_bunch.meta().path() == "inner_bunch"
-        assert (
-            settings.inner_bunch.bunch_key.meta().path()
-            == "inner_bunch.bunch_key"
-        )
+        assert settings.inner_bunch.bunch_key.meta().path() == "inner_bunch.bunch_key"
 
         settings.bunch_list.appendOne()  # 1
         settings.bunch_list.appendOne()  # 2

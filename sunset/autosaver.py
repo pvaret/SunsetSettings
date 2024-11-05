@@ -166,9 +166,7 @@ class AutoSaver:
                 return True
 
         except OSError as e:
-            self._logger.error(
-                "Error while loading from '%s': %s", self._path, e
-            )
+            self._logger.error("Error while loading from '%s': %s", self._path, e)
 
         return False
 

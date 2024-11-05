@@ -6,15 +6,11 @@ from sunset import sets
 
 
 class TestWeakCallableSet:
-
     def test_function(self) -> None:
-
         def test(_: str) -> None:
             pass
 
-        reg: sets.WeakCallableSet[Callable[[str], None]] = (
-            sets.WeakCallableSet()
-        )
+        reg: sets.WeakCallableSet[Callable[[str], None]] = sets.WeakCallableSet()
 
         assert len(reg) == 0
 
@@ -30,9 +26,7 @@ class TestWeakCallableSet:
             def test(self, _: str) -> None:
                 pass
 
-        reg: sets.WeakCallableSet[Callable[[str], None]] = (
-            sets.WeakCallableSet()
-        )
+        reg: sets.WeakCallableSet[Callable[[str], None]] = sets.WeakCallableSet()
 
         t = Test()
 
@@ -50,9 +44,7 @@ class TestWeakCallableSet:
         def test(_: int) -> None:
             pass
 
-        reg: sets.WeakCallableSet[Callable[[int], None]] = (
-            sets.WeakCallableSet()
-        )
+        reg: sets.WeakCallableSet[Callable[[int], None]] = sets.WeakCallableSet()
 
         reg.add(test)
         assert test in reg
@@ -66,9 +58,7 @@ class TestWeakCallableSet:
 
         t = Test()
 
-        reg: sets.WeakCallableSet[Callable[[int], None]] = (
-            sets.WeakCallableSet()
-        )
+        reg: sets.WeakCallableSet[Callable[[int], None]] = sets.WeakCallableSet()
 
         reg.add(t.test)
         assert t.test in reg
@@ -79,9 +69,7 @@ class TestWeakCallableSet:
         def test(_: bool) -> None:
             pass
 
-        reg: sets.WeakCallableSet[Callable[[bool], None]] = (
-            sets.WeakCallableSet()
-        )
+        reg: sets.WeakCallableSet[Callable[[bool], None]] = sets.WeakCallableSet()
 
         reg.add(test)
         assert test in reg
@@ -93,9 +81,7 @@ class TestWeakCallableSet:
         def test(_: str) -> None:
             pass
 
-        reg: sets.WeakCallableSet[Callable[[str], None]] = (
-            sets.WeakCallableSet()
-        )
+        reg: sets.WeakCallableSet[Callable[[str], None]] = sets.WeakCallableSet()
 
         reg.add(test)
         assert len(reg) == 1
@@ -107,9 +93,7 @@ class TestWeakCallableSet:
             def test(self, _: str) -> None:
                 pass
 
-        reg: sets.WeakCallableSet[Callable[[str], None]] = (
-            sets.WeakCallableSet()
-        )
+        reg: sets.WeakCallableSet[Callable[[str], None]] = sets.WeakCallableSet()
 
         t = Test()
 
@@ -120,7 +104,6 @@ class TestWeakCallableSet:
 
     def test_non_hashable_element(self) -> None:
         class Test(list[int]):
-
             def test(self, _: int) -> None:
                 pass
 
@@ -131,9 +114,7 @@ class TestWeakCallableSet:
 
             hash(t)
 
-        reg: sets.WeakCallableSet[Callable[[int], None]] = (
-            sets.WeakCallableSet()
-        )
+        reg: sets.WeakCallableSet[Callable[[int], None]] = sets.WeakCallableSet()
 
         reg.add(t.test)
         assert t.test in reg
@@ -143,9 +124,7 @@ class TestWeakCallableSet:
             def test(self, _: str) -> None:
                 pass
 
-        reg: sets.WeakCallableSet[Callable[[str], None]] = (
-            sets.WeakCallableSet()
-        )
+        reg: sets.WeakCallableSet[Callable[[str], None]] = sets.WeakCallableSet()
 
         t1 = Test()
         t2 = Test()

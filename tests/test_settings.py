@@ -169,9 +169,7 @@ class TestSettings:
         assert section1.a.get() == "test section1 a"
         callback.assert_not_called()
 
-        assert settings.restoreField(
-            "main/section2/subsection/a", "test subsection a"
-        )
+        assert settings.restoreField("main/section2/subsection/a", "test subsection a")
         section2 = settings.getSection("section2")
         assert section2 is not None
         subsection = section2.getSection("subsection")
@@ -391,10 +389,7 @@ a = bunch values will be merged, last takes precedence
             )
         )
 
-        assert (
-            settings.a.get()
-            == "bunch values will be merged, last takes precedence"
-        )
+        assert settings.a.get() == "bunch values will be merged, last takes precedence"
 
     def test_load_invalid_missing_main(self) -> None:
         settings = ExampleSettings()
@@ -409,9 +404,7 @@ a = main bunch is implicitly created if needed
 
         sections = list(settings.sections())
         assert len(sections) == 1
-        assert (
-            sections[0].a.get() == "main bunch is implicitly created if needed"
-        )
+        assert sections[0].a.get() == "main bunch is implicitly created if needed"
 
     def test_load_invalid_extra_section_separators(self) -> None:
         settings = ExampleSettings()
@@ -767,9 +760,7 @@ a = value
         callback1.assert_not_called()
         callback2.assert_not_called()
 
-    def test_reparenting_renaming_notifications(
-        self, mocker: MockerFixture
-    ) -> None:
+    def test_reparenting_renaming_notifications(self, mocker: MockerFixture) -> None:
         class TestSettings(Settings):
             pass
 

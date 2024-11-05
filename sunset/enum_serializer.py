@@ -106,9 +106,7 @@ class EnumSerializer(Generic[_EnumT]):
 
         names = string.split("|") if "|" in string else [string]
         named_members = [
-            member
-            for name in names
-            if (member := self._lookupMember(name)) is not None
+            member for name in names if (member := self._lookupMember(name)) is not None
         ]
 
         if not named_members:

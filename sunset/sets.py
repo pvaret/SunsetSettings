@@ -8,7 +8,6 @@ from typing import (
     Callable,
     Iterator,
     MutableMapping,
-    MutableSet,
     TypeVar,
     cast,
 )
@@ -27,9 +26,7 @@ class NonHashableSet(MutableSet[_T]):
     _contents: MutableMapping[int, _T]
     _lock: threading.RLock
 
-    def __init__(
-        self, mapping_type: type[MutableMapping[int, _T]] = dict
-    ) -> None:
+    def __init__(self, mapping_type: type[MutableMapping[int, _T]] = dict) -> None:
         super().__init__()
 
         self._contents = mapping_type()
@@ -136,9 +133,7 @@ class WeakCallableSet(MutableSet[_C]):
 
     @staticmethod
     def _isSameCallable(callable1: _C, callable2: _C) -> bool:
-        if isinstance(callable1, MethodType) and isinstance(
-            callable2, MethodType
-        ):
+        if isinstance(callable1, MethodType) and isinstance(callable2, MethodType):
             return (
                 callable1.__self__ is callable2.__self__
                 and callable1.__name__ == callable2.__name__

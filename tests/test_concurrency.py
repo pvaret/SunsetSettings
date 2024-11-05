@@ -31,9 +31,7 @@ def run_threaded(
         except Exception as e:
             exceptions.append(e)
 
-    threads = [
-        threading.Thread(target=executor, args=[i]) for i in range(thread_count)
-    ]
+    threads = [threading.Thread(target=executor, args=[i]) for i in range(thread_count)]
 
     for thread in threads:
         thread.start()
@@ -146,9 +144,7 @@ class TestSettingsConcurrency:
         settings = TestSettings()
         sections = [settings.newSection(str(i)) for i in range(16)]
 
-        def rename_section(
-            thread_id: int, sections: list[TestSettings]
-        ) -> None:
+        def rename_section(thread_id: int, sections: list[TestSettings]) -> None:
             section = sections[thread_id % len(sections)]
             section.setSectionName("test")
             section.setSectionName("section")

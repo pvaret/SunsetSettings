@@ -42,10 +42,7 @@ class TestKey:
         assert not Key(default=False).get()
         assert Key(default=12.345e-67).get() == 12.345e-67
         assert Key(default=ExampleEnum.ONE).get() == ExampleEnum.ONE
-        assert (
-            Key(default=ExampleFlag.ONE | ExampleFlag.TWO).get()
-            == ExampleFlag.THREE
-        )
+        assert Key(default=ExampleFlag.ONE | ExampleFlag.TWO).get() == ExampleFlag.THREE
         with pytest.raises(TypeError):
             Key(default=object())  # type: ignore # It's the point!
 
@@ -177,9 +174,7 @@ class TestKey:
         key.clear()
         callback.assert_not_called()
 
-    def test_value_change_callback_inheritance(
-        self, mocker: MockerFixture
-    ) -> None:
+    def test_value_change_callback_inheritance(self, mocker: MockerFixture) -> None:
         callback_sub_child1 = mocker.stub()
         callback_sub_child2 = mocker.stub()
 
@@ -510,9 +505,7 @@ class TestKey:
         assert key_bool.restoreField("", "true")
         assert key_bool.get()
 
-        key_custom: Key[ExampleSerializable] = Key(
-            default=ExampleSerializable("")
-        )
+        key_custom: Key[ExampleSerializable] = Key(default=ExampleSerializable(""))
         assert key_custom.restoreField("", "test")
         assert key_custom.get().toStr() == "test"
 

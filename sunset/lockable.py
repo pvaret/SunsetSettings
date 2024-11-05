@@ -26,12 +26,10 @@ class Lockable:
 
     @staticmethod
     def with_lock(
-        method: Callable[Concatenate[_Self, _P], _R]
+        method: Callable[Concatenate[_Self, _P], _R],
     ) -> Callable[Concatenate[_Self, _P], _R]:
         @wraps(method)
-        def locked_method(
-            self: _Self, *args: _P.args, **kwargs: _P.kwargs
-        ) -> _R:
+        def locked_method(self: _Self, *args: _P.args, **kwargs: _P.kwargs) -> _R:
             with self._lock:
                 return method(self, *args, **kwargs)
 

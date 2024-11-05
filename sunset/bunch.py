@@ -158,9 +158,7 @@ class Bunch(BaseField):
 
         fields_attr: str = getattr(dataclasses, "_FIELDS")
         field_type: Any = getattr(dataclasses, "_FIELD")
-        fields: dict[str, dataclasses.Field[Any]] = getattr(
-            self, fields_attr, {}
-        )
+        fields: dict[str, dataclasses.Field[Any]] = getattr(self, fields_attr, {})
 
         # Then look up the fields stored in the dataclass.
 

@@ -69,11 +69,7 @@ def lookup(type_: type[_T]) -> Optional[Serializer[_T]]:
     # Note: these need to come after the Enum case, because Enum can be a
     # subclass of these.
 
-    if (
-        issubclass(type_, int)
-        or issubclass(type_, float)
-        or issubclass(type_, str)
-    ):
+    if issubclass(type_, int) or issubclass(type_, float) or issubclass(type_, str):
         return cast(Serializer[_T], StraightCastSerializer(type_))
 
     return None

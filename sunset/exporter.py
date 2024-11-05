@@ -141,9 +141,7 @@ def save_to_file(
             file.write("\n")
 
 
-def load_from_file(
-    file: IO[str], main: str
-) -> Iterator[tuple[str, Optional[str]]]:
+def load_from_file(file: IO[str], main: str) -> Iterator[tuple[str, Optional[str]]]:
     main = normalize(main)
 
     current_section = ""

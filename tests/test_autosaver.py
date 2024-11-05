@@ -105,9 +105,7 @@ class TestAutosaver:
         assert settings_file.exists()
         assert settings_file.read_text() == "[main]\nkey_str = test\n"
 
-    def test_autosave_creates_missing_dirs(
-        self, tmp_path: pathlib.Path
-    ) -> None:
+    def test_autosave_creates_missing_dirs(self, tmp_path: pathlib.Path) -> None:
         settings = ExampleSettings()
         settings_file = tmp_path / "multiple" / "levels" / "deep" / "test.conf"
         autosaver = AutoSaver(
@@ -169,14 +167,10 @@ class TestAutosaver:
         saver1 = AutoSaver(ExampleSettings(), "/no/tilde", load_on_init=False)
         assert str(saver1.path()) == "/no/tilde"
 
-        saver2 = AutoSaver(
-            ExampleSettings(), "~/with/tilde", load_on_init=False
-        )
+        saver2 = AutoSaver(ExampleSettings(), "~/with/tilde", load_on_init=False)
         assert str(saver2.path()) == "HOME/with/tilde"
 
-    def test_exceptions(
-        self, tmp_path: pathlib.Path, mocker: MockerFixture
-    ) -> None:
+    def test_exceptions(self, tmp_path: pathlib.Path, mocker: MockerFixture) -> None:
         settings_file = tmp_path / "actually_a_folder"
         settings_file.mkdir(parents=True)
 

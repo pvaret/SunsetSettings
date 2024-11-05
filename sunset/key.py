@@ -184,9 +184,7 @@ class Key(Generic[_T], BaseField, Lockable):
         value for the Key if not.
         """
 
-        return (
-            self._default if (parent := self.parent()) is None else parent.get()
-        )
+        return self._default if (parent := self.parent()) is None else parent.get()
 
     def set(self, value: _T) -> bool:
         """
@@ -208,9 +206,7 @@ class Key(Generic[_T], BaseField, Lockable):
             return False
 
         if not self._validator(value):
-            logging.debug(
-                "Validator rejected value for Key %r: %r", self, value
-            )
+            logging.debug("Validator rejected value for Key %r: %r", self, value)
             return False
 
         # Setting a Key's value programmatically always resets bad values.
@@ -453,7 +449,6 @@ class Key(Generic[_T], BaseField, Lockable):
             return False
 
         with self._update_notifier.inhibit():
-
             if (val := self._serializer.fromStr(value)) is not None:
                 return self.set(val)
 
