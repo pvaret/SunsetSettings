@@ -1,6 +1,6 @@
 # SunsetSettings
 
-[![Build Status](https://github.com/pvaret/SunsetSettings/actions/workflows/python-build.yml/badge.svg)](https://github.com/pvaret/SunsetSettings/actions/workflows/python-build.yml)
+[![Build Status](https://github.com/pvaret/SunsetSettings/actions/workflows/python-build.yml/badge.svg?branch=main)](https://github.com/pvaret/SunsetSettings/actions/workflows/python-build.yml)
 [![Documentation Status](https://readthedocs.org/projects/sunsetsettings/badge/?version=latest)](https://sunsetsettings.readthedocs.io/en/latest/?badge=latest)
 
 SunsetSettings is a library that provides facilities to declare and use settings
@@ -209,7 +209,7 @@ Each setting key can be given callbacks to be called when its value changes.
 >>> from sunset import Key
 
 >>> number_of_ponies = Key(default=0)
->>> def callback(value):
+>>> def callback(value: int):
 ...     print("Pony count updated:", value)
 >>> number_of_ponies.onValueChangeCall(callback)
 >>> number_of_ponies.set(6)
@@ -222,22 +222,30 @@ True
 ## Requirements
 
 - Python 3.10 or later.
-- If installing from sources:
-    - The `flit` build tool.
 
 
 ## Installation
 
 ### Installing from PyPI (recommended)
 
-Run:
+SunsetSettings releases are available from
+[PyPI](https://pypi.org/project/SunsetSettings/) and can be installed with the standard
+Python tooling.
+
+Directly add `SunsetSettings` to your project's dependencies or, in order to manually
+install SunsetSettings and make it available in the current Python prefix, run:
 
 ```
 pip install SunsetSettings
 ```
 
 This will install the latest version of SunsetSettings, with its required
-dependencies.
+dependencies, if any. The module can then be imported under the name `sunset`:
+
+```python
+>>> import sunset
+>>>
+```
 
 
 ### Installing from sources
@@ -251,7 +259,7 @@ dependencies.
 2. Install the library:
 
     ```
-    cd SunsetSettings ; flit install
+    cd SunsetSettings ; pip install .
     ```
 
 That's it.

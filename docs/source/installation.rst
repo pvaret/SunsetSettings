@@ -10,7 +10,12 @@ SunsetSettings requires Python 3.10 or later.
 Installing from PyPI (recommended)
 ----------------------------------
 
-From a command line prompt, type:
+SunsetSettings releases are available from `PyPI
+<https://pypi.org/project/SunsetSettings/>`_ and can be installed with the standard
+Python tooling.
+
+Directly add ``SunsetSettings`` to your project's dependencies or, in order to manually
+install SunsetSettings and make it available in the current Python prefix, run:
 
 .. code:: shell
 
@@ -19,12 +24,6 @@ From a command line prompt, type:
 
 Installing from GitHub
 ----------------------
-
-- Dependencies: install `flit <https://pypi.org/project/flit/>`_:
-
-  .. code:: shell
-
-    pip install flit
 
 - Checkout the code:
 
@@ -36,6 +35,6 @@ Installing from GitHub
 
   .. code:: shell
 
-    cd SunsetSettings ; flit install
+    cd SunsetSettings ; pip install .
 
 That's it!

@@ -4,52 +4,42 @@
 name: Build
 
 on:
-  push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
+  - push
+  - pull_request
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  test-all:
+    name: Tests for Python ${{ matrix.python-version }} on ${{ matrix.os }}
+
+    runs-on: ${{ matrix.os }}-latest
+
     strategy:
-      fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
+        os: [ubuntu, macos, windows]
 
     steps:
-      - uses: actions/checkout@main
+      - name: Check out the code
+        uses: actions/checkout@main
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@main
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install flake8
-          python -m pip install .[test]
+      - name: Install Hatch
+        uses: pypa/hatch@install
+      
+      - name: Report Hatch status
+        run: hatch status
 
-      - name: Lint with flake8
-        run: |
-          # stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+      - name: Check linting
+        run: hatch fmt --linter --check
+        # Until linter warnings are fixed, don't consider them build-breaking errors.
+        continue-on-error: true
+      
+      - name: check formatting
+        run: hatch fmt --formatter --check
 
-      - name: Test with pytest
-        run: |
-          pytest --junitxml=junit/test-results-${{ matrix.python-version }}.xml --cov=sunset --cov-report=xml --cov-report=html
-
-      - name: Upload pytest test results
-        uses: actions/upload-artifact@main
-        with:
-          name: pytest-results-${{ matrix.python-version }}
-          path: junit/test-results-${{ matrix.python-version }}.xml
-        # Use always() to always run this step to publish test results when there are test failures
-        if: ${{ always() }}
-
-      - name: Upload coverage results
-        uses: actions/upload-artifact@main
-        with:
-          name: coverage-${{ matrix.python-version }}
-          path: htmlcov
+      - name: Run test suite
+        run: hatch test -py=${{ matrix.python-version }}

@@ -1,6 +1,6 @@
 [build-system]
-requires = ["flit_core >=3.2,<4"]
-build-backend = "flit_core.buildapi"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "SunsetSettings"
@@ -23,23 +23,17 @@ classifiers = [
 dynamic = ["version", "description"]
 requires-python = ">=3.10"
 
-dependencies = ["typing_extensions"]
+# Python 3.10 does not have a Self type, but it is available in the typing_extensions
+# module.
+dependencies = ["typing_extensions ; python_version=='3.10'"]
 
 [project.urls]
 Home = "https://github.com/pvaret/SunsetSettings"
 Documentation = "https://sunsetsettings.readthedocs.io/"
 
 [project.optional-dependencies]
-test = ["bandit[toml]", "pytest", "pytest-cov", "pytest-mock"]
+tests = ["coverage[toml]", "pytest", "pytest-mock"]
 docs = ["sphinx", "sphinx_rtd_theme"]
-
-[tool.flit.module]
-name = "sunset"
-
-[tool.pylint.'MESSAGES CONTROL']
-# Silence errors about protected member access. We use protected members so as
-# to not pollute the API namespace that users will see.
-disable = "protected-access"
 
 [tool.mypy]
 show_error_codes = true
@@ -48,11 +42,63 @@ show_error_codes = true
 addopts = "-vv --doctest-modules --doctest-glob=README.md --doctest-glob=docs/*.rst"
 
 [tool.coverage.run]
-source = ["sunset"]
+# Also measure tests. Helps detect tests that are not properly executed.
+source = ["sunset/", "tests/"]
+
+# Measure coverage of conditional branches.
 branch = true
 
-[tool.bandit]
-exclude_dirs = ["tests"]
-skips = [
-    "B101", # Disable alerting on 'assert' usage.
+# Tag the coverage file names uniquely to avoid conflicts.
+parallel = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "^ *\\.\\.\\.$", # Ignore ellipsis lines.
+    "^ *pass$",      # Ignore pass lines.
 ]
+
+[tool.ruff]
+# Use the default line length.
+line-length = 88
+extend-exclude = ["tests/", "docs/"]
+
+[tool.ruff.lint]
+# Enable all linting rules by default.
+select = ["ALL"]
+ignore = [
+    "COM812", # Can confuse the Ruff formatter.
+    "ISC001", # Can confuse the Ruff formatter.
+    "N802",   # We use camelCase method names.
+    "D",      # Ignore docstring style linting for now. Revisit later.
+]
+
+[tool.ruff.format]
+# Don't reformat docstrings, for now. Should probably revisit at some point.
+docstring-code-format = false
+
+[tool.hatch.version]
+path = "sunset/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["sunset"]
+
+[tool.hatch.envs.hatch-test]
+# This forces hatch test to use the pytest ini options listed above.
+default-args = []
+# This makes this environment use the "tests" optional dependencies above. Hatch
+# installs its own set by default, but explicit is better than implicit.
+features = ["tests"]
+# Parallelizes test execution.
+parallel = true
+
+[[tool.hatch.envs.hatch-test.matrix]]
+python = ["3.10", "3.11", "3.12"]
+
+[tool.hatch.envs.docs]
+# This makes this environment use the "docs" optional dependencies above.
+features = ["docs"]
+# This environment does not need the code built and installed.
+detached = true
+
+[tool.hatch.envs.docs.scripts]
+html = "make -C ./docs html"

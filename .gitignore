@@ -1,5 +1,4 @@
-.coverage
-.tox/*
+.coverage*
 coverage.xml
 dist/*
 docs/build/*
