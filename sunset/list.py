@@ -1,20 +1,8 @@
 import weakref
-
+from collections.abc import Callable, Iterable, Iterator, MutableSequence
 from enum import Enum, auto
 from types import GenericAlias
-from typing import (
-    Any,
-    Callable,
-    Iterable,
-    Iterator,
-    MutableSequence,
-    Optional,
-    SupportsIndex,
-    TypeVar,
-    Union,
-    cast,
-    overload,
-)
+from typing import Any, SupportsIndex, TypeVar, cast, overload
 
 try:
     from typing import Self
@@ -28,7 +16,7 @@ from sunset.notifier import Notifier
 from sunset.protocols import BaseField, UpdateNotifier
 from sunset.sets import WeakNonHashableSet
 
-ListItemT = TypeVar("ListItemT", bound=Union[Bunch, Key[Any]])
+ListItemT = TypeVar("ListItemT", bound=Bunch | Key[Any])
 
 
 class IterOrder(Enum):
@@ -92,7 +80,7 @@ class List(MutableSequence[ListItemT], BaseField):
     PARENT_LAST = IterOrder.PARENT_LAST
 
     _contents: list[ListItemT]
-    _parent_ref: Optional[weakref.ref["List[ListItemT]"]]
+    _parent_ref: weakref.ref["List[ListItemT]"] | None
     _children_ref: WeakNonHashableSet["List[ListItemT]"]
     _iter_order: IterOrder
     _update_notifier: Notifier[[UpdateNotifier]]
@@ -124,9 +112,7 @@ class List(MutableSequence[ListItemT], BaseField):
     @overload
     def __getitem__(self, index: slice) -> list[ListItemT]: ...
 
-    def __getitem__(
-        self, index: Union[SupportsIndex, slice]
-    ) -> Union[ListItemT, list[ListItemT]]:
+    def __getitem__(self, index: SupportsIndex | slice) -> ListItemT | list[ListItemT]:
         return self._contents[index]
 
     @overload
@@ -136,9 +122,7 @@ class List(MutableSequence[ListItemT], BaseField):
     def __setitem__(self, index: slice, value: Iterable[ListItemT]) -> None: ...
 
     def __setitem__(
-        self,
-        index: Union[SupportsIndex, slice],
-        value: Union[ListItemT, Iterable[ListItemT]],
+        self, index: SupportsIndex | slice, value: ListItemT | Iterable[ListItemT]
     ) -> None:
         self._clearMetadata(self._contents[index])
         if isinstance(index, slice):
@@ -153,7 +137,7 @@ class List(MutableSequence[ListItemT], BaseField):
         self._relabelItems()
         self._update_notifier.trigger(self)
 
-    def __delitem__(self, index: Union[SupportsIndex, slice]) -> None:
+    def __delitem__(self, index: SupportsIndex | slice) -> None:
         self._clearMetadata(self._contents[index])
         del self._contents[index]
         self._relabelItems()
@@ -174,7 +158,7 @@ class List(MutableSequence[ListItemT], BaseField):
     def clear(self) -> None:
         del self[:]
 
-    def _clearMetadata(self, fields: Union[ListItemT, list[ListItemT]]) -> None:
+    def _clearMetadata(self, fields: ListItemT | list[ListItemT]) -> None:
         for field in fields if isinstance(fields, list) else [fields]:
             field.meta().clear()
             field._update_notifier.discard(self._update_notifier.trigger)
@@ -240,12 +224,12 @@ class List(MutableSequence[ListItemT], BaseField):
         return str(int(index) + 1)
 
     @staticmethod
-    def _indexForLabel(label: str) -> Optional[int]:
+    def _indexForLabel(label: str) -> int | None:
         if not label.isdigit():
             return None
         return int(label) - 1
 
-    def setParent(self, parent: Optional[Self]) -> None:
+    def setParent(self, parent: Self | None) -> None:
         """
         Makes the given List the parent of this one. If None, remove this List's
         parent, if any.
@@ -281,7 +265,7 @@ class List(MutableSequence[ListItemT], BaseField):
             self._parent_ref = weakref.ref(parent)
             parent._children_ref.add(self)
 
-    def iter(self, order: Optional[IterOrder] = None) -> Iterator[ListItemT]:
+    def iter(self, order: IterOrder | None = None) -> Iterator[ListItemT]:
         """
         Yields the elements contained in this List, and optionally in its
         parents, if any.
@@ -348,7 +332,7 @@ class List(MutableSequence[ListItemT], BaseField):
         if parent is not None and order == IterOrder.PARENT_LAST:
             yield from parent.iter(order)
 
-    def parent(self) -> Optional[Self]:
+    def parent(self) -> Self | None:
         """
         Returns the parent of this List, if any.
 
@@ -359,7 +343,7 @@ class List(MutableSequence[ListItemT], BaseField):
         # Make the type of self._parent_ref more specific for the purpose of
         # type checking.
 
-        parent = cast(Optional[weakref.ref[Self]], self._parent_ref)
+        parent = cast(weakref.ref[Self] | None, self._parent_ref)
         return parent() if parent is not None else None
 
     def children(self) -> Iterator[Self]:
@@ -412,7 +396,7 @@ class List(MutableSequence[ListItemT], BaseField):
 
         self._loaded_notifier.add(callback)
 
-    def dumpFields(self) -> Iterator[tuple[str, Optional[str]]]:
+    def dumpFields(self) -> Iterator[tuple[str, str | None]]:
         """
         Internal.
         """
@@ -429,7 +413,7 @@ class List(MutableSequence[ListItemT], BaseField):
                         for path, child_item in item.dumpFields()
                     )
 
-    def restoreField(self, path: str, value: Optional[str]) -> bool:
+    def restoreField(self, path: str, value: str | None) -> bool:
         """
         Internal.
         """
@@ -451,7 +435,7 @@ class List(MutableSequence[ListItemT], BaseField):
         missing_count = length - len(self)
 
         if missing_count > 0:
-            self.extend((self._newItem() for _ in range(missing_count)))
+            self.extend(self._newItem() for _ in range(missing_count))
 
     def _typeHint(self) -> GenericAlias:
         return GenericAlias(type(self), type(self._template))

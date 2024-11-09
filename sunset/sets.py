@@ -1,16 +1,8 @@
 import threading
 import weakref
-
-from collections.abc import MutableSet
+from collections.abc import Callable, Iterator, MutableMapping, MutableSet
 from types import MethodType
-from typing import (
-    Any,
-    Callable,
-    Iterator,
-    MutableMapping,
-    TypeVar,
-    cast,
-)
+from typing import Any, TypeVar, cast
 
 _T = TypeVar("_T")
 _C = TypeVar("_C", bound=Callable[..., Any])

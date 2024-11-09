@@ -1,8 +1,7 @@
 import threading
-
+from collections.abc import Callable
 from functools import wraps
-from typing import Callable, Concatenate, ParamSpec, TypeVar
-
+from typing import Concatenate, ParamSpec, TypeVar
 
 _Self = TypeVar("_Self", bound="Lockable")
 _R = TypeVar("_R")

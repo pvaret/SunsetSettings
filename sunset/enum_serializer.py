@@ -1,7 +1,6 @@
 import enum
 import functools
-
-from typing import Generic, Optional, TypeVar, cast
+from typing import Generic, TypeVar, cast
 
 _EnumT = TypeVar("_EnumT", bound=enum.Enum)
 
@@ -26,8 +25,8 @@ class EnumSerializer(Generic[_EnumT]):
         # ourselves.
 
         names: list[str] = []
-        final_name: Optional[str] = None
-        current_value: Optional[int] = None
+        final_name: str | None = None
+        current_value: int | None = None
 
         # Note how we sort the items by ascending value. This lets us keep
         # the name component order deterministic, as well as prioritize the
@@ -82,7 +81,7 @@ class EnumSerializer(Generic[_EnumT]):
 
         return members
 
-    def _lookupMember(self, name: str) -> Optional[_EnumT]:
+    def _lookupMember(self, name: str) -> _EnumT | None:
         candidates: list[_EnumT] = []
 
         for candidate_name, member in self._members().items():
@@ -100,7 +99,7 @@ class EnumSerializer(Generic[_EnumT]):
 
         return None
 
-    def fromStr(self, string: str) -> Optional[_EnumT]:
+    def fromStr(self, string: str) -> _EnumT | None:
         # value is either a single word, or, in the case of Flag enums, multiple
         # words separated by a pipe. We handle both cases together here.
 

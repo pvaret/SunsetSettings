@@ -1,15 +1,7 @@
 import logging
 import pathlib
-
-from typing import (
-    Any,
-    Callable,
-    IO,
-    Iterator,
-    MutableSet,
-    Optional,
-    Union,
-)
+from collections.abc import Callable, Iterator, MutableSet
+from typing import IO, Any
 
 try:
     from typing import Self
@@ -19,10 +11,9 @@ except ImportError:
 
 from sunset.autosaver import AutoSaver
 from sunset.bunch import Bunch
-from sunset.exporter import normalize, load_from_file, save_to_file
+from sunset.exporter import load_from_file, normalize, save_to_file
 from sunset.lockable import Lockable
 from sunset.sets import NonHashableSet
-
 
 _MAIN = "main"
 
@@ -138,7 +129,7 @@ class Settings(Bunch, Lockable):
 
     _section_name: str = ""
     _children_set: MutableSet[Bunch]
-    _autosaver: Optional[AutoSaver] = None
+    _autosaver: AutoSaver | None = None
     _autosaver_class: type[AutoSaver]
 
     def __post_init__(self) -> None:
@@ -210,7 +201,7 @@ class Settings(Bunch, Lockable):
             else self.newSection(name=name)
         )
 
-    def getSection(self, name: str) -> Optional[Self]:
+    def getSection(self, name: str) -> Self | None:
         """
         Finds and returns a section of this instance with the given name, if it
         exists, else None.
@@ -334,7 +325,7 @@ class Settings(Bunch, Lockable):
         return name if self.parent() is not None else self.MAIN
 
     @Lockable.with_lock
-    def setParent(self, parent: Optional[Self]) -> None:  # type: ignore
+    def setParent(self, parent: Self | None) -> None:
         """
         Makes the given Settings instance the parent of this one. If None,
         remove this instance's parent, if any.
@@ -399,7 +390,7 @@ class Settings(Bunch, Lockable):
     def skipOnSave(self) -> bool:
         return self.sectionName() == ""
 
-    def dumpFields(self) -> Iterator[tuple[str, Optional[str]]]:
+    def dumpFields(self) -> Iterator[tuple[str, str | None]]:
         """
         Internal.
         """
@@ -418,7 +409,7 @@ class Settings(Bunch, Lockable):
             for section in self.sections():
                 yield from ((label + path, item) for path, item in section.dumpFields())
 
-    def restoreField(self, path: str, value: Optional[str]) -> bool:
+    def restoreField(self, path: str, value: str | None) -> bool:
         """
         Internal.
         """
@@ -495,10 +486,10 @@ class Settings(Bunch, Lockable):
 
     def autosave(
         self,
-        path: Union[str, pathlib.Path],
+        path: str | pathlib.Path,
         save_on_update: bool = True,
         save_delay: int = 0,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ) -> AutoSaver:
         """
         Returns a context manager that loads these Settings from the given file

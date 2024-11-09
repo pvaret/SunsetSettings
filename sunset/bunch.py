@@ -1,15 +1,8 @@
 import dataclasses
 import inspect
 import weakref
-
-from typing import (
-    Any,
-    Callable,
-    Iterator,
-    MutableSet,
-    Optional,
-    cast,
-)
+from collections.abc import Callable, Iterator, MutableSet
+from typing import Any, cast
 
 try:
     from typing import Self
@@ -59,7 +52,7 @@ class Bunch(BaseField):
     'Calibri'
     """
 
-    _parent_ref: Optional[weakref.ref["Bunch"]]
+    _parent_ref: weakref.ref["Bunch"] | None
     _children_set: MutableSet["Bunch"]
     _fields: dict[str, Field]
     _update_notifier: Notifier[[UpdateNotifier]]
@@ -73,7 +66,7 @@ class Bunch(BaseField):
 
         _dataclass_attr = "__DATACLASS_CLASS"
 
-        dataclass_class: Optional[type[Self]] = None
+        dataclass_class: type[Self] | None = None
         if (dataclass_class := getattr(cls, _dataclass_attr, None)) is None:
             # We haven't yet constructed a dataclass from this class. Construct
             # one here.
@@ -187,7 +180,7 @@ class Bunch(BaseField):
                 field._update_notifier.add(self._update_notifier.trigger)
                 self._loaded_notifier.add(field._loaded_notifier.trigger)
 
-    def setParent(self, parent: Optional[Self]) -> None:
+    def setParent(self, parent: Self | None) -> None:
         """
         Makes the given Bunch the parent of this one. If None, remove this
         Bunch's parent, if any.
@@ -241,7 +234,7 @@ class Bunch(BaseField):
             assert type(field) is type(parent_field)
             field.setParent(parent_field)
 
-    def parent(self) -> Optional[Self]:
+    def parent(self) -> Self | None:
         """
         Returns the parent of this Bunch, if any.
 
@@ -252,7 +245,7 @@ class Bunch(BaseField):
         # Make the type of self._parent_ref more specific for the purpose of
         # type checking.
 
-        parent = cast(Optional[weakref.ref[Self]], self._parent_ref)
+        parent = cast(weakref.ref[Self] | None, self._parent_ref)
         return parent() if parent is not None else None
 
     def children(self) -> Iterator[Self]:
@@ -315,7 +308,7 @@ class Bunch(BaseField):
 
         return any(field.isSet() for field in self._fields.values())
 
-    def dumpFields(self) -> Iterator[tuple[str, Optional[str]]]:
+    def dumpFields(self) -> Iterator[tuple[str, str | None]]:
         """
         Internal.
         """
@@ -328,7 +321,7 @@ class Bunch(BaseField):
                     for path, item in field.dumpFields()
                 )
 
-    def restoreField(self, path: str, value: Optional[str]) -> bool:
+    def restoreField(self, path: str, value: str | None) -> bool:
         """
         Internal.
         """

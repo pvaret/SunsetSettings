@@ -1,6 +1,6 @@
-import pytest
+from collections.abc import Callable
 
-from typing import Callable
+import pytest
 
 from sunset import sets
 

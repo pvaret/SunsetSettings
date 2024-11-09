@@ -2,10 +2,9 @@ import logging
 import os
 import pathlib
 import tempfile
-
+from collections.abc import Callable
 from types import TracebackType
-
-from typing import Any, Callable, IO, Optional, Protocol, TypeVar, Union
+from typing import IO, Any, Protocol, TypeVar
 
 from sunset.timer import PersistentTimer, TimerProtocol
 
@@ -100,13 +99,13 @@ class AutoSaver:
     def __init__(
         self,
         settings: _SavableProtocol,
-        path: Union[pathlib.Path, str],
+        path: pathlib.Path | str,
         *,
         save_on_update: bool = True,
         save_on_delete: bool = True,
         load_on_init: bool = True,
         save_delay: float = 0.0,
-        logger: Optional[logging.Logger] = None,
+        logger: logging.Logger | None = None,
     ) -> None:
         if isinstance(path, str):
             path = pathlib.Path(path)
@@ -254,8 +253,8 @@ class AutoSaver:
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_value: Optional[BaseException],
-        traceback: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None:
         self.saveIfNeeded()

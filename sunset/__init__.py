@@ -6,16 +6,15 @@ __author__ = "P. Varet"
 __copyright__ = "2022-2024, P. Varet"
 
 from . import exporter, serializers, sets
-
 from .autosaver import AutoSaver
 from .bunch import Bunch
-from .key import Key
-from .list import List
-from .protocols import Serializable, Serializer
 from .enum_serializer import (
     SerializableEnum,
     SerializableFlag,
 )
+from .key import Key
+from .list import List
+from .protocols import Serializable, Serializer
 from .settings import Settings, normalize
 from .timer import PersistentTimer
 

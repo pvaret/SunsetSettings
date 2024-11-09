@@ -1,5 +1,5 @@
-from typing import Iterable, Iterator, Optional, IO
-
+from collections.abc import Iterable, Iterator
+from typing import IO
 
 _SECTION_SEPARATOR = "/"
 _PATH_SEPARATOR = "."
@@ -103,7 +103,7 @@ def cleanup_path(path: str) -> str:
 # yields lines of text, and then use file.writelines.
 def save_to_file(
     file: IO[str],
-    data: Iterable[tuple[str, Optional[str]]],
+    data: Iterable[tuple[str, str | None]],
     *,
     blanklines: bool,
 ) -> None:
@@ -141,7 +141,7 @@ def save_to_file(
             file.write("\n")
 
 
-def load_from_file(file: IO[str], main: str) -> Iterator[tuple[str, Optional[str]]]:
+def load_from_file(file: IO[str], main: str) -> Iterator[tuple[str, str | None]]:
     main = normalize(main)
 
     current_section = ""

@@ -1,6 +1,6 @@
 import threading
-
-from typing import Any, Callable, Optional, Protocol
+from collections.abc import Callable
+from typing import Any, Protocol
 
 
 class TimerProtocol(Protocol):
@@ -12,7 +12,7 @@ class TimerProtocol(Protocol):
 
 
 class PersistentTimer:
-    _timer: Optional[threading.Timer]
+    _timer: threading.Timer | None
     _function: Callable[[], Any]
     _lock: threading.Lock
 

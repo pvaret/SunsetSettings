@@ -4,7 +4,6 @@ import typing
 
 from sunset import Key, List, Settings
 
-
 _P = typing.ParamSpec("_P")
 
 _THREAD_COUNT = 16

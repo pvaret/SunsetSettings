@@ -1,6 +1,5 @@
 import enum
-
-from typing import Generic, Optional, TypeVar, cast
+from typing import Generic, TypeVar, cast
 
 from sunset.enum_serializer import EnumSerializer
 from sunset.protocols import Serializable, Serializer
@@ -19,7 +18,7 @@ class StraightCastSerializer(Generic[_Castable]):
     def toStr(self, value: _Castable) -> str:
         return str(value)
 
-    def fromStr(self, string: str) -> Optional[_Castable]:
+    def fromStr(self, string: str) -> _Castable | None:
         try:
             return self._type(string)
         except ValueError:
@@ -30,7 +29,7 @@ class BoolSerializer:
     def toStr(self, value: bool) -> str:
         return "true" if value else "false"
 
-    def fromStr(self, string: str) -> Optional[bool]:
+    def fromStr(self, string: str) -> bool | None:
         string = string.strip().lower()
         if string in ("true", "yes", "y", "1"):
             return True
@@ -48,11 +47,11 @@ class SerializableSerializer(Generic[_Serializable]):
     def toStr(self, value: _Serializable) -> str:
         return value.toStr()
 
-    def fromStr(self, string: str) -> Optional[_Serializable]:
+    def fromStr(self, string: str) -> _Serializable | None:
         return self._type.fromStr(string)
 
 
-def lookup(type_: type[_T]) -> Optional[Serializer[_T]]:
+def lookup(type_: type[_T]) -> Serializer[_T] | None:
     # Note the cast on the return values. It's unfortunate, but works around a
     # mypy limitation where it fails to recognize our serializers as rightful
     # implementation of the generic Serializer protocol.

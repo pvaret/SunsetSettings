@@ -1,18 +1,8 @@
 import weakref
-
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from types import GenericAlias
-from typing import (
-    Any,
-    Callable,
-    Generic,
-    Iterator,
-    Optional,
-    Protocol,
-    TypeVar,
-    Union,
-    runtime_checkable,
-)
+from typing import Any, Generic, Protocol, TypeVar, runtime_checkable
 
 try:
     from typing import Self
@@ -21,7 +11,6 @@ except ImportError:
     from typing_extensions import Self
 
 from sunset.notifier import Notifier
-
 
 _T = TypeVar("_T")
 
@@ -49,7 +38,7 @@ class Serializable(Protocol):
         ...
 
     @classmethod
-    def fromStr(cls: type[Self], string: str) -> Optional[Self]:
+    def fromStr(cls: type[Self], string: str) -> Self | None:
         """
         Takes a string that represents a serialized instance of this class, and
         returns a newly created instance that corresponds to that
@@ -77,7 +66,7 @@ class Serializer(Generic[_T], Protocol):
         """
         ...
 
-    def fromStr(self, string: str) -> Optional[_T]:
+    def fromStr(self, string: str) -> _T | None:
         """
         Takes a string that represents a serialized instance of a value, and
         returns a newly created instance that corresponds to that string, or
@@ -89,18 +78,18 @@ class Serializer(Generic[_T], Protocol):
 
 @runtime_checkable
 class Inheriter(Protocol):
-    def setParent(self, parent: Optional[Self]) -> None: ...
+    def setParent(self, parent: Self | None) -> None: ...
 
-    def parent(self) -> Optional[Self]: ...
+    def parent(self) -> Self | None: ...
 
     def children(self) -> Iterator[Self]: ...
 
 
 @runtime_checkable
 class Dumpable(Protocol):
-    def dumpFields(self) -> Iterator[tuple[str, Optional[str]]]: ...
+    def dumpFields(self) -> Iterator[tuple[str, str | None]]: ...
 
-    def restoreField(self, path: str, value: Optional[str]) -> bool: ...
+    def restoreField(self, path: str, value: str | None) -> bool: ...
 
     def isSet(self) -> bool: ...
 
@@ -119,7 +108,7 @@ class LoadedNotifier(Protocol):
 
 @runtime_checkable
 class ItemTemplate(Protocol):
-    def _typeHint(self) -> Union[type, GenericAlias]: ...
+    def _typeHint(self) -> type | GenericAlias: ...
 
     def _newInstance(self) -> Self: ...
 
@@ -133,7 +122,7 @@ class HasMetadata(Protocol):
 
 @dataclass
 class Metadata:
-    container: Optional[weakref.ref[HasMetadata]] = None
+    container: weakref.ref[HasMetadata] | None = None
     label: str = ""
 
     def clear(self) -> None:
@@ -142,8 +131,8 @@ class Metadata:
 
     def update(
         self,
-        label: Optional[str] = None,
-        container: Optional[HasMetadata] = None,
+        label: str | None = None,
+        container: HasMetadata | None = None,
     ) -> None:
         if container is not None:
             self.container = weakref.ref(container)
@@ -178,7 +167,7 @@ class Field(
 class BaseField:
     _PATH_SEPARATOR: str = "."
 
-    _metadata: Optional[Metadata] = None
+    _metadata: Metadata | None = None
 
     def skipOnSave(self) -> bool:
         """

@@ -1,13 +1,10 @@
 import logging
 import weakref
-
+from collections.abc import Callable, Iterator
 from types import GenericAlias
 from typing import (
     Any,
-    Callable,
     Generic,
-    Iterator,
-    Optional,
     TypeVar,
     cast,
 )
@@ -23,7 +20,6 @@ from sunset.lockable import Lockable
 from sunset.notifier import Notifier
 from sunset.protocols import BaseField, Serializer, UpdateNotifier
 from sunset.serializers import lookup
-
 
 _T = TypeVar("_T")
 
@@ -98,23 +94,23 @@ class Key(Generic[_T], BaseField, Lockable):
     """
 
     _default: _T
-    _value: Optional[_T]
+    _value: _T | None
     _serializer: Serializer[_T]
     _validator: Callable[[_T], bool]
-    _bad_value_string: Optional[str]
+    _bad_value_string: str | None
     _value_change_notifier: Notifier[_T]
     _update_notifier: Notifier[[UpdateNotifier]]
     _loaded_notifier: Notifier[[]]
-    _parent_ref: Optional[weakref.ref["Key[_T]"]]
+    _parent_ref: weakref.ref["Key[_T]"] | None
     _children_ref: weakref.WeakSet["Key[_T]"]
     _type: type[_T]
 
     def __init__(
         self,
         default: _T,
-        serializer: Optional[Serializer[_T]] = None,
-        validator: Optional[Callable[[_T], bool]] = None,
-        value_type: Optional[type[_T]] = None,
+        serializer: Serializer[_T] | None = None,
+        validator: Callable[[_T], bool] | None = None,
+        value_type: type[_T] | None = None,
     ) -> None:
         super().__init__()
 
@@ -354,7 +350,7 @@ class Key(Generic[_T], BaseField, Lockable):
 
         self._validator = validator
 
-    def setParent(self, parent: Optional[Self]) -> None:
+    def setParent(self, parent: Self | None) -> None:
         """
         Makes the given Key the parent of this one. If None, remove this
         Key's parent, if any.
@@ -398,7 +394,7 @@ class Key(Generic[_T], BaseField, Lockable):
         parent._children_ref.add(self)
         self._parent_ref = weakref.ref(parent)
 
-    def parent(self) -> Optional[Self]:
+    def parent(self) -> Self | None:
         """
         Returns the parent of this Key, if any.
 
@@ -409,7 +405,7 @@ class Key(Generic[_T], BaseField, Lockable):
         # Make the type of self._parent_ref more specific for the purpose of
         # type checking.
 
-        parent = cast(Optional[weakref.ref[Self]], self._parent_ref)
+        parent = cast(weakref.ref[Self] | None, self._parent_ref)
         return parent() if parent is not None else None
 
     def children(self) -> Iterator[Self]:
@@ -423,7 +419,7 @@ class Key(Generic[_T], BaseField, Lockable):
         for child in self._children_ref:
             yield cast(Self, child)
 
-    def dumpFields(self) -> Iterator[tuple[str, Optional[str]]]:
+    def dumpFields(self) -> Iterator[tuple[str, str | None]]:
         if not self.skipOnSave():
             if self.isSet():
                 yield "", self._serializer.toStr(self.get())
@@ -436,7 +432,7 @@ class Key(Generic[_T], BaseField, Lockable):
 
                 yield "", self._bad_value_string
 
-    def restoreField(self, path: str, value: Optional[str]) -> bool:
+    def restoreField(self, path: str, value: str | None) -> bool:
         if value is None:
             # Note that doing nothing when the given value is None, is
             # considered a success.

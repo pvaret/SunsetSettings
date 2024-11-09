@@ -1,5 +1,4 @@
 import threading
-
 from unittest.mock import MagicMock
 
 from pytest import MonkeyPatch

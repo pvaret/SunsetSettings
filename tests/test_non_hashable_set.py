@@ -1,4 +1,5 @@
-from typing import Any, MutableSet
+from collections.abc import MutableSet
+from typing import Any
 
 from sunset import sets
 

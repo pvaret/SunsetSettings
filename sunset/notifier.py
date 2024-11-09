@@ -1,10 +1,9 @@
 import threading
-
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from typing import Any, Callable, Generic, Iterator, ParamSpec
+from typing import Any, Generic, ParamSpec
 
 from sunset.sets import WeakCallableSet
-
 
 _P = ParamSpec("_P")
 

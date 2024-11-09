@@ -1,5 +1,4 @@
 import pytest
-
 from pytest_mock import MockerFixture
 
 from sunset import Bunch, Key, List, protocols

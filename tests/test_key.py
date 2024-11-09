@@ -1,10 +1,9 @@
 from typing import Optional
 
 import pytest
-
 from pytest_mock import MockerFixture
 
-from sunset import Bunch, Key, protocols, SerializableEnum, SerializableFlag
+from sunset import Bunch, Key, SerializableEnum, SerializableFlag, protocols
 
 
 class ExampleSerializable:
@@ -111,7 +110,7 @@ class TestKey:
             def toStr(self, value: str) -> str:
                 return value + "-TEST"
 
-            def fromStr(self, string: str) -> Optional[str]:
+            def fromStr(self, string: str) -> str | None:
                 if string.endswith("-TEST"):
                     return string[:-5]
                 return None

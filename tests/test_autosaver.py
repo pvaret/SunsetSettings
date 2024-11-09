@@ -1,10 +1,9 @@
 import logging
 import pathlib
-
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import pytest
-
 from pytest_mock import MockerFixture
 
 from sunset import AutoSaver, Key, Settings
