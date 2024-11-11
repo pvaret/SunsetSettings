@@ -4,6 +4,7 @@ Changelog
 Latest
 ---------------------------------
 
+ - Added Python 3.13 to officially supported versions.
  - Migrated to Hatch as the build and environment management system.
 
 SunsetSettings 0.6.0 (2024-07-16)
