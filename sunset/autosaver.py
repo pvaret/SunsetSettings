@@ -1,8 +1,7 @@
 import logging
-import os
-import pathlib
 import tempfile
 from collections.abc import Callable
+from pathlib import Path
 from types import TracebackType
 from typing import IO, Any, Protocol, TypeVar
 
@@ -19,7 +18,7 @@ class _SavableProtocol(Protocol):
 
     def load(self, file: IO[str]) -> None: ...
 
-    def save(self, file: IO[str], blanklines: bool = False) -> None: ...
+    def save(self, file: IO[str], *, blanklines: bool = False) -> None: ...
 
     def onUpdateCall(self, callback: Callable[[Any], Any]) -> None: ...
 
@@ -87,7 +86,7 @@ class AutoSaver:
     _FILE_MODE: int = 0o644
     _ENCODING: str = "UTF-8"
 
-    _path: pathlib.Path
+    _path: Path
     _settings: _SavableProtocol
     _dirty: bool
     _save_on_update: bool
@@ -96,10 +95,10 @@ class AutoSaver:
     _save_timer: TimerProtocol
     _logger: logging.Logger
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         settings: _SavableProtocol,
-        path: pathlib.Path | str,
+        path: Path | str,
         *,
         save_on_update: bool = True,
         save_on_delete: bool = True,
@@ -108,7 +107,7 @@ class AutoSaver:
         logger: logging.Logger | None = None,
     ) -> None:
         if isinstance(path, str):
-            path = pathlib.Path(path)
+            path = Path(path)
 
         path = path.expanduser()
 
@@ -128,7 +127,7 @@ class AutoSaver:
         if load_on_init:
             self.doLoad()
 
-    def path(self) -> pathlib.Path:
+    def path(self) -> Path:
         """
         Returns the settings path for this AutoSaver.
 
@@ -159,13 +158,14 @@ class AutoSaver:
         try:
             if (path := self._path).exists():
                 self._logger.debug("Loading settings file '%s'...", path)
-                with open(path, encoding=self._ENCODING) as f:
+                with Path(path).open(encoding=self._ENCODING) as f:
                     self._settings.load(f)
                 self._logger.debug("Loaded.")
                 return True
+            self._logger.error("Path %s not found.", path)
 
-        except OSError as e:
-            self._logger.error("Error while loading from '%s': %s", self._path, e)
+        except OSError:
+            self._logger.exception("Error while loading from '%s':", self._path)
 
         return False
 
@@ -201,12 +201,13 @@ class AutoSaver:
             ) as tmp:
                 self._logger.debug("Saving settings file '%s'...", self._path)
                 self._settings.save(tmp.file, blanklines=True)
-                os.chmod(tmp.name, self._FILE_MODE)
-                os.rename(tmp.name, self._path)
+                tmp_path = Path(tmp.name)
+                tmp_path.chmod(self._FILE_MODE)
+                tmp_path.rename(self._path)
                 self._logger.debug("Saved.")
 
-        except OSError as e:
-            self._logger.error("Error while saving to '%s': %s", self._path, e)
+        except OSError:
+            self._logger.exception("Error while saving to '%s':", self._path)
             return False
 
         self._dirty = False
@@ -230,7 +231,7 @@ class AutoSaver:
 
         return save_needed
 
-    def _onSettingsUpdated(self, _: Any) -> None:
+    def _onSettingsUpdated(self, _: Any) -> None:  # noqa: ANN401
         self._dirty = True
         if self._save_on_update:
             self._save_timer.start(self._save_delay)

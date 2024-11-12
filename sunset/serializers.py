@@ -26,7 +26,7 @@ class StraightCastSerializer(Generic[_Castable]):
 
 
 class BoolSerializer:
-    def toStr(self, value: bool) -> str:
+    def toStr(self, value: bool) -> str:  # noqa: FBT001
         return "true" if value else "false"
 
     def fromStr(self, string: str) -> bool | None:

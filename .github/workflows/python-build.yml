@@ -35,8 +35,6 @@ jobs:
 
       - name: Check linting
         run: hatch fmt --linter --check
-        # Until linter warnings are fixed, don't consider them build-breaking errors.
-        continue-on-error: true
       
       - name: check formatting
         run: hatch fmt --formatter --check

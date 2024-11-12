@@ -1,14 +1,14 @@
+import sys
 import weakref
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from types import GenericAlias
 from typing import Any, Generic, Protocol, TypeVar, runtime_checkable
 
-try:
-    from typing import Self
-except ImportError:
-    # TODO: Remove once we deprecate support for Python 3.10.
+if sys.version_info < (3, 11):
     from typing_extensions import Self
+else:
+    from typing import Self
 
 from sunset.notifier import Notifier
 
@@ -149,7 +149,7 @@ class Metadata:
         if not path:
             return self.label
 
-        return path + container._PATH_SEPARATOR + self.label
+        return path + container._PATH_SEPARATOR + self.label  # noqa: SLF001
 
 
 @runtime_checkable

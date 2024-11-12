@@ -4,6 +4,8 @@ Changelog
 Latest
 ---------------------------------
 
+ - Arguments after the first position in Settings.save() and Settings.autosave() methods
+   are now keyword arguments only.
  - Added Python 3.13 to officially supported versions.
  - Migrated to Hatch as the build and environment management system.
 

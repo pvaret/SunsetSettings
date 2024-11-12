@@ -182,11 +182,11 @@ class TestAutosaver:
             logger=logger_stub,
         )
 
-        logger_stub.error.assert_not_called()  # type: ignore
+        logger_stub.exception.assert_not_called()
         assert settings_file.exists()
         assert not saver.doLoad()
-        logger_stub.error.assert_called_once()  # type: ignore
-        logger_stub.error.reset_mock()  # type: ignore
+        logger_stub.exception.assert_called_once()
+        logger_stub.exception.reset_mock()
 
         assert not saver.doSave()
-        logger_stub.error.assert_called_once()  # type: ignore
+        logger_stub.exception.assert_called_once()

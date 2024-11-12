@@ -34,8 +34,8 @@ class Notifier(Generic[_P]):
         """
 
         if not self._inhibited:
-            for callable in self._callbacks:
-                callable(*args, **kwargs)
+            for callback in self._callbacks:
+                callback(*args, **kwargs)
 
     def add(self, callback: Callable[_P, Any]) -> None:
         """

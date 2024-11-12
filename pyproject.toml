@@ -67,6 +67,7 @@ extend-exclude = ["tests/", "docs/"]
 # Enable all linting rules by default.
 select = ["ALL"]
 ignore = [
+    "ANN101", # This rule is deprecated. Ignore it until it's removed.
     "COM812", # Can confuse the Ruff formatter.
     "ISC001", # Can confuse the Ruff formatter.
     "N802",   # We use camelCase method names.

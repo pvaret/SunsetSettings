@@ -1,14 +1,14 @@
+import sys
 import weakref
 from collections.abc import Callable, Iterable, Iterator, MutableSequence
 from enum import Enum, auto
 from types import GenericAlias
 from typing import Any, SupportsIndex, TypeVar, cast, overload
 
-try:
-    from typing import Self
-except ImportError:
-    # TODO: Remove once we deprecate support for Python 3.10.
+if sys.version_info < (3, 11):
     from typing_extensions import Self
+else:
+    from typing import Self
 
 from sunset.bunch import Bunch
 from sunset.key import Key
@@ -126,12 +126,12 @@ class List(MutableSequence[ListItemT], BaseField):
     ) -> None:
         self._clearMetadata(self._contents[index])
         if isinstance(index, slice):
-            assert isinstance(value, Iterable)
+            assert isinstance(value, Iterable)  # noqa: S101
             self._contents[index] = value
 
         else:
-            assert isinstance(index, SupportsIndex)
-            assert not isinstance(value, Iterable)
+            assert isinstance(index, SupportsIndex)  # noqa: S101
+            assert not isinstance(value, Iterable)  # noqa: S101
             self._contents[index] = value
 
         self._relabelItems()
@@ -161,14 +161,14 @@ class List(MutableSequence[ListItemT], BaseField):
     def _clearMetadata(self, fields: ListItemT | list[ListItemT]) -> None:
         for field in fields if isinstance(fields, list) else [fields]:
             field.meta().clear()
-            field._update_notifier.discard(self._update_notifier.trigger)
-            self._loaded_notifier.discard(field._loaded_notifier.trigger)
+            field._update_notifier.discard(self._update_notifier.trigger)  # noqa: SLF001
+            self._loaded_notifier.discard(field._loaded_notifier.trigger)  # noqa: SLF001
 
     def __len__(self) -> int:
         return len(self._contents)
 
     def _newItem(self) -> ListItemT:
-        item = self._template._newInstance()
+        item = self._template._newInstance()  # noqa: SLF001
 
         # WORKAROUND: This lets mypy properly typecheck the return type.
 
@@ -216,8 +216,8 @@ class List(MutableSequence[ListItemT], BaseField):
     def _relabelItems(self) -> None:
         for i, item in enumerate(self._contents):
             item.meta().update(label=self._labelForIndex(i), container=self)
-            item._update_notifier.add(self._update_notifier.trigger)
-            self._loaded_notifier.add(item._loaded_notifier.trigger)
+            item._update_notifier.add(self._update_notifier.trigger)  # noqa: SLF001
+            self._loaded_notifier.add(item._loaded_notifier.trigger)  # noqa: SLF001
 
     @staticmethod
     def _labelForIndex(index: SupportsIndex) -> str:
@@ -251,19 +251,18 @@ class List(MutableSequence[ListItemT], BaseField):
 
         # Runtime check to affirm the type check of the method.
 
-        if parent is not None:
-            if type(self) is not type(parent):
-                return
+        if parent is not None and type(self) is not type(parent):
+            return
 
         old_parent = self.parent()
         if old_parent is not None:
-            old_parent._children_ref.discard(self)
+            old_parent._children_ref.discard(self)  # noqa: SLF001
 
         if parent is None:
             self._parent_ref = None
         else:
             self._parent_ref = weakref.ref(parent)
-            parent._children_ref.add(self)
+            parent._children_ref.add(self)  # noqa: SLF001
 
     def iter(self, order: IterOrder | None = None) -> Iterator[ListItemT]:
         """

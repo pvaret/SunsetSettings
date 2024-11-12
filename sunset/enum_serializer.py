@@ -62,36 +62,29 @@ class EnumSerializer(Generic[_EnumT]):
 
                 names.append(name)
 
-        if not final_name:
-            if names:
-                final_name = "|".join(names)
+        if names and not final_name:
+            final_name = "|".join(names)
 
         if final_name:
             value._name_ = final_name
 
     def _members(self) -> dict[str, _EnumT]:
-        members: dict[str, _EnumT] = {}
-
-        # Note that we use the __members__ attribute and not dir() in order to
-        # get the members in order of declaration.
-
-        for name, member in self._type.__members__.items():
-            if isinstance(member, self._type):
-                members[name] = member
-
-        return members
+        # Note that we use the __members__ attribute and not dir() in order to get the
+        # members in order of declaration.
+        return {
+            name: member
+            for name, member in self._type.__members__.items()
+            if isinstance(member, self._type)
+        }
 
     def _lookupMember(self, name: str) -> _EnumT | None:
         candidates: list[_EnumT] = []
 
         for candidate_name, member in self._members().items():
-            candidate_name = candidate_name.strip()
-
-            if candidate_name == name.strip():
+            if candidate_name.strip() == name.strip():
                 return member
 
-            candidate_name = candidate_name.strip().lower()
-            if candidate_name == name.strip().lower():
+            if candidate_name.strip().lower() == name.strip().lower():
                 candidates.append(member)
 
         if len(candidates) == 1:

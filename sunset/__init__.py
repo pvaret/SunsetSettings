@@ -5,18 +5,15 @@ __version__ = "0.6.1-dev"
 __author__ = "P. Varet"
 __copyright__ = "2022-2024, P. Varet"
 
-from . import exporter, serializers, sets
-from .autosaver import AutoSaver
-from .bunch import Bunch
-from .enum_serializer import (
-    SerializableEnum,
-    SerializableFlag,
-)
-from .key import Key
-from .list import List
-from .protocols import Serializable, Serializer
-from .settings import Settings, normalize
-from .timer import PersistentTimer
+from sunset import exporter, serializers, sets
+from sunset.autosaver import AutoSaver
+from sunset.bunch import Bunch
+from sunset.enum_serializer import SerializableEnum, SerializableFlag
+from sunset.key import Key
+from sunset.list import List
+from sunset.protocols import Serializable, Serializer
+from sunset.settings import Settings, normalize
+from sunset.timer import PersistentTimer
 
 # Backward compatibility: Bunch used to be called Bundle prior to version 0.4.0.
 # Retain compatibility by keeping this name around for a few versions.

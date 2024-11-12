@@ -5,7 +5,7 @@ _SECTION_SEPARATOR = "/"
 _PATH_SEPARATOR = "."
 
 
-def normalize(string: str, to_lower: bool = True) -> str:
+def normalize(string: str, *, to_lower: bool = True) -> str:
     ret = ""
     for c in string:
         if c.isalnum() or c in ("-", "_"):
@@ -43,7 +43,7 @@ def unescape(value: str) -> str:
     if '"' not in value and "\\" not in value:
         return value
 
-    if len(value) < 2:
+    if len(value) <= 1:
         return value
 
     if value[0] == '"':
@@ -73,7 +73,7 @@ def unescape(value: str) -> str:
     return ret
 
 
-def cleanup_string(string: str, /, sep: str, to_lower: bool) -> str:
+def cleanup_string(string: str, /, sep: str, *, to_lower: bool) -> str:
     replacements = (
         (f" {sep}", f"{sep}"),
         (f"{sep} ", f"{sep}"),
@@ -85,7 +85,7 @@ def cleanup_string(string: str, /, sep: str, to_lower: bool) -> str:
             string = string.replace(from_, to)
 
     string = sep.join(
-        normalize(fragment.strip(), to_lower) for fragment in string.split(sep)
+        normalize(fragment.strip(), to_lower=to_lower) for fragment in string.split(sep)
     )
 
     return string.strip(sep)
@@ -99,8 +99,6 @@ def cleanup_path(path: str) -> str:
     return cleanup_string(path, sep=_PATH_SEPARATOR, to_lower=False)
 
 
-# TODO: turn into a function (like dump_to_ini maybe) that takes the data and
-# yields lines of text, and then use file.writelines.
 def save_to_file(
     file: IO[str],
     data: Iterable[tuple[str, str | None]],
@@ -120,8 +118,8 @@ def save_to_file(
 
         return section, path
 
-    for path, dump in data:
-        section, path = extract_section(path.strip())
+    for full_path, dump in data:
+        section, path = extract_section(full_path.strip())
         if not section:
             continue
 
@@ -146,8 +144,8 @@ def load_from_file(file: IO[str], main: str) -> Iterator[tuple[str, str | None]]
 
     current_section = ""
 
-    for line in file:
-        line = line.strip()
+    for full_line in file:
+        line = full_line.strip()
 
         if not line:
             continue

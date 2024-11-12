@@ -1,4 +1,5 @@
 import logging
+import sys
 import weakref
 from collections.abc import Callable, Iterator
 from types import GenericAlias
@@ -9,11 +10,10 @@ from typing import (
     cast,
 )
 
-try:
-    from typing import Self
-except ImportError:
-    # TODO: Remove once we deprecate support for Python 3.10.
+if sys.version_info < (3, 11):
     from typing_extensions import Self
+else:
+    from typing import Self
 
 from sunset.exporter import maybe_escape
 from sunset.lockable import Lockable
@@ -119,12 +119,13 @@ class Key(Generic[_T], BaseField, Lockable):
 
         if value_type is not None:
             if not isinstance(default, value_type):
-                raise TypeError(
+                msg = (
                     f"Default Key value '{default}' has type"
                     f" '{default.__class__.__name__}', which is not compatible"
                     " with explicitly given value type"
                     f" '{value_type.__name__}'."
                 )
+                raise TypeError(msg)
             self._type = value_type
         else:
             self._type = default.__class__
@@ -136,12 +137,13 @@ class Key(Generic[_T], BaseField, Lockable):
         if serializer is None:
             serializer = lookup(self._type)
             if serializer is None:
-                raise TypeError(
+                msg = (
                     f"Default Key value '{default}' has type"
-                    f" '{self._type.__name__}', which is not"
-                    " supported by a native serializer. Please construct"
-                    " the Key with an explicit serializer argument."
+                    f" '{self._type.__name__}', which is not supported by a native"
+                    " serializer. Please construct the Key with an explicit serializer"
+                    " argument."
                 )
+                raise TypeError(msg)
 
         if validator is not None:
             self._validator = validator
@@ -217,7 +219,7 @@ class Key(Generic[_T], BaseField, Lockable):
         if prev_value != self.get():
             self._value_change_notifier.trigger(self.get())
             for child in self.children():
-                child._notifyParentValueChanged()
+                child._notifyParentValueChanged()  # noqa: SLF001
 
         if not previously_set or prev_value != self.get():
             self._update_notifier.trigger(self)
@@ -242,7 +244,7 @@ class Key(Generic[_T], BaseField, Lockable):
         if prev_value != self.get():
             self._value_change_notifier.trigger(self.get())
             for child in self.children():
-                child._notifyParentValueChanged()
+                child._notifyParentValueChanged()  # noqa: SLF001
 
         self._update_notifier.trigger(self)
 
@@ -321,7 +323,7 @@ class Key(Generic[_T], BaseField, Lockable):
             callback.
         """
 
-        self._update_notifier.add(callback)  # type: ignore
+        self._update_notifier.add(callback)  # type: ignore[reportArgumentType]
 
     def onLoadedCall(self, callback: Callable[[], Any]) -> None:
         """
@@ -373,25 +375,24 @@ class Key(Generic[_T], BaseField, Lockable):
 
         # Runtime check to affirm the type check of the method.
 
-        if parent is not None:
-            if type(self) is not type(parent):
-                return
+        if parent is not None and type(self) is not type(parent):
+            return
 
         old_parent = self.parent()
         if old_parent is not None:
-            old_parent._children_ref.discard(self)
+            old_parent._children_ref.discard(self)  # noqa: SLF001
 
         if parent is None:
             self._parent_ref = None
             return
 
-        if parent._type is not self._type:
+        if parent._type is not self._type:  # noqa: SLF001
             # This should not happen... unless the user is holding it wrong.
             # So, better safe than sorry.
 
             return
 
-        parent._children_ref.add(self)
+        parent._children_ref.add(self)  # noqa: SLF001
         self._parent_ref = weakref.ref(parent)
 
     def parent(self) -> Self | None:
@@ -448,15 +449,13 @@ class Key(Generic[_T], BaseField, Lockable):
             if (val := self._serializer.fromStr(value)) is not None:
                 return self.set(val)
 
-            else:
-                # Keep track of the value that failed to restore, so that we can
-                # dump it again when saving. That way, if a user makes a typo
-                # while editing the settings file, the faulty entry is not
-                # entirely lost when we save.
+            # Keep track of the value that failed to restore, so that we can dump it
+            # again when saving. That way, if a user makes a typo while editing the
+            # settings file, the faulty entry is not entirely lost when we save.
 
-                logging.error("Invalid value for Key %r: %s", self, value)
-                self._bad_value_string = value
-                return False
+            logging.error("Invalid value for Key %r: %s", self, value)
+            self._bad_value_string = value
+            return False
 
     def _notifyParentValueChanged(self) -> None:
         if self.isSet():
@@ -464,7 +463,7 @@ class Key(Generic[_T], BaseField, Lockable):
 
         self._value_change_notifier.trigger(self.get())
         for child in self.children():
-            child._notifyParentValueChanged()
+            child._notifyParentValueChanged()  # noqa: SLF001
 
     def _typeHint(self) -> GenericAlias:
         return GenericAlias(type(self), self._type)

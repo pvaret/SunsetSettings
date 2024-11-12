@@ -24,7 +24,8 @@ class NonHashableSet(MutableSet[_T]):
         self._contents = mapping_type()
         self._lock = threading.RLock()
 
-    def _computeHash(self, value: Any) -> int:
+    @staticmethod
+    def _computeHash(value: object) -> int:
         # Try to return the normal hash for the value if possible. This is
         # because hash is more selective than id. For instance! If value is a
         # weakref, then hash properly identifies two distinct weakrefs to the
@@ -49,7 +50,7 @@ class NonHashableSet(MutableSet[_T]):
         except KeyError:
             pass
 
-    def __contains__(self, obj: Any) -> bool:
+    def __contains__(self, obj: object) -> bool:
         return self._computeHash(obj) in self._contents
 
     def __iter__(self) -> Iterator[_T]:
@@ -101,7 +102,7 @@ class WeakCallableSet(MutableSet[_C]):
 
         self._content.add(r)
 
-    def __contains__(self, value: Any) -> bool:
+    def __contains__(self, value: object) -> bool:
         return any(self._isSameCallable(candidate, value) for candidate in self)
 
     def __iter__(self) -> Iterator[_C]:
@@ -124,7 +125,7 @@ class WeakCallableSet(MutableSet[_C]):
             self._content.discard(ref)
 
     @staticmethod
-    def _isSameCallable(callable1: _C, callable2: _C) -> bool:
+    def _isSameCallable(callable1: _C, callable2: object) -> bool:
         if isinstance(callable1, MethodType) and isinstance(callable2, MethodType):
             return (
                 callable1.__self__ is callable2.__self__

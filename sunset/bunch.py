@@ -1,14 +1,14 @@
 import dataclasses
 import inspect
+import sys
 import weakref
 from collections.abc import Callable, Iterator, MutableSet
 from typing import Any, cast
 
-try:
-    from typing import Self
-except ImportError:
-    # TODO: Remove once we deprecate support for Python 3.10.
+if sys.version_info < (3, 11):
     from typing_extensions import Self
+else:
+    from typing import Self
 
 
 from sunset.notifier import Notifier
@@ -85,10 +85,11 @@ class Bunch(BaseField):
 
                         continue
 
-                    raise TypeError(
-                        f"Field '{name}' in the definition of '{cls.__name__}'"
-                        " is uninstantiated"
+                    msg = (
+                        f"Field '{name}' in the definition of '{cls.__name__}' is"
+                        " uninstantiated"
                     )
+                    raise TypeError(msg)
 
                 if isinstance(attr, ItemTemplate):
                     # Safety check: make sure the user isn't accidentally
@@ -96,18 +97,19 @@ class Bunch(BaseField):
 
                     for cls_parent in cls_parents:
                         if getattr(cls_parent, name, None) is not None:
-                            raise TypeError(
+                            msg = (
                                 f"Field '{name}' in the definition of"
                                 f" '{cls.__name__}' overrides attribute of the"
                                 " same name declared in parent class"
                                 f" '{cls_parent.__name__}'; consider renaming"
                                 f" this field to '{name}_' for instance"
                             )
+                            raise TypeError(msg)
 
                     # Create a proper field from the attribute.
 
-                    field = dataclasses.field(default_factory=attr._newInstance)
-                    dataclasses_fields.append((name, attr._typeHint(), field))
+                    field = dataclasses.field(default_factory=attr._newInstance)  # noqa: SLF001
+                    dataclasses_fields.append((name, attr._typeHint(), field))  # noqa: SLF001
 
                     # Note that we delete the attribute now that the field is
                     # created. This helps avoid a hard-to-debug problem if the
@@ -130,7 +132,7 @@ class Bunch(BaseField):
                     cls.__qualname__,
                     dataclasses_fields,
                     init=False,
-                    bases=(cls,) + cls_parents,
+                    bases=(cls, *cls_parents),
                 ),
             )
 
@@ -140,7 +142,7 @@ class Bunch(BaseField):
 
         # And finally, return an instance of the dataclass. Phew.
 
-        return super().__new__(dataclass_class)  # type: ignore
+        return super().__new__(dataclass_class)
 
     def __init__(self) -> None:
         super().__init__()
@@ -149,8 +151,8 @@ class Bunch(BaseField):
 
         # First, look up internal dataclass attribute names.
 
-        fields_attr: str = getattr(dataclasses, "_FIELDS")
-        field_type: Any = getattr(dataclasses, "_FIELD")
+        fields_attr: str = getattr(dataclasses, "_FIELDS")  # noqa: B009
+        field_type: Any = getattr(dataclasses, "_FIELD")  # noqa: B009
         fields: dict[str, dataclasses.Field[Any]] = getattr(self, fields_attr, {})
 
         # Then look up the fields stored in the dataclass.
@@ -177,8 +179,8 @@ class Bunch(BaseField):
             if isinstance(field, Field):
                 self._fields[label] = field
                 field.meta().update(label=label, container=self)
-                field._update_notifier.add(self._update_notifier.trigger)
-                self._loaded_notifier.add(field._loaded_notifier.trigger)
+                field._update_notifier.add(self._update_notifier.trigger)  # noqa: SLF001
+                self._loaded_notifier.add(field._loaded_notifier.trigger)  # noqa: SLF001
 
     def setParent(self, parent: Self | None) -> None:
         """
@@ -204,19 +206,18 @@ class Bunch(BaseField):
 
         # Runtime check to affirm the type check of the method.
 
-        if parent is not None:
-            if type(self) is not type(parent):
-                return
+        if parent is not None and type(self) is not type(parent):
+            return
 
         old_parent = self.parent()
         if old_parent is not None:
-            old_parent._children_set.discard(self)
+            old_parent._children_set.discard(self)  # noqa: SLF001
 
         if parent is None:
             self._parent_ref = None
         else:
             self._parent_ref = weakref.ref(parent)
-            parent._children_set.add(self)
+            parent._children_set.add(self)  # noqa: SLF001
 
         for label, field in self._fields.items():
             if parent is None:
@@ -231,7 +232,7 @@ class Bunch(BaseField):
 
                 continue
 
-            assert type(field) is type(parent_field)
+            assert type(field) is type(parent_field)  # noqa: S101
             field.setParent(parent_field)
 
     def parent(self) -> Self | None:

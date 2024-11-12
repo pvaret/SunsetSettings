@@ -1,13 +1,13 @@
 import logging
-import pathlib
+import sys
 from collections.abc import Callable, Iterator, MutableSet
+from pathlib import Path
 from typing import IO, Any
 
-try:
-    from typing import Self
-except ImportError:
-    # TODO: Remove once we deprecate support for Python 3.10.
+if sys.version_info < (3, 11):
     from typing_extensions import Self
+else:
+    from typing import Self
 
 from sunset.autosaver import AutoSaver
 from sunset.bunch import Bunch
@@ -288,7 +288,7 @@ class Settings(Bunch, Lockable):
             # Note that this triggers a notification if the unique name is
             # different from the current name.
 
-            parent._setUniqueNameForSection(name, self)
+            parent._setUniqueNameForSection(name, self)  # noqa: SLF001
 
         return self.sectionName()
 
@@ -297,18 +297,16 @@ class Settings(Bunch, Lockable):
         candidate = name = normalize(name)
 
         if candidate:
-            other_names = set(
-                s.sectionName() for s in self.children() if s is not section
-            )
+            other_names = {s.sectionName() for s in self.children() if s is not section}
 
             i = 0
             while candidate in other_names:
                 i += 1
                 candidate = f"{name}_{i}"
 
-        if candidate != section._section_name:
-            section._section_name = candidate
-            section._update_notifier.trigger(section)
+        if candidate != section._section_name:  # noqa: SLF001
+            section._section_name = candidate  # noqa: SLF001
+            section._update_notifier.trigger(section)  # noqa: SLF001
 
     def sectionName(self) -> str:
         """
@@ -351,17 +349,17 @@ class Settings(Bunch, Lockable):
         if parent is not None:
             # May trigger an update notification if the name is changed.
 
-            parent._setUniqueNameForSection(self._section_name, self)
-            self._update_notifier.add(parent._update_notifier.trigger)
+            parent._setUniqueNameForSection(self._section_name, self)  # noqa: SLF001
+            self._update_notifier.add(parent._update_notifier.trigger)  # noqa: SLF001
 
-        super().setParent(parent)  # type:ignore
+        super().setParent(parent)
 
         if parent is not None:
-            parent._update_notifier.trigger(parent)
+            parent._update_notifier.trigger(parent)  # noqa: SLF001
 
         if previous_parent is not None:
-            previous_parent._update_notifier.trigger(previous_parent)
-            self._update_notifier.discard(previous_parent._update_notifier.trigger)
+            previous_parent._update_notifier.trigger(previous_parent)  # noqa: SLF001
+            self._update_notifier.discard(previous_parent._update_notifier.trigger)  # noqa: SLF001
 
     # Not actually useless. This lets us override the docstring with
     # Settings-specific info.
@@ -433,7 +431,7 @@ class Settings(Bunch, Lockable):
 
         return False
 
-    def save(self, file: IO[str], blanklines: bool = False) -> None:
+    def save(self, file: IO[str], *, blanklines: bool = False) -> None:
         """
         Writes the contents of this Settings instance and its subsections in
         text form to the given file object.
@@ -486,7 +484,8 @@ class Settings(Bunch, Lockable):
 
     def autosave(
         self,
-        path: str | pathlib.Path,
+        path: str | Path,
+        *,
         save_on_update: bool = True,
         save_delay: int = 0,
         logger: logging.Logger | None = None,

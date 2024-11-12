@@ -43,7 +43,7 @@ class TestKey:
         assert Key(default=ExampleEnum.ONE).get() == ExampleEnum.ONE
         assert Key(default=ExampleFlag.ONE | ExampleFlag.TWO).get() == ExampleFlag.THREE
         with pytest.raises(TypeError):
-            Key(default=object())  # type: ignore # It's the point!
+            Key(default=object())
 
     def test_set(self) -> None:
         key = Key(default="test")
