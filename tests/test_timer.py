@@ -31,9 +31,9 @@ class TestPersistentTimer:
         assert timer._timer is None
 
     def test_timer_with_delay(self, monkeypatch: MonkeyPatch) -> None:
-        mock_cls = MagicMock(threading.Timer, autospec=True)
-        mock = mock_cls.return_value
-        monkeypatch.setattr(threading, "Timer", mock_cls)
+        mock = MagicMock(threading.Timer, autospec=True)
+        mock.return_value = mock
+        monkeypatch.setattr(threading, "Timer", mock)
 
         def test() -> None:
             pass
@@ -44,7 +44,7 @@ class TestPersistentTimer:
 
         timer.start(1.0)
 
-        mock_cls.assert_called_once_with(1.0, timer._timeout)
+        mock.assert_called_once_with(1.0, timer._timeout)
         assert timer._timer is mock
         mock.start.assert_called_once()
 

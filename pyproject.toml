@@ -96,6 +96,17 @@ parallel = true
 [[tool.hatch.envs.hatch-test.matrix]]
 python = ["3.10", "3.11", "3.12", "3.13"]
 
+[tool.hatch.envs.mypy]
+# This environment is where we exercise type checks.
+dependencies = ["mypy"]
+# We check tests too, so their dependencies are needed.
+features = ["tests"]
+# This environment does not need the code built and installed.
+detached = true
+
+[tool.hatch.envs.mypy.scripts]
+check = "mypy ."
+
 [tool.hatch.envs.docs]
 # This makes this environment use the "docs" optional dependencies above.
 features = ["docs"]

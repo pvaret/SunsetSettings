@@ -323,7 +323,7 @@ class Key(Generic[_T], BaseField, Lockable):
             callback.
         """
 
-        self._update_notifier.add(callback)  # type: ignore[reportArgumentType]
+        self._update_notifier.add(callback)  # type: ignore[arg-type]
 
     def onLoadedCall(self, callback: Callable[[], Any]) -> None:
         """
