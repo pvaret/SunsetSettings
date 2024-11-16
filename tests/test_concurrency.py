@@ -2,13 +2,15 @@ import threading
 import time
 import typing
 
+import pytest
+
 from sunset import Key, List, Settings
 
 _P = typing.ParamSpec("_P")
 
-_THREAD_COUNT = 16
-_DURATION = 0.1  # seconds
-_ATTEMPTS = 5
+_THREAD_COUNT = 64
+_DURATION = 1.0  # seconds
+_ATTEMPTS = 3
 
 
 def run_threaded(
@@ -41,6 +43,7 @@ def run_threaded(
         raise exceptions[0]
 
 
+@pytest.mark.slow
 class TestKeyConcurrency:
     def test_set_clear(self) -> None:
         str_key = Key("default value")
@@ -99,6 +102,7 @@ class TestKeyConcurrency:
             assert str_key.get() == "parent"
 
 
+@pytest.mark.slow
 class TestListConcurrency:
     def test_append_pop(self) -> None:
         _start_items: int = 10
@@ -135,6 +139,7 @@ class TestListConcurrency:
                 assert item.meta().label == expected_label
 
 
+@pytest.mark.slow
 class TestSettingsConcurrency:
     def test_settings_names(self) -> None:
         class TestSettings(Settings):
