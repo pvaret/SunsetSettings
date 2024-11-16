@@ -5,6 +5,8 @@ __version__ = "0.6.1-dev"
 __author__ = "P. Varet"
 __copyright__ = "2022-2024, P. Varet"
 
+import warnings
+
 from sunset import exporter, serializers, sets
 from sunset.autosaver import AutoSaver
 from sunset.bunch import Bunch
@@ -17,7 +19,20 @@ from sunset.timer import PersistentTimer
 
 # Backward compatibility: Bunch used to be called Bundle prior to version 0.4.0.
 # Retain compatibility by keeping this name around for a few versions.
-Bundle = Bunch
+
+
+class Bundle(Bunch):
+    def __init__(self) -> None:
+        version_tuple = tuple(
+            int(s) if s.isdigit() else 0 for s in __version__.split(".")
+        )
+        msg = "'Bundle' is deprecated. Use 'Bunch' instead."
+        if version_tuple < (1, 0):
+            warnings.warn(msg, DeprecationWarning, stacklevel=1)
+        else:
+            raise DeprecationWarning(msg)
+        super().__init__()
+
 
 __all__ = [
     "AutoSaver",

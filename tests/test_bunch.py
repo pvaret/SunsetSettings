@@ -1,7 +1,8 @@
+import warnings
 import pytest
 from pytest_mock import MockerFixture
 
-from sunset import Bunch, Key, List, protocols
+from sunset import Bunch, Bundle, Key, List, protocols
 
 
 class ExampleBunch(Bunch):
@@ -315,3 +316,29 @@ class TestBunch:
         bunch = TestBunch()
         with pytest.raises(AttributeError):
             bunch.a
+
+class TestBundle:
+    def test_bundle_works(self)-> None:
+        class TestBundle(Bundle):
+            key: Key[int] = Key(default=0)
+            bunch: ExampleBunch = ExampleBunch()
+
+        try:
+            warnings.filterwarnings("ignore", category=DeprecationWarning)
+            bundle = TestBundle()
+        finally:
+            warnings.resetwarnings()
+
+        bundle.key.set(42)
+        bundle.bunch.a.set("test")
+
+        assert bundle.key.get() == 42
+        assert bundle.bunch.a.get() == "test"
+    
+    def test_bundle_raises_deprecation_warning(self) -> None:
+        try:
+            warnings.filterwarnings("error", category=DeprecationWarning)
+            with pytest.raises(DeprecationWarning):
+                Bundle()
+        finally:
+            warnings.resetwarnings()
