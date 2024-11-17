@@ -1,28 +1,30 @@
 Changelog
 =========
 
-Latest
+SunsetSettings 0.6.1 (2024-11-17)
 ---------------------------------
 
- - Added Python 3.13 to officially supported versions.
- - Migrated to Hatch as the build and environment management system.
- - Arguments after the first position in Settings.save() and Settings.autosave() methods
-   are now keyword arguments only.
- - Fixed several subtle bugs that would occur when creating a Bunch as a subclass of
-   another Bunch.
+  - Added Python 3.13 to officially supported versions.
+  - Migrated to Hatch as the build and environment management system.
+  - Arguments after the first position in :code:`Settings.save()` and
+    :code:`Settings.autosave()` methods are now keyword-only arguments.
+  - Fixed several subtle bugs that could occur when creating a :code:`Bunch` as a
+    subclass of another :code:`Bunch`.
+  - Deprecated :code:`Bunch.__post_init__()` and :code:`Settings.__post_init__()`.
 
 SunsetSettings 0.6.0 (2024-07-16)
 ---------------------------------
 
   - Dropped support for Python 3.9.
-  - Fixed a race condition in NonHashableSet.
-  - Added onLoadedCall() to Key, List and Bunch types, to call a callback after
-    settings were just loaded. API is experimental, and may change.
+  - Fixed a race condition in :code:`NonHashableSet`.
+  - Added :code:`onLoadedCall()` to :code:`Key`, :code:`List` and :code:`Bunch` types,
+    to call a callback after settings were just loaded. API is experimental, and may
+    change.
 
 SunsetSettings 0.5.6 (2024-06-17)
 ---------------------------------
 
-  - Removed Self type workaround now that mypy handles it properly.
+  - Removed :code:`Self` type workaround now that mypy handles it properly.
   - Fixed notification inhibitation issue that caused update notifications to fail
     to fire.
 
@@ -36,25 +38,25 @@ SunsetSettings 0.5.4 (2024-02-01)
 ---------------------------------
 
   - Added Python 3.12 to officially supported versions.
-  - Fixed regression where changing a section's name might fail to be applied.
+  - Fixed regression where changing a section's name might silently fail.
 
 SunsetSettings 0.5.3 (2024-01-29)
 ---------------------------------
 
   - Made some internal methods private to de-clutter the API namespace.
   - Documented some internal methods where it may make to expose them publically.
-  - Renamed internal method isPrivate() into skipOnSave().
-  - onUpdateCall() callbacks are now called for entities for which skipOnSave()
-    is true.
+  - Renamed internal method :code:`isPrivate()` into :code:`skipOnSave()`.
+  - :code:`onUpdateCall()` callbacks are now called for entities for which
+    :code:`skipOnSave()` is true.
   - Improved notification logic when a section is renamed or reparented.
-  - Added fallback() method to Key.
+  - Added :code:`fallback()` method to :code:`Key`.
 
 SunsetSettings 0.5.2 (2023-08-14)
 ---------------------------------
 
-  - Added more logging when AutoSaver loads/saves.
-  - Added ability to create Keys with an explicit runtime type.
-  - Rolled back undocumented Bunch default value override feature. It's not
+  - Added more logging when :code:`AutoSaver` loads/saves.
+  - Added ability to create a :code:`Key` with an explicit runtime type.
+  - Rolled back undocumented :code:`Bunch` default value override feature. It's not
     dependable.
 
 SunsetSettings 0.5.1 (2023-04-26)
@@ -62,35 +64,36 @@ SunsetSettings 0.5.1 (2023-04-26)
 
   - Made deserializing an enum case-insensitive when the result is
     non-ambiguous.
-  - Added ability to instantiate Bunches with default value overrides. This is
+  - Added ability to instantiate :code:`Bunch` with default value overrides. This is
     still experimental and undocumented.
 
 SunsetSettings 0.5.0 (2023-04-22)
 ---------------------------------
 
-  - Added ability to set a validator on Keys to limit their possible values.
+  - Added ability to set a validator on a :code:`Key` to restrict its possible values.
   - Making a typo in a value when editing a settings file manually no longer
     causes the entry to be deleted on save.
-  - Added ability to serialize Enum subclasses natively.
-  - Deprecated now unnecessary SerializableEnum and -Flag classes.
-  - Added ability to pass a custom serializer when instantiating a Key.
-  - Added ability to store any type in a Key.
-  - onUpdateCall() and onValueChangeCall() now accept callbacks with any return
-    value.
+  - Added ability to serialize :code:`Enum` subclasses natively.
+  - Deprecated now unnecessary :code:`SerializableEnum` and :code:`SerializableFlag`
+    classes.
+  - Added ability to pass a custom serializer when instantiating a :code:`Key`.
+  - Added ability to store any type in a :code:`Key`.
+  - :code:`onUpdateCall()` and :code:`onValueChangeCall()` now accept callbacks with any
+    return value.
 
 SunsetSettings 0.4.0 (2023-03-22)
 ---------------------------------
 
-  - Renamed Bundle to Bunch. Just makes more sense for something that holds
-    Keys.
-  - Added serializable Enum and Flag subclasses.
-  - AutoSaver now expands '~' to the current user's home directory.
-  - Added atomic updateValue() method to Keys.
+  - Renamed :code:`Bundle` to :code:`Bunch`. Just makes more sense for something that
+    holds :code:`Keys`.
+  - Added serializable :code:`Enum` and :code:`Flag` subclasses.
+  - :code:`AutoSaver` now expands '~' to the current user's home directory.
+  - Added atomic :code:`updateValue()` method to :code:`Key`.
 
 SunsetSettings 0.3.2 (2022-12-22)
 ---------------------------------
 
-  - Added AutoSaver context manager.
+  - Added :code:`AutoSaver` context manager.
 
 SunsetSettings 0.3.1 (2022-12-19)
 ---------------------------------
@@ -101,18 +104,19 @@ SunsetSettings 0.3.0 (2022-12-19)
 ---------------------------------
 
   - Sphinx documentation added.
-  - Renamed Setting class to Key.
-  - Renamed Section class to Bundle.
-  - List overhaul: it now supports both Bundle and Key instances.
-  - Removed need for New* functions. Keys, Lists and Bundles can now be used
-    directly in Settings definitions.
-  - Removed need for explicit type annotations in Settings class definitions.
-  - Renamed List.iterAll() to iter() and added order parameter.
-  - Replaced derive() and deriveAs() with newSection() and assorted functions.
-  - Renamed onKeyModifiedCall() to onUpdateCall().
-  - Added float to supported Key value types.
-  - Renamed Settings.name() to Settings.sectionName() and Settings.setName() to
-    Settings.setSectionName().
+  - Renamed :code:`Setting` class to :code:`Key`.
+  - Renamed :code:`Section` class to :code:`Bundle`.
+  - :code:`List` overhaul: it now supports both :code:`Bundle` and :code:`Key`
+    instances.
+  - Removed need for :code:`New*` functions. :code:`Key`, :code:`List` and
+    :code:`Bundle` instances can now be used directly in :code:`Settings` definitions.
+  - Removed need for explicit type annotations in :code:`Settings` class definitions.
+  - Renamed :code:`List.iterAll()` to :code:`iter()` and added order parameter.
+  - Replaced :code:`derive()` and :code:`deriveAs()` with :code:`newSection()` and
+    assorted functions. - Renamed :code:`onKeyModifiedCall()` to :code:`onUpdateCall()`.
+  - Added float to supported :code:`Key` value types.
+  - Renamed :code:`Settings.name()` to :code:`Settings.sectionName()` and
+    :code:`Settings.setName()` to :code:`Settings.setSectionName()`.
 
 SunsetSettings 0.2.0 (2022-08-03)
 ---------------------------------

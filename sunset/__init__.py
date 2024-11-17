@@ -1,7 +1,7 @@
 "SunsetSettings: a type-safe, extensible settings system with inheritance."
 
 __project__ = "SunsetSettings"
-__version__ = "0.6.1-dev"
+__version__ = "0.6.1"
 __author__ = "P. Varet"
 __copyright__ = "2022-2024, P. Varet"
 
@@ -17,11 +17,10 @@ from sunset.protocols import Serializable, Serializer
 from sunset.settings import Settings, normalize
 from sunset.timer import PersistentTimer
 
-# Backward compatibility: Bunch used to be called Bundle prior to version 0.4.0.
-# Retain compatibility by keeping this name around for a few versions.
-
 
 class Bundle(Bunch):
+    # Backward compatibility: Bunch used to be called Bundle prior to version 0.4.0.
+    # Retain compatibility by keeping this name around for a few versions.
     def __init__(self) -> None:
         version_tuple = tuple(
             int(s) if s.isdigit() else 0 for s in __version__.split(".")
