@@ -25,9 +25,10 @@ adding :class:`~sunset.Key` fields to it, in the same way you would with a
 <https://docs.python.org/3/library/dataclasses.html>`_.
 
 .. note::
-    Under the hood, Settings is, in fact, a dataclass, and is used in much the
-    same way. Unlike normal dataclasses, adding type annotations is not
-    mandatory: SunsetSettings infers the type of your settings automatically.
+    Under the hood, `Settings` is, in fact, a dataclass, and is used in much the same
+    way. Unlike normal dataclasses, adding type annotations is not mandatory:
+    SunsetSettings infers the type of your settings automatically. Also unlike a
+    dataclass, manually adding `field()` attributes will not work as intended.
 
 .. code-block:: python
 

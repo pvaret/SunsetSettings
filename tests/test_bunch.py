@@ -1,3 +1,4 @@
+import sys
 import warnings
 import pytest
 from pytest_mock import MockerFixture
@@ -77,18 +78,75 @@ class TestBunch:
 
     def test_bunch_dataclass_mro(self) -> None:
         # Bunch instantiation is a tad tricky. Here we make sure that attributes
-        # of a Bunch that are not SunsetSetting fields do work as expected.
+        # of a Bunch that are not dataclass fields do work as expected.
 
-        class ExampleBunchSubclass(Bunch):
+        class TestBunch(Bunch):
             a = Key("test a")
             b = "random attribute"
 
             def test_a(self) -> str:
                 return self.a.get()
 
-        bunch = ExampleBunchSubclass()
+        bunch = TestBunch()
         assert bunch.test_a() == "test a"
         assert bunch.b == "random attribute"
+
+    def test_multiple_subclass_levels_work(self) -> None:
+        class TestParentBunch(Bunch):
+            key1: Key[int] = Key(default=0)
+            key2: Key[int] = Key(default=0)
+
+        class TestChildBunch(TestParentBunch):
+            key2: Key[int] = Key(default=42)
+            key3: Key[int] = Key(default=100)
+
+        # Create a blank Bunch to validate that doing so does not disrupt the Bunch
+        # instantiation logic of child classes.
+        Bunch()
+
+        bunch = TestParentBunch()
+        child_bunch = TestChildBunch()
+        assert bunch.key1.get() == 0
+        assert bunch.key2.get() == 0
+        assert child_bunch.key1.get() == 0
+        assert child_bunch.key2.get() == 42
+        assert child_bunch.key3.get() == 100
+
+        # Check that the inherited field is properly instantiated too, and not shared
+        # across instances.
+
+        other_child_bunch = TestChildBunch()
+        other_child_bunch.key1.set(256)
+        assert child_bunch.key1.get() == 0
+
+    def test_multiple_instances_work_as_expected(self) -> None:
+        bunch1 = ExampleBunch()
+        bunch2 = ExampleBunch()
+
+        # The Bunch instantiation logic is tricky. Check that basic expectations about
+        # multiple instances of the same class are met.
+
+        bunch1.a.set("test value")
+        assert bunch1.a.get() == "test value"
+        assert bunch2.a.get() == "default a"
+        assert type(bunch1) is type(bunch2)
+        assert isinstance(bunch1, ExampleBunch)
+        assert isinstance(bunch2, ExampleBunch)
+        if sys.version_info >= (3, 12):
+            assert bunch1.__class__.__module__ == ExampleBunch.__module__
+            assert bunch2.__class__.__module__ == ExampleBunch.__module__
+
+    def test_extra_dataclass_fields(self) -> None:
+        class TestDataclassBunch(Bunch):
+            key: Key[int] = Key(default=0)
+            str_default_value: str = "default"
+            int_type: int
+
+        bunch = TestDataclassBunch()
+        assert bunch.key.get() == 0
+        assert bunch.str_default_value == "default"
+        bunch.int_type = 42
+        assert bunch.int_type == 42
 
     def test_parenting(self) -> None:
         parent_bunch = ExampleBunch()
@@ -305,7 +363,7 @@ class TestBunch:
         assert bunch in called
         assert bunch.a.get() == 0
 
-    def test_missing_init_super_causes_attribute_error(self) -> None:
+    def test_missing_init_super_does_not_make_attribute_shared(self) -> None:
         class TestBunch(Bunch):
             a = Key(default=0)
 
@@ -313,12 +371,15 @@ class TestBunch:
                 # This incorrectly fails to call super().__init__().
                 pass
 
-        bunch = TestBunch()
-        with pytest.raises(AttributeError):
-            bunch.a
+        bunch1 = TestBunch()
+        bunch2 = TestBunch()
+        bunch1.a.set(42)
+
+        assert bunch2.a.get() == 0
+
 
 class TestBundle:
-    def test_bundle_works(self)-> None:
+    def test_bundle_works(self) -> None:
         class TestBundle(Bundle):
             key: Key[int] = Key(default=0)
             bunch: ExampleBunch = ExampleBunch()
@@ -334,7 +395,7 @@ class TestBundle:
 
         assert bundle.key.get() == 42
         assert bundle.bunch.a.get() == "test"
-    
+
     def test_bundle_raises_deprecation_warning(self) -> None:
         try:
             warnings.filterwarnings("error", category=DeprecationWarning)

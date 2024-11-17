@@ -3,21 +3,18 @@ import inspect
 import sys
 import weakref
 from collections.abc import Callable, Iterator, MutableSet
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 if sys.version_info < (3, 11):
     from typing_extensions import Self
 else:
     from typing import Self
 
+if TYPE_CHECKING:
+    from types import GenericAlias
 
 from sunset.notifier import Notifier
-from sunset.protocols import (
-    BaseField,
-    Field,
-    ItemTemplate,
-    UpdateNotifier,
-)
+from sunset.protocols import BaseField, Field, ItemTemplate, UpdateNotifier
 from sunset.sets import WeakNonHashableSet
 
 
@@ -62,20 +59,34 @@ class Bunch(BaseField):
         # Build and return a dataclass constructed from this class. Keep a
         # reference to that dataclass as a private class attribute, so that we
         # only construct it once. This allows type identity checks (as in
-        # "type(a) is type (b)") to work.
+        # "type(a) is type(b)") to work.
 
-        _dataclass_attr = "__DATACLASS_CLASS"
+        dataclass_attr = "__DATACLASS_CLASS"
+        orig_class_attr = "__ORIG_CLASS"
 
         dataclass_class: type[Self] | None = None
-        if (dataclass_class := getattr(cls, _dataclass_attr, None)) is None:
+        if dataclasses.is_dataclass(cls):
+            # If this class is already a dataclass, then no need to construct a new one.
+            # Just use this one directly.
+            dataclass_class = cls
+        else:
+            # Else use the dataclass recorded on this class, if there is one. Note the
+            # use of vars(), in order to look up the dataclass for this specific
+            # class, and not one of its parents.
+            dataclass_class = vars(cls).get(dataclass_attr, None)
+
+        if dataclass_class is None:
             # We haven't yet constructed a dataclass from this class. Construct
             # one here.
 
             cls_parents = cls.__bases__
+            dataclass_fields: list[tuple[str, type | GenericAlias, ItemTemplate]] = []
+            potential_fields = [
+                (name, getattr(cls, name, None))
+                for name in dir(cls)
+                if not name.startswith("__")
+            ]
 
-            dataclasses_fields: list[Any] = []
-
-            potential_fields = list(vars(cls).items())
             for name, attr in potential_fields:
                 if inspect.isclass(attr):
                     if attr.__name__ == name:
@@ -87,16 +98,21 @@ class Bunch(BaseField):
 
                     msg = (
                         f"Field '{name}' in the definition of '{cls.__name__}' is"
-                        " uninstantiated"
+                        " uninstantiated. Did you forget the parentheses?"
                     )
                     raise TypeError(msg)
 
                 if isinstance(attr, ItemTemplate):
-                    # Safety check: make sure the user isn't accidentally
-                    # overriding an existing attribute.
+                    # Safety check: make sure the user isn't accidentally overriding an
+                    # existing attribute. We do however allow overriding an attribute
+                    # with an attribute of the same type, which allows the user to
+                    # override a Key with a Key of the same type but a different
+                    # default value, for instance.
 
                     for cls_parent in cls_parents:
-                        if getattr(cls_parent, name, None) is not None:
+                        if (
+                            parent_attr := getattr(cls_parent, name, None)
+                        ) is not None and type(parent_attr) is not type(attr):
                             msg = (
                                 f"Field '{name}' in the definition of"
                                 f" '{cls.__name__}' overrides attribute of the"
@@ -109,46 +125,45 @@ class Bunch(BaseField):
                     # Create a proper field from the attribute.
 
                     field = dataclasses.field(default_factory=attr._newInstance)  # noqa: SLF001
-                    dataclasses_fields.append((name, attr._typeHint(), field))  # noqa: SLF001
-
-                    # Note that we delete the attribute now that the field is
-                    # created. This helps avoid a hard-to-debug problem if the
-                    # user subclasses a Bunch with a custom __init__() that
-                    # doesn't call super().__init__(). That would seem to work,
-                    # but any updates made to attributes of that bunch would
-                    # really be applied to the attribute of the Bunch *class*,
-                    # not the instance, which would cause 'weird action at a
-                    # distance' bugs. Deleting the original class attribute
-                    # prevents this entirely.
-
-                    delattr(cls, name)
+                    dataclass_fields.append((name, attr._typeHint(), field))  # noqa: SLF001
 
             # Create a dataclass based on this class. Note that we will be
             # providing our own __init__() override below.
 
+            kwargs: dict[str, Any] = (
+                {} if sys.version_info < (3, 12) else {"module": cls.__module__}
+            )
             dataclass_class = cast(
                 type[Self],
                 dataclasses.make_dataclass(
                     cls.__qualname__,
-                    dataclasses_fields,
+                    dataclass_fields,
                     init=False,
                     bases=(cls, *cls_parents),
+                    **kwargs,
                 ),
             )
 
-            # And store it on the class itself for later.
+            # And store it on the class itself so it can be reused if this class is
+            # instantiated again.
 
-            setattr(cls, _dataclass_attr, dataclass_class)
+            setattr(cls, dataclass_attr, dataclass_class)
 
-        # And finally, return an instance of the dataclass. Phew.
+            # Also keep a reference to the original class, so that's not lost.
 
-        return super().__new__(dataclass_class)
+            setattr(dataclass_class, orig_class_attr, cls)
 
-    def __init__(self) -> None:
-        super().__init__()
+        # Create an instance of the dataclass.
 
-        # Set up the Bunch fields.
+        new_cls = super().__new__(dataclass_class)
 
+        # Set up the fields that were identified above as instance attributes.
+
+        new_cls.__setup_fields__()
+        return new_cls
+
+    def __setup_fields__(self) -> None:
+        # Set up the Bunch fields as instance attributes.
         # First, look up internal dataclass attribute names.
 
         fields_attr: str = getattr(dataclasses, "_FIELDS")  # noqa: B009
@@ -166,9 +181,9 @@ class Bunch(BaseField):
 
             setattr(self, field.name, field.default_factory())
 
-        self.__post_init__()
+    def __init__(self) -> None:
+        super().__init__()
 
-    def __post_init__(self) -> None:
         self._parent_ref = None
         self._children_set = WeakNonHashableSet[Bunch]()
         self._fields = {}
@@ -181,6 +196,15 @@ class Bunch(BaseField):
                 field.meta().update(label=label, container=self)
                 field._update_notifier.add(self._update_notifier.trigger)  # noqa: SLF001
                 self._loaded_notifier.add(field._loaded_notifier.trigger)  # noqa: SLF001
+
+        self.__post_init__()
+
+    def __post_init__(self) -> None:
+        """
+        DEPRECATED. Will be removed in v1.0.
+
+        Use __init__() instead.
+        """
 
     def setParent(self, parent: Self | None) -> None:
         """

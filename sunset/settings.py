@@ -132,8 +132,8 @@ class Settings(Bunch, Lockable):
     _autosaver: AutoSaver | None = None
     _autosaver_class: type[AutoSaver]
 
-    def __post_init__(self) -> None:
-        super().__post_init__()
+    def __init__(self) -> None:
+        super().__init__()
 
         # Note that this overrides the similarly named attribute from the parent
         # class. In the parent class, the set does not keep references to its

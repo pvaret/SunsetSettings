@@ -4,10 +4,12 @@ Changelog
 Latest
 ---------------------------------
 
- - Arguments after the first position in Settings.save() and Settings.autosave() methods
-   are now keyword arguments only.
  - Added Python 3.13 to officially supported versions.
  - Migrated to Hatch as the build and environment management system.
+ - Arguments after the first position in Settings.save() and Settings.autosave() methods
+   are now keyword arguments only.
+ - Fixed several subtle bugs that would occur when creating a Bunch as a subclass of
+   another Bunch.
 
 SunsetSettings 0.6.0 (2024-07-16)
 ---------------------------------
