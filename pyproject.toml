@@ -61,11 +61,12 @@ exclude_lines = [
 [tool.ruff]
 # Use the default line length.
 line-length = 88
-extend-exclude = ["tests/", "docs/"]
+extend-exclude = ["docs/"]
 
 [tool.ruff.lint]
 # Enable all linting rules by default.
 select = ["ALL"]
+exclude = ["tests/*"]
 ignore = [
     "ANN101", # This rule is deprecated. Ignore it until it's removed.
     "COM812", # Can confuse the Ruff formatter.
