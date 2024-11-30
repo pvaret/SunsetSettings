@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Latest
+---------------------------------
+
+  - Switched to Pyright for automated type checks.
+
 SunsetSettings 0.6.1 (2024-11-17)
 ---------------------------------
 

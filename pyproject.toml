@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling"]
+requires      = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
@@ -30,15 +30,12 @@ requires-python = ">=3.10"
 dependencies = ["typing_extensions ; python_version=='3.10'"]
 
 [project.urls]
-Home = "https://github.com/pvaret/SunsetSettings"
+Home          = "https://github.com/pvaret/SunsetSettings"
 Documentation = "https://sunsetsettings.readthedocs.io/"
 
 [project.optional-dependencies]
 tests = ["coverage[toml]", "pytest", "pytest-mock", "pytest-skip-slow"]
-docs = ["sphinx", "sphinx_rtd_theme"]
-
-[tool.mypy]
-show_error_codes = true
+docs  = ["sphinx", "sphinx_rtd_theme"]
 
 [tool.pytest.ini_options]
 addopts = "-vv --doctest-modules --doctest-glob=README.md --doctest-glob=docs/*.rst"
@@ -61,7 +58,7 @@ exclude_lines = [
 
 [tool.ruff]
 # Use the default line length.
-line-length = 88
+line-length    = 88
 extend-exclude = ["docs/"]
 
 [tool.ruff.lint]
@@ -69,7 +66,7 @@ extend-exclude = ["docs/"]
 select = ["ALL"]
 exclude = ["tests/*"]
 ignore = [
-    "ANN101", # This rule is deprecated. Ignore it until it's removed.
+    "ANN101", # Deprecated check that doesn't add value.
     "COM812", # Can confuse the Ruff formatter.
     "ISC001", # Can confuse the Ruff formatter.
     "N802",   # We use camelCase method names.
@@ -98,16 +95,16 @@ parallel = true
 [[tool.hatch.envs.hatch-test.matrix]]
 python = ["3.10", "3.11", "3.12", "3.13"]
 
-[tool.hatch.envs.mypy]
-# This environment is where we exercise type checks.
-dependencies = ["mypy"]
-# We check tests too, so their dependencies are needed.
+[tool.hatch.envs.dev]
+# Use this environment for development purposes. I.e. point VSCode to the Python
+# interpreter in this environment.
+
+# Add test-related dependencies to the dev environment.
 features = ["tests"]
+# This environment is also where we exercise type checks.
+dependencies = ["pyright"]
 # This environment does not need the code built and installed.
 detached = true
-
-[tool.hatch.envs.mypy.scripts]
-check = "mypy ."
 
 [tool.hatch.envs.docs]
 # This makes this environment use the "docs" optional dependencies above.

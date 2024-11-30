@@ -168,11 +168,7 @@ class List(MutableSequence[ListItemT], BaseField):
         return len(self._contents)
 
     def _newItem(self) -> ListItemT:
-        item = self._template._newInstance()  # noqa: SLF001
-
-        # WORKAROUND: This lets mypy properly typecheck the return type.
-
-        return cast(ListItemT, item)
+        return self._template._newInstance()  # noqa: SLF001
 
     def isSet(self) -> bool:
         """

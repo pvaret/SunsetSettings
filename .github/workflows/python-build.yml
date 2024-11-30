@@ -40,7 +40,7 @@ jobs:
         run: hatch fmt --formatter --check
       
       - name: Check types
-        run: hatch run mypy:check
+        run: hatch run dev:pyright --verbose
 
       - name: Run test suite
         run: hatch test -py=${{ matrix.python-version }} --slow
