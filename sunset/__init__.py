@@ -46,7 +46,7 @@ __all__ = [
     "Serializer",
     "Settings",
     "exporter",
-    "sets",
     "normalize",
     "serializers",
+    "sets",
 ]
