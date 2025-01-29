@@ -260,23 +260,35 @@ class List(MutableSequence[ListItemT], BaseField):
             self._parent_ref = weakref.ref(parent)
             parent._children_ref.add(self)  # noqa: SLF001
 
-    def iter(self, order: IterOrder | None = None) -> Iterator[ListItemT]:
+    def iter(self, order: IterOrder | None = None) -> Iterable[ListItemT]:
         """
-        Yields the elements contained in this List, and optionally in its
-        parents, if any.
+        Returns the elements contained in this List, and optionally in its parents, if
+        any.
 
         Args:
             order: One of `List.NO_PARENT`, `List.PARENT_FIRST`,
                 `List.PARENT_LAST`, or None.
 
+                - If `List.NO_PARENT`, this method only returns the contents of this
+                  List instance.
                 - If `List.NO_PARENT`, this method only yields the contents of
                   this List instance.
+                - If `List.NO_PARENT`, this method only returns the contents of this
+                  List instance.
 
+                - If `List.PARENT_FIRST`, it recursively returns items from this List's
+                  parents, if any, then from this List itself.
                 - If `List.PARENT_FIRST`, it yields from this List's parents, if
                   any, then this List itself.
+                - If `List.PARENT_FIRST`, it recursively returns items from this List's
+                  parents, if any, then from this List itself.
 
+                - If `List.PARENT_LAST`, it returns items from this List itself, then
+                  recursively from its parents, if any.
                 - If `List.PARENT_LAST`, it yields from this List itself, then
                   from its parents, if any.
+                - If `List.PARENT_LAST`, it returns items from this List itself, then
+                  recursively from its parents, if any.
 
                 - If None, the order set on the List itself at creation time
                   will be used.
@@ -284,8 +296,7 @@ class List(MutableSequence[ListItemT], BaseField):
                 Default: None.
 
         Returns:
-            An iterator over the items contained in this List and optionally its
-            parents.
+            An iterable on the items contained in this List and optionally its parents.
 
         Example:
 
@@ -314,18 +325,25 @@ class List(MutableSequence[ListItemT], BaseField):
         [3, 4, 1, 2]
         """
 
+        ret: list[ListItemT] = []
         parent = self.parent()
 
         if order is None:
             order = self._iter_order
 
         if parent is not None and order == IterOrder.PARENT_FIRST:
-            yield from parent.iter(order)
+            ret.extend(parent.iter(order))
 
-        yield from self._contents
+        ret.extend(self._contents)
 
         if parent is not None and order == IterOrder.PARENT_LAST:
-            yield from parent.iter(order)
+            ret.extend(parent.iter(order))
+
+        return ret
+
+    def __iter__(self) -> Iterator[ListItemT]:
+        items = self.iter(IterOrder.NO_PARENT)
+        yield from items
 
     def parent(self) -> Self | None:
         """
@@ -341,17 +359,15 @@ class List(MutableSequence[ListItemT], BaseField):
         parent = cast(weakref.ref[Self] | None, self._parent_ref)
         return parent() if parent is not None else None
 
-    def children(self) -> Iterator[Self]:
+    def children(self) -> Iterable[Self]:
         """
-        Returns an iterator over the List instances that have this List
-        as their parent.
+        Returns an iterable with the List instances that have this List as their parent.
 
         Returns:
-            An iterator over List instances of the same type as this one.
+            An iterable of List instances of the same type as this one.
         """
 
-        for child in self._children_ref:
-            yield cast(Self, child)
+        return [cast(Self, child) for child in self._children_ref]
 
     def onUpdateCall(self, callback: Callable[[Any], Any]) -> None:
         """
@@ -391,22 +407,25 @@ class List(MutableSequence[ListItemT], BaseField):
 
         self._loaded_notifier.add(callback)
 
-    def dumpFields(self) -> Iterator[tuple[str, str | None]]:
+    def dumpFields(self) -> Iterable[tuple[str, str | None]]:
         """
         Internal.
         """
 
+        ret: list[tuple[str, str | None]] = []
         sep = self._PATH_SEPARATOR
         if not self.skipOnSave():
             for i, item in enumerate(self._contents, start=1):
                 label = str(i)
                 if not item.isSet():
-                    yield label, None
+                    ret.append((label, None))
                 else:
-                    yield from (
+                    ret.extend(
                         (label + sep + path if path else label, child_item)
                         for path, child_item in item.dumpFields()
                     )
+
+        return ret
 
     def restoreField(self, path: str, value: str | None) -> bool:
         """

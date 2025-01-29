@@ -1,4 +1,4 @@
-from collections.abc import Iterator
+from collections.abc import Iterable
 
 from pytest_mock import MockerFixture
 
@@ -67,7 +67,7 @@ class TestList:
         assert child_list.parent() is None
 
     def test_iter_inheritance(self) -> None:
-        def flatten(keys: Iterator[Key[str]]) -> list[str]:
+        def flatten(keys: Iterable[Key[str]]) -> list[str]:
             return [key.get() for key in keys]
 
         parent: List[Key[str]] = List(Key(default=""))

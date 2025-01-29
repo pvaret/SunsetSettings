@@ -1,6 +1,6 @@
 import sys
 import weakref
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from types import GenericAlias
 from typing import Any, Generic, Protocol, TypeVar, runtime_checkable
@@ -82,12 +82,12 @@ class Inheriter(Protocol):
 
     def parent(self) -> Self | None: ...
 
-    def children(self) -> Iterator[Self]: ...
+    def children(self) -> Iterable[Self]: ...
 
 
 @runtime_checkable
 class Dumpable(Protocol):
-    def dumpFields(self) -> Iterator[tuple[str, str | None]]: ...
+    def dumpFields(self) -> Iterable[tuple[str, str | None]]: ...
 
     def restoreField(self, path: str, value: str | None) -> bool: ...
 

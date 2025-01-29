@@ -4,6 +4,8 @@ Changelog
 Latest
 ---------------------------------
 
+  - Methods that returned Iterators now return Iterables. Usage of Iterators was an
+    implementation details that doesn't need to be exposed.
   - Switched to Pyright for automated type checks.
 
 SunsetSettings 0.6.1 (2024-11-17)

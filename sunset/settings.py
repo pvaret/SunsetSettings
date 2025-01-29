@@ -1,6 +1,6 @@
 import logging
 import sys
-from collections.abc import Callable, Iterator, MutableSet
+from collections.abc import Callable, Iterable, MutableSet
 from pathlib import Path
 from typing import IO, Any
 
@@ -223,17 +223,17 @@ class Settings(Bunch, Lockable):
 
         return None
 
-    def sections(self) -> Iterator[Self]:
+    def sections(self) -> Iterable[Self]:
         """
-        Returns an iterator over the subsections of this Settings instance. Note
-        that the subsections are only looked up one level deep, that is to say,
-        no recursing into the section hierarchy occurs.
+        Returns an iterable with the subsections of this Settings instance. Note that
+        the subsections are only looked up one level deep, that is to say, no recursing
+        into the section hierarchy occurs.
 
         Returns:
-            An iterator over Settings instances of the same type as this one.
+            An iterable of Settings instances of the same type as this one.
         """
 
-        yield from sorted(self.children())
+        return sorted(self.children())
 
     def setSectionName(self, name: str) -> str:
         """
@@ -388,24 +388,27 @@ class Settings(Bunch, Lockable):
     def skipOnSave(self) -> bool:
         return self.sectionName() == ""
 
-    def dumpFields(self) -> Iterator[tuple[str, str | None]]:
+    def dumpFields(self) -> Iterable[tuple[str, str | None]]:
         """
         Internal.
         """
 
+        ret: list[tuple[str, str | None]] = []
         if not self.skipOnSave():
-            # Ensure the section is dumped event if empty. Dumping an empty
-            # section is valid.
+            # Ensure the section is dumped even if empty. Dumping an empty section is
+            # valid.
 
             label = (self.sectionName() or "?") + self._SECTION_SEPARATOR
 
             if not self.isSet():
-                yield label, None
+                ret.append((label, None))
             else:
-                yield from ((label + path, item) for path, item in super().dumpFields())
+                ret.extend((label + path, item) for path, item in super().dumpFields())
 
             for section in self.sections():
-                yield from ((label + path, item) for path, item in section.dumpFields())
+                ret.extend((label + path, item) for path, item in section.dumpFields())
+
+        return ret
 
     def restoreField(self, path: str, value: str | None) -> bool:
         """

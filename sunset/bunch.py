@@ -2,7 +2,7 @@ import dataclasses
 import inspect
 import sys
 import weakref
-from collections.abc import Callable, Iterator, MutableSet
+from collections.abc import Callable, Iterable, MutableSet
 from typing import TYPE_CHECKING, Any, cast
 
 if sys.version_info < (3, 11):
@@ -273,20 +273,16 @@ class Bunch(BaseField):
         parent = cast(weakref.ref[Self] | None, self._parent_ref)
         return parent() if parent is not None else None
 
-    def children(self) -> Iterator[Self]:
+    def children(self) -> Iterable[Self]:
         """
-        Returns an iterator over the Bunch instances that have this Bunch
-        as their parent.
+        Returns an iterable with the Bunch instances that have this Bunch as their
+        parent.
 
         Returns:
-            An iterator over Bunch instances of the same type as this one.
+            An iterable of Bunch instances of the same type as this one.
         """
 
-        # Note that we iterate on a copy so that this will not break if a
-        # different thread updates the contents during the iteration.
-
-        for child in list(self._children_set):
-            yield cast(Self, child)
+        return [cast(Self, child) for child in self._children_set]
 
     def onUpdateCall(self, callback: Callable[[Any], Any]) -> None:
         """
@@ -333,18 +329,21 @@ class Bunch(BaseField):
 
         return any(field.isSet() for field in self._fields.values())
 
-    def dumpFields(self) -> Iterator[tuple[str, str | None]]:
+    def dumpFields(self) -> Iterable[tuple[str, str | None]]:
         """
         Internal.
         """
 
+        ret: list[tuple[str, str | None]] = []
         sep = self._PATH_SEPARATOR
         if not self.skipOnSave():
             for label, field in sorted(self._fields.items()):
-                yield from (
+                ret.extend(
                     (label + sep + path if path else label, item)
                     for path, item in field.dumpFields()
                 )
+
+        return ret
 
     def restoreField(self, path: str, value: str | None) -> bool:
         """

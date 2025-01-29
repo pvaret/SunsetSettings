@@ -1,7 +1,7 @@
 import logging
 import sys
 import weakref
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterable
 from types import GenericAlias
 from typing import (
     Any,
@@ -288,7 +288,6 @@ class Key(Generic[_T], BaseField, Lockable):
         :meth:`onUpdateCall()` are called and callbacks added with
         :meth:`onValueChangeCall()` are not.
 
-
         Args:
             callback: A callable that takes one argument of the same type as the
                 values held by this Key.
@@ -409,35 +408,35 @@ class Key(Generic[_T], BaseField, Lockable):
         parent = cast(weakref.ref[Self] | None, self._parent_ref)
         return parent() if parent is not None else None
 
-    def children(self) -> Iterator[Self]:
+    def children(self) -> Iterable[Self]:
         """
-        Returns an iterator over the Keys that have this Key as their parent.
+        Returns an iterable with the Keys that have this Key as their parent.
 
         Returns:
-            An iterator over Keys of the same type as this one.
+            An iterable of Keys of the same type as this one.
         """
 
-        for child in self._children_ref:
-            yield cast(Self, child)
+        return [cast(Self, child) for child in self._children_ref]
 
-    def dumpFields(self) -> Iterator[tuple[str, str | None]]:
+    def dumpFields(self) -> Iterable[tuple[str, str | None]]:
         if not self.skipOnSave():
             if self.isSet():
-                yield "", self._serializer.toStr(self.get())
+                return [("", self._serializer.toStr(self.get()))]
 
-            elif self._bad_value_string is not None:
+            if self._bad_value_string is not None:
                 # If a bad value was set in the settings file for this Key, and
                 # the Key was not modified since, then save the bad value again.
                 # This way, typos in the settings file don't outright destroy
                 # the entry.
 
-                yield "", self._bad_value_string
+                return [("", self._bad_value_string)]
+
+        return []
 
     def restoreField(self, path: str, value: str | None) -> bool:
         if value is None:
             # Note that doing nothing when the given value is None, is
             # considered a success.
-
             return True
 
         if path != "":

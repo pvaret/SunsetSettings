@@ -437,7 +437,7 @@ only recursively sets up inheritance for the Bunches, Lists and Keys held in
 that Bunch.
 
 A List's behavior does not change when it has a parent except for the
-:meth:`~sunset.List.iter()` method. This method return an iterator on the List's
+:meth:`~sunset.List.iter()` method. This method return an iterable on the List's
 items and optionally its parent's items. An optional parameter indicates if the
 parent's items will be returned, and if so, whether they will be returned before
 or after this List's items. The default value for this parameter for a given
