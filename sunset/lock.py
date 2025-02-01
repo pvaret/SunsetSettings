@@ -2,9 +2,8 @@ import threading
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from functools import wraps
-from typing import Concatenate, ParamSpec, TypeVar
+from typing import ParamSpec, TypeVar
 
-_Self = TypeVar("_Self", bound="Lockable")
 _R = TypeVar("_R")
 _P = ParamSpec("_P")
 
@@ -96,40 +95,32 @@ class RWLock:
         self._writer_lock.release()
 
     @contextmanager
-    def lock_read(self) -> Iterator[None]:
+    def lock_reads(self) -> Iterator[None]:
         self._acquire_read_lock(blocking=True)
         yield
         self._release_read_lock()
 
     @contextmanager
-    def lock_write(self) -> Iterator[None]:
+    def lock_writes(self) -> Iterator[None]:
         self._acquire_write_lock(blocking=True)
         yield
         self._release_write_lock()
 
+    def with_read_lock(self, func: Callable[_P, _R]) -> Callable[_P, _R]:
+        @wraps(func)
+        def locked_func(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+            with self.lock_reads():
+                return func(*args, **kwargs)
 
-class Lockable:
-    """
-    Internal.
+        return locked_func
 
-    A helper mixin that provides a context manager to lock a class method's
-    against one another.
-    """
+    def with_write_lock(self, func: Callable[_P, _R]) -> Callable[_P, _R]:
+        @wraps(func)
+        def locked_func(*args: _P.args, **kwargs: _P.kwargs) -> _R:
+            with self.lock_writes():
+                return func(*args, **kwargs)
 
-    _lock: threading.RLock
+        return locked_func
 
-    def __init__(self) -> None:
-        super().__init__()
 
-        self._lock = threading.RLock()
-
-    @staticmethod
-    def with_lock(
-        method: Callable[Concatenate[_Self, _P], _R],
-    ) -> Callable[Concatenate[_Self, _P], _R]:
-        @wraps(method)
-        def locked_method(self: _Self, *args: _P.args, **kwargs: _P.kwargs) -> _R:
-            with self._lock:
-                return method(self, *args, **kwargs)
-
-        return locked_method
+SettingsLock = RWLock()

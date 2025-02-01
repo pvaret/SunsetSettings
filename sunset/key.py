@@ -16,7 +16,7 @@ else:
     from typing import Self
 
 from sunset.exporter import maybe_escape
-from sunset.lockable import Lockable
+from sunset.lock import SettingsLock
 from sunset.notifier import Notifier
 from sunset.protocols import BaseField, Serializer, UpdateNotifier
 from sunset.serializers import lookup
@@ -24,7 +24,7 @@ from sunset.serializers import lookup
 _T = TypeVar("_T")
 
 
-class Key(Generic[_T], BaseField, Lockable):
+class Key(Generic[_T], BaseField):
     """
     A single setting key containing a typed value.
 
@@ -159,6 +159,7 @@ class Key(Generic[_T], BaseField, Lockable):
         self._parent_ref = None
         self._children_ref = weakref.WeakSet()
 
+    @SettingsLock.with_read_lock
     def get(self) -> _T:
         """
         Returns the current value of this Key.
@@ -173,6 +174,7 @@ class Key(Generic[_T], BaseField, Lockable):
 
         return self.fallback() if (value := self._value) is None else value
 
+    @SettingsLock.with_read_lock
     def fallback(self) -> _T:
         """
         Returns the value that this Key will fall back to when it does not have
@@ -184,6 +186,7 @@ class Key(Generic[_T], BaseField, Lockable):
 
         return self._default if (parent := self.parent()) is None else parent.get()
 
+    @SettingsLock.with_write_lock
     def set(self, value: _T) -> bool:
         """
         Sets the given value on this Key.
@@ -226,6 +229,7 @@ class Key(Generic[_T], BaseField, Lockable):
 
         return True
 
+    @SettingsLock.with_write_lock
     def clear(self) -> None:
         """
         Clears the value currently set on this Key, if any.
@@ -248,7 +252,7 @@ class Key(Generic[_T], BaseField, Lockable):
 
         self._update_notifier.trigger(self)
 
-    @Lockable.with_lock
+    @SettingsLock.with_write_lock
     def updateValue(self, updater: Callable[[_T], _T]) -> None:
         """
         Atomically updates this Key's value using the given update function. The
@@ -262,6 +266,7 @@ class Key(Generic[_T], BaseField, Lockable):
 
         self.set(updater(self.get()))
 
+    @SettingsLock.with_read_lock
     def isSet(self) -> bool:
         """
         Returns whether there is a value currently set on this Key.
@@ -351,6 +356,7 @@ class Key(Generic[_T], BaseField, Lockable):
 
         self._validator = validator
 
+    @SettingsLock.with_write_lock
     def setParent(self, parent: Self | None) -> None:
         """
         Makes the given Key the parent of this one. If None, remove this
@@ -394,6 +400,7 @@ class Key(Generic[_T], BaseField, Lockable):
         parent._children_ref.add(self)  # noqa: SLF001
         self._parent_ref = weakref.ref(parent)
 
+    @SettingsLock.with_read_lock
     def parent(self) -> Self | None:
         """
         Returns the parent of this Key, if any.
@@ -408,6 +415,7 @@ class Key(Generic[_T], BaseField, Lockable):
         parent = cast(weakref.ref[Self] | None, self._parent_ref)
         return parent() if parent is not None else None
 
+    @SettingsLock.with_read_lock
     def children(self) -> Iterable[Self]:
         """
         Returns an iterable with the Keys that have this Key as their parent.
@@ -418,6 +426,7 @@ class Key(Generic[_T], BaseField, Lockable):
 
         return [cast(Self, child) for child in self._children_ref]
 
+    @SettingsLock.with_read_lock
     def dumpFields(self) -> Iterable[tuple[str, str | None]]:
         if not self.skipOnSave():
             if self.isSet():
@@ -433,6 +442,7 @@ class Key(Generic[_T], BaseField, Lockable):
 
         return []
 
+    @SettingsLock.with_write_lock
     def restoreField(self, path: str, value: str | None) -> bool:
         if value is None:
             # Note that doing nothing when the given value is None, is

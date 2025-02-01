@@ -13,6 +13,7 @@ else:
 if TYPE_CHECKING:
     from types import GenericAlias
 
+from sunset.lock import SettingsLock
 from sunset.notifier import Notifier
 from sunset.protocols import BaseField, Field, ItemTemplate, UpdateNotifier
 from sunset.sets import WeakNonHashableSet
@@ -206,6 +207,7 @@ class Bunch(BaseField):
         Use __init__() instead.
         """
 
+    @SettingsLock.with_write_lock
     def setParent(self, parent: Self | None) -> None:
         """
         Makes the given Bunch the parent of this one. If None, remove this
@@ -259,6 +261,7 @@ class Bunch(BaseField):
             assert type(field) is type(parent_field)  # noqa: S101
             field.setParent(parent_field)
 
+    @SettingsLock.with_read_lock
     def parent(self) -> Self | None:
         """
         Returns the parent of this Bunch, if any.
@@ -273,6 +276,7 @@ class Bunch(BaseField):
         parent = cast(weakref.ref[Self] | None, self._parent_ref)
         return parent() if parent is not None else None
 
+    @SettingsLock.with_read_lock
     def children(self) -> Iterable[Self]:
         """
         Returns an iterable with the Bunch instances that have this Bunch as their
@@ -319,6 +323,7 @@ class Bunch(BaseField):
 
         self._loaded_notifier.add(callback)
 
+    @SettingsLock.with_read_lock
     def isSet(self) -> bool:
         """
         Indicates whether this Bunch holds any field that is set.
@@ -329,6 +334,7 @@ class Bunch(BaseField):
 
         return any(field.isSet() for field in self._fields.values())
 
+    @SettingsLock.with_read_lock
     def dumpFields(self) -> Iterable[tuple[str, str | None]]:
         """
         Internal.
@@ -345,6 +351,7 @@ class Bunch(BaseField):
 
         return ret
 
+    @SettingsLock.with_write_lock
     def restoreField(self, path: str, value: str | None) -> bool:
         """
         Internal.

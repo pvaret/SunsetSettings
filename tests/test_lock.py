@@ -3,7 +3,7 @@ import threading
 
 import pytest
 
-from sunset.lockable import RWLock
+from sunset.lock import RWLock
 
 
 def _start_threaded(target: Callable[[], None]) -> threading.Thread:
@@ -17,20 +17,20 @@ class TestRWLock:
         lock = RWLock()
 
         def try_lock() -> None:
-            with lock.lock_read():
-                with lock.lock_read():
+            with lock.lock_reads():
+                with lock.lock_reads():
                     pass
 
-            with lock.lock_write():
-                with lock.lock_write():
+            with lock.lock_writes():
+                with lock.lock_writes():
                     pass
 
-            with lock.lock_read():
-                with lock.lock_write():
+            with lock.lock_reads():
+                with lock.lock_writes():
                     pass
 
-            with lock.lock_write():
-                with lock.lock_read():
+            with lock.lock_writes():
+                with lock.lock_reads():
                     pass
 
         task = _start_threaded(target=try_lock)
@@ -43,7 +43,7 @@ class TestRWLock:
         read_locks_all_held = threading.Barrier(reader_count + 1)
 
         def lock_and_wait() -> None:
-            with lock.lock_read():
+            with lock.lock_reads():
                 read_locks_all_held.wait()
 
         tasks = [_start_threaded(target=lock_and_wait) for _ in range(reader_count)]
@@ -61,7 +61,7 @@ class TestRWLock:
         testing_done = threading.Event()
 
         def hold_read_lock() -> None:
-            with lock.lock_read():
+            with lock.lock_reads():
                 lock_acquired.set()
                 testing_done.wait()
 
@@ -81,7 +81,7 @@ class TestRWLock:
         testing_done = threading.Event()
 
         def hold_write_lock() -> None:
-            with lock.lock_write():
+            with lock.lock_writes():
                 lock_acquired.set()
                 testing_done.wait()
 
@@ -100,7 +100,7 @@ class TestRWLock:
         testing_done = threading.Event()
 
         def hold_read_lock() -> None:
-            with lock.lock_read():
+            with lock.lock_reads():
                 lock_acquired.set()
                 testing_done.wait()
 
@@ -119,7 +119,7 @@ class TestRWLock:
         testing_done = threading.Event()
 
         def hold_write_lock() -> None:
-            with lock.lock_write():
+            with lock.lock_writes():
                 lock_acquired.set()
                 testing_done.wait()
 
@@ -144,12 +144,12 @@ class TestRWLock:
 
         def hold_read_lock_and_wait() -> None:
             while not done[0]:
-                with lock.lock_read():
+                with lock.lock_reads():
                     read_locks_all_held.wait()
                     unpause.acquire()
 
         def try_write_lock() -> None:
-            with lock.lock_write():
+            with lock.lock_writes():
                 write_lock_acquired.set()
                 writer_can_quit.wait()
 
@@ -177,8 +177,8 @@ class TestRWLock:
         assert read_locks_all_held.n_waiting == 0
 
         # Cleanup is a bit tricky because we need to unpause as many reader threads as
-        # are paused. So we let the writer thread terimate and wait until all the reader
-        # threads are in the critical section again...
+        # are paused. So we let the writer thread terminate and wait until all the
+        # reader threads are in the critical section again...
         writer_can_quit.set()
         read_locks_all_held.wait()
 

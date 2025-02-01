@@ -12,13 +12,13 @@ else:
 from sunset.autosaver import AutoSaver
 from sunset.bunch import Bunch
 from sunset.exporter import load_from_file, normalize, save_to_file
-from sunset.lockable import Lockable
+from sunset.lock import SettingsLock
 from sunset.sets import NonHashableSet
 
 _MAIN = "main"
 
 
-class Settings(Bunch, Lockable):
+class Settings(Bunch):
     """
     A collection of keys that can be saved to and loaded from text, and supports
     subsections.
@@ -142,7 +142,7 @@ class Settings(Bunch, Lockable):
         self._children_set = NonHashableSet()
         self._autosaver_class = AutoSaver
 
-    @Lockable.with_lock
+    @SettingsLock.with_write_lock
     def newSection(self, name: str = "") -> Self:
         """
         Creates and returns a new instance of this class. Each key of the new
@@ -177,7 +177,7 @@ class Settings(Bunch, Lockable):
 
         return new
 
-    @Lockable.with_lock
+    @SettingsLock.with_write_lock
     def getOrCreateSection(self, name: str) -> Self:
         """
         Finds and returns the section of these Settings with the given name if
@@ -201,6 +201,7 @@ class Settings(Bunch, Lockable):
             else self.newSection(name=name)
         )
 
+    @SettingsLock.with_read_lock
     def getSection(self, name: str) -> Self | None:
         """
         Finds and returns a section of this instance with the given name, if it
@@ -223,6 +224,7 @@ class Settings(Bunch, Lockable):
 
         return None
 
+    @SettingsLock.with_read_lock
     def sections(self) -> Iterable[Self]:
         """
         Returns an iterable with the subsections of this Settings instance. Note that
@@ -235,6 +237,7 @@ class Settings(Bunch, Lockable):
 
         return sorted(self.children())
 
+    @SettingsLock.with_write_lock
     def setSectionName(self, name: str) -> str:
         """
         Sets the unique name under which this Settings instance will be
@@ -292,7 +295,6 @@ class Settings(Bunch, Lockable):
 
         return self.sectionName()
 
-    @Lockable.with_lock
     def _setUniqueNameForSection(self, name: str, section: Self) -> None:
         candidate = name = normalize(name)
 
@@ -308,6 +310,7 @@ class Settings(Bunch, Lockable):
             section._section_name = candidate  # noqa: SLF001
             section._update_notifier.trigger(section)  # noqa: SLF001
 
+    @SettingsLock.with_read_lock
     def sectionName(self) -> str:
         """
         Returns the current name of this Settings instance. This name will be
@@ -322,7 +325,7 @@ class Settings(Bunch, Lockable):
 
         return name if self.parent() is not None else self.MAIN
 
-    @Lockable.with_lock
+    @SettingsLock.with_write_lock
     def setParent(self, parent: Self | None) -> None:
         """
         Makes the given Settings instance the parent of this one. If None,
@@ -388,6 +391,7 @@ class Settings(Bunch, Lockable):
     def skipOnSave(self) -> bool:
         return self.sectionName() == ""
 
+    @SettingsLock.with_read_lock
     def dumpFields(self) -> Iterable[tuple[str, str | None]]:
         """
         Internal.
@@ -410,6 +414,7 @@ class Settings(Bunch, Lockable):
 
         return ret
 
+    @SettingsLock.with_write_lock
     def restoreField(self, path: str, value: str | None) -> bool:
         """
         Internal.
