@@ -32,7 +32,7 @@ Creating settings:
 ...             size = Key(default=12)
 ...
 ...         font  = Font()
-...         theme = Key(default="") 
+...         theme = Key(default="")
 ...
 ...     class Backup(Bunch):
 ...         folder      = Key(default="~")
@@ -183,7 +183,7 @@ subsections can be arbitrarily deep.
 
 >>> class Animals(Settings):
 ...     limbs: Key[int] = Key(default=4)
-... 
+...
 >>> animals = Animals()
 >>> octopuses = animals.newSection(name="octopuses")
 >>> octopuses.limbs.get()

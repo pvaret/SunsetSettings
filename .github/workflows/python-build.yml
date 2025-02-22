@@ -29,16 +29,16 @@ jobs:
 
       - name: Install Hatch
         uses: pypa/hatch@install
-      
+
       - name: Report Hatch status
         run: hatch status
 
       - name: Check linting
         run: hatch fmt --linter --check
-      
+
       - name: Check formatting
         run: hatch fmt --formatter --check
-      
+
       - name: Check types
         run: hatch run dev:pyright --verbose
 

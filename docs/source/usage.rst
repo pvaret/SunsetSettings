@@ -109,7 +109,7 @@ Here too, type annotations are optional, but can be used, and are a good idea:
     you encounter problems where modifying the value of a Key in a Bunch also
     changes the value of the corresponding Key in another Bunch, make sure that
     your Bunch fields are properly instantiated.
-    
+
     Using type annotations for Bunch fields ensures that the type checker will
     catch un-instantiated Bunches.
 
@@ -455,7 +455,7 @@ Example:
     ...         Key(default="*"), order=List.PARENT_FIRST
     ...     )
 
-    >>> settings = BackupSettings()    
+    >>> settings = BackupSettings()
 
     >>> user1section = settings.newSection("User 1")
     >>> user1section.path.set("/home/user1/")

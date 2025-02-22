@@ -40,7 +40,7 @@ API Reference
     .. automethod:: get
 
     .. automethod:: isSet
-    
+
     .. automethod:: fallback
 
     .. automethod:: updateValue
@@ -54,7 +54,7 @@ API Reference
     .. automethod:: onUpdateCall
 
     .. automethod:: onLoadedCall
-    
+
     .. automethod:: skipOnSave
 
     .. automethod:: setParent
@@ -68,7 +68,7 @@ API Reference
     .. automethod:: onUpdateCall
 
     .. automethod:: onLoadedCall
-    
+
     .. automethod:: skipOnSave
 
     .. automethod:: setParent
@@ -88,7 +88,7 @@ API Reference
     .. automethod:: onUpdateCall
 
     .. automethod:: onLoadedCall
-    
+
     .. automethod:: skipOnSave
 
     .. automethod:: setParent
