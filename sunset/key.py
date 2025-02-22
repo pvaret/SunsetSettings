@@ -100,7 +100,6 @@ class Key(Generic[_T], BaseField):
     _bad_value_string: str | None
     _value_change_notifier: Notifier[_T]
     _update_notifier: Notifier[[UpdateNotifier]]
-    _loaded_notifier: Notifier[[]]
     _parent_ref: weakref.ref["Key[_T]"] | None
     _children_ref: weakref.WeakSet["Key[_T]"]
     _type: type[_T]
@@ -154,7 +153,6 @@ class Key(Generic[_T], BaseField):
 
         self._value_change_notifier = Notifier()
         self._update_notifier = Notifier()
-        self._loaded_notifier = Notifier()
 
         self._parent_ref = None
         self._children_ref = weakref.WeakSet()
@@ -328,21 +326,6 @@ class Key(Generic[_T], BaseField):
         """
 
         self._update_notifier.add(callback)  # type: ignore[arg-type]
-
-    def onLoadedCall(self, callback: Callable[[], Any]) -> None:
-        """
-        Adds a callback to be called whenever settings were just loaded. This
-        Key itself may or may not have been modified during the load.
-
-        Args:
-            callback: A callable that takes no argument.
-
-        Note:
-            This method does not increase the reference count of the given
-            callback.
-        """
-
-        self._loaded_notifier.add(callback)
 
     def setValidator(self, validator: Callable[[_T], bool]) -> None:
         """

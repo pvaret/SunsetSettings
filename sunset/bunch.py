@@ -54,7 +54,6 @@ class Bunch(BaseField):
     _children_set: MutableSet["Bunch"]
     _fields: dict[str, Field]
     _update_notifier: Notifier[[UpdateNotifier]]
-    _loaded_notifier: Notifier[[]]
 
     def __new__(cls) -> Self:
         # Build and return a dataclass constructed from this class. Keep a
@@ -189,14 +188,12 @@ class Bunch(BaseField):
         self._children_set = WeakNonHashableSet[Bunch]()
         self._fields = {}
         self._update_notifier = Notifier()
-        self._loaded_notifier = Notifier()
 
         for label, field in vars(self).items():
             if isinstance(field, Field):
                 self._fields[label] = field
                 field.meta().update(label=label, container=self)
                 field._update_notifier.add(self._update_notifier.trigger)  # noqa: SLF001
-                self._loaded_notifier.add(field._loaded_notifier.trigger)  # noqa: SLF001
 
         self.__post_init__()
 
@@ -307,21 +304,6 @@ class Bunch(BaseField):
         """
 
         self._update_notifier.add(callback)
-
-    def onLoadedCall(self, callback: Callable[[], Any]) -> None:
-        """
-        Adds a callback to be called whenever settings were just loaded. This
-        Bunch itself may or may not have been modified during the load.
-
-        Args:
-            callback: A callable that takes no argument.
-
-        Note:
-            This method does not increase the reference count of the given
-            callback.
-        """
-
-        self._loaded_notifier.add(callback)
 
     @SettingsLock.with_read_lock
     def isSet(self) -> bool:

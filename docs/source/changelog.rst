@@ -4,6 +4,8 @@ Changelog
 Latest
 ---------------------------------
 
+  - Removed :code:`onLoadedCall()` methods. Use the regular :code:`onUpdateCall()`
+    methods instead.
   - Methods that returned Iterators now return Iterables. Usage of Iterators was an
     implementation details that doesn't need to be exposed.
   - Switched to Pyright for automated type checks.

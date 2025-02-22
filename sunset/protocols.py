@@ -1,9 +1,9 @@
 import sys
 import weakref
-from collections.abc import Callable, Iterable
+from collections.abc import Iterable
 from dataclasses import dataclass
 from types import GenericAlias
-from typing import Any, Generic, Protocol, TypeVar, runtime_checkable
+from typing import Generic, Protocol, TypeVar, runtime_checkable
 
 if sys.version_info < (3, 11):
     from typing_extensions import Self
@@ -100,13 +100,6 @@ class UpdateNotifier(Protocol):
 
 
 @runtime_checkable
-class LoadedNotifier(Protocol):
-    _loaded_notifier: Notifier[[]]
-
-    def onLoadedCall(self, callback: Callable[[], Any]) -> None: ...
-
-
-@runtime_checkable
 class ItemTemplate(Protocol):
     def _typeHint(self) -> type | GenericAlias: ...
 
@@ -159,7 +152,6 @@ class Field(
     Inheriter,
     ItemTemplate,
     UpdateNotifier,
-    LoadedNotifier,
     Protocol,
 ): ...
 

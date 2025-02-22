@@ -23,8 +23,6 @@ API Reference
 
     .. automethod:: onUpdateCall
 
-    .. automethod:: onLoadedCall
-    
     .. automethod:: skipOnSave
 
     .. automethod:: setParent
@@ -53,8 +51,6 @@ API Reference
 
     .. automethod:: onUpdateCall
 
-    .. automethod:: onLoadedCall
-
     .. automethod:: skipOnSave
 
     .. automethod:: setParent
@@ -66,8 +62,6 @@ API Reference
 .. autoclass:: sunset.Bunch
 
     .. automethod:: onUpdateCall
-
-    .. automethod:: onLoadedCall
 
     .. automethod:: skipOnSave
 
@@ -86,8 +80,6 @@ API Reference
     .. automethod:: insertOne
 
     .. automethod:: onUpdateCall
-
-    .. automethod:: onLoadedCall
 
     .. automethod:: skipOnSave
 

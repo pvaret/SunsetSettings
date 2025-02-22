@@ -482,8 +482,6 @@ class Settings(Bunch):
         for path, dump in load_from_file(file, self.sectionName()):
             self.restoreField(path, dump)
 
-        self._loaded_notifier.trigger()
-
     def setAutosaverClass(self, class_: type[AutoSaver]) -> None:
         """
         Internal.

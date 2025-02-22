@@ -85,7 +85,6 @@ class List(MutableSequence[ListItemT], BaseField):
     _children_ref: WeakNonHashableSet["List[ListItemT]"]
     _iter_order: IterOrder
     _update_notifier: Notifier[[UpdateNotifier]]
-    _loaded_notifier: Notifier[[]]
     _template: ListItemT
 
     def __init__(
@@ -99,7 +98,6 @@ class List(MutableSequence[ListItemT], BaseField):
         self._children_ref = WeakNonHashableSet()
         self._iter_order = order
         self._update_notifier = Notifier()
-        self._loaded_notifier = Notifier()
         self._template = template
 
     @SettingsLock.with_write_lock
@@ -171,7 +169,6 @@ class List(MutableSequence[ListItemT], BaseField):
         for field in fields if isinstance(fields, list) else [fields]:
             field.meta().clear()
             field._update_notifier.discard(self._update_notifier.trigger)  # noqa: SLF001
-            self._loaded_notifier.discard(field._loaded_notifier.trigger)  # noqa: SLF001
 
     def __len__(self) -> int:
         return len(self._contents)
@@ -225,7 +222,6 @@ class List(MutableSequence[ListItemT], BaseField):
         for i, item in enumerate(self._contents):
             item.meta().update(label=self._labelForIndex(i), container=self)
             item._update_notifier.add(self._update_notifier.trigger)  # noqa: SLF001
-            self._loaded_notifier.add(item._loaded_notifier.trigger)  # noqa: SLF001
 
     @staticmethod
     def _labelForIndex(index: SupportsIndex) -> str:
@@ -395,21 +391,6 @@ class List(MutableSequence[ListItemT], BaseField):
         """
 
         self._update_notifier.add(callback)
-
-    def onLoadedCall(self, callback: Callable[[], Any]) -> None:
-        """
-        Adds a callback to be called whenever settings were just loaded. This
-        List itself may or may not have been modified during the load.
-
-        Args:
-            callback: A callable that takes no argument.
-
-        Note:
-            This method does not increase the reference count of the given
-            callback.
-        """
-
-        self._loaded_notifier.add(callback)
 
     @SettingsLock.with_read_lock
     def dumpFields(self) -> Iterable[tuple[str, str | None]]:
