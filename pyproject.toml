@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "SunsetSettings"
-description = "Type-safe, extensible settings library."
+description = "A type-safe, extensible INI-style settings library."
 authors = [{ name = "P. Varet", email = "p.varet@gmail.com" }]
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -34,7 +34,7 @@ Home          = "https://github.com/pvaret/SunsetSettings"
 Documentation = "https://sunsetsettings.readthedocs.io/"
 
 [project.optional-dependencies]
-tests = ["coverage[toml]", "pytest", "pytest-mock", "pytest-skip-slow"]
+tests = ["coverage[toml]", "pytest", "pytest-case", "pytest-mock", "pytest-skip-slow"]
 docs  = ["sphinx", "sphinx_rtd_theme"]
 
 [tool.pytest.ini_options]
@@ -70,6 +70,7 @@ ignore = [
     "COM812", # Can confuse the Ruff formatter.
     "ISC001", # Can confuse the Ruff formatter.
     "N802",   # We use camelCase method names.
+    "TC006",  # Obsoleted by PEP 563.
     "D",      # Ignore docstring style linting for now. Revisit later.
 ]
 
