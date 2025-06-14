@@ -42,19 +42,19 @@ class TestSettings:
         assert othersection is section
 
     def test_dump_fields(self) -> None:
-        # When no field is set, the name of the section should still be dumped.
+        # When no field is set, the section should still be dumped.
 
         settings = ExampleSettings()
         assert list(settings.dumpFields()) == [
-            ("main/", None),
+            ("", None),
         ]
 
         # This applies to subsections too.
 
         settings.newSection("empty")
         assert list(settings.dumpFields()) == [
-            ("main/", None),
-            ("main/empty/", None),
+            ("", None),
+            ("empty/", None),
         ]
 
         # Set fields should be dumped, in alphabetic order.
@@ -70,15 +70,15 @@ class TestSettings:
         settings.key_list.appendOne()
         settings.key_list.appendOne().set("three")
         assert list(settings.dumpFields()) == [
-            ("main/a", "new a"),
-            ("main/b", "new b"),
-            ("main/bunch_list.1.c", "100"),
-            ("main/bunch_list.2.d", "true"),
-            ("main/inner_bunch.c", "40"),
-            ("main/inner_bunch.d", "true"),
-            ("main/key_list.1", "one"),
-            ("main/key_list.2", None),
-            ("main/key_list.3", "three"),
+            ("a", "new a"),
+            ("b", "new b"),
+            ("bunch_list.1.c", "100"),
+            ("bunch_list.2.d", "true"),
+            ("inner_bunch.c", "40"),
+            ("inner_bunch.d", "true"),
+            ("key_list.1", "one"),
+            ("key_list.2", None),
+            ("key_list.3", "three"),
         ]
 
         # Anonymous sections, and subsections of anonymous sections, should not
@@ -106,26 +106,13 @@ class TestSettings:
         subsection.inner_bunch.c.set(200)
 
         assert list(settings.dumpFields()) == [
-            ("main/a", "a"),
-            ("main/bunch_list.1.c", "100"),
-            ("main/section1/a", "sub a"),
-            ("main/section1/b", "sub b"),
-            ("main/section1/bunch_list.1.c", "1000"),
-            ("main/section1/subsection/inner_bunch.c", "200"),
-            ("main/section2/inner_bunch.d", "false"),
-        ]
-
-        # Settings with a custom section name should use that name in dumps.
-
-        settings.setSectionName("new")
-        assert list(settings.dumpFields()) == [
-            ("new/a", "a"),
-            ("new/bunch_list.1.c", "100"),
-            ("new/section1/a", "sub a"),
-            ("new/section1/b", "sub b"),
-            ("new/section1/bunch_list.1.c", "1000"),
-            ("new/section1/subsection/inner_bunch.c", "200"),
-            ("new/section2/inner_bunch.d", "false"),
+            ("a", "a"),
+            ("bunch_list.1.c", "100"),
+            ("section1/a", "sub a"),
+            ("section1/b", "sub b"),
+            ("section1/bunch_list.1.c", "1000"),
+            ("section1/subsection/inner_bunch.c", "200"),
+            ("section2/inner_bunch.d", "false"),
         ]
 
         # Section should be dumped in alphabetic order.
@@ -135,10 +122,10 @@ class TestSettings:
         settings.newSection("mm")
         settings.newSection("aaa")
         assert list(settings.dumpFields()) == [
-            ("main/", None),
-            ("main/aaa/", None),
-            ("main/mm/", None),
-            ("main/z/", None),
+            ("", None),
+            ("aaa/", None),
+            ("mm/", None),
+            ("z/", None),
         ]
 
     def test_restore_field(self, mocker: MockerFixture) -> None:
@@ -265,6 +252,123 @@ class TestSettings:
 
             [otherlevel1]
             inner_bunch.d = false
+            """
+        )
+
+    def test_load_to_save_idempotency(self) -> None:
+        settings = ExampleSettings()
+        settings.load(
+            io.StringIO(
+                """\
+                [main]
+                a = a
+                bunch_list.1.c = 100
+
+                [level1]
+                a = sub a
+                b = sub b
+                bunch_list.1.c = 1000
+                key_list.1 = one
+                key_list.2 =
+                key_list.3 = ""
+
+                [level1/level2]
+                inner_bunch.c = 200
+
+                [otherlevel1]
+                inner_bunch.d = false
+                """
+            )
+        )
+
+        file = io.StringIO()
+        settings.save(file, blanklines=True)
+
+        assert file.getvalue() == textwrap.dedent(
+            """\
+            [main]
+            a = a
+            bunch_list.1.c = 100
+
+            [level1]
+            a = sub a
+            b = sub b
+            bunch_list.1.c = 1000
+            key_list.1 = one
+            key_list.2 =
+            key_list.3 = ""
+
+            [level1/level2]
+            inner_bunch.c = 200
+
+            [otherlevel1]
+            inner_bunch.d = false
+            """
+        )
+
+    def test_dump_to_restore_idempotency(self) -> None:
+        settings = ExampleSettings()
+        settings.a.set("a")
+        settings.bunch_list.appendOne().c.set(100)
+
+        section1 = settings.newSection(name="Level 1")
+        section1.a.set("sub a")
+        section1.b.set("sub b")
+        section1.bunch_list.appendOne().c.set(1000)
+        section1.key_list.appendOne().set("one")
+        section1.key_list.appendOne()
+        section1.key_list.appendOne().set("")
+
+        section2 = settings.newSection(name="Other level 1")
+        section2.inner_bunch.d.set(False)
+
+        subsection1 = section1.newSection(name="Level 2")
+        subsection1.inner_bunch.c.set(200)
+
+        expected_fields: list[tuple[str, str | None]] = [
+            ("a", "a"),
+            ("bunch_list.1.c", "100"),
+            ("level1/a", "sub a"),
+            ("level1/b", "sub b"),
+            ("level1/bunch_list.1.c", "1000"),
+            ("level1/key_list.1", "one"),
+            ("level1/key_list.2", None),
+            ("level1/key_list.3", ""),
+            ("level1/level2/inner_bunch.c", "200"),
+            ("otherlevel1/inner_bunch.d", "false"),
+        ]
+        assert list(settings.dumpFields()) == expected_fields
+
+        restored = ExampleSettings()
+        restored.restoreFields(expected_fields)
+        assert list(restored.dumpFields()) == expected_fields
+
+        restored.restoreFields(expected_fields)
+        assert list(restored.dumpFields()) == expected_fields
+
+    def test_save_non_default_toplevel_section_name(self) -> None:
+        settings = ExampleSettings()
+        settings.setSectionName("renamed")
+        settings.a.set("a")
+        settings.bunch_list.appendOne().c.set(100)
+
+        section1 = settings.newSection(name="Level 1")
+        section1.b.set("sub b")
+        section1.newSection("Level 2")
+
+        file = io.StringIO()
+        settings.save(file, blanklines=True)
+
+        assert file.getvalue() == textwrap.dedent(
+            """\
+            [renamed]
+            a = a
+            bunch_list.1.c = 100
+
+            [level1]
+            b = sub b
+
+            [level1/level2]
             """
         )
 

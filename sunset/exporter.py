@@ -104,18 +104,16 @@ def save_to_file(
     data: Iterable[tuple[str, str | None]],
     *,
     blanklines: bool,
+    main: str = "main",
 ) -> None:
     need_space = False
     current_section = ""
 
     def extract_section(path: str) -> tuple[str, str]:
         if _SECTION_SEPARATOR not in path:
-            return "", ""
+            return main, path
 
         section, path = path.rsplit(_SECTION_SEPARATOR, 1)
-        if _SECTION_SEPARATOR in section:
-            _, section = section.split(_SECTION_SEPARATOR, 1)
-
         return section, path
 
     for full_path, dump in data:

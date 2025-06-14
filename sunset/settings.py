@@ -405,15 +405,16 @@ class Settings(Bunch):
             # Ensure the section is dumped even if empty. Dumping an empty section is
             # valid.
 
-            label = (self.sectionName() or "?") + self._SECTION_SEPARATOR
-
             if not self.isSet():
-                ret.append((label, None))
+                ret.append(("", None))
             else:
-                ret.extend((label + path, item) for path, item in super().dumpFields())
+                ret.extend((path, item) for path, item in super().dumpFields())
 
             for section in self.sections():
-                ret.extend((label + path, item) for path, item in section.dumpFields())
+                ret.extend(
+                    (section.sectionName() + self._SECTION_SEPARATOR + path, item)
+                    for path, item in section.dumpFields()
+                )
 
         return ret
 
@@ -476,7 +477,9 @@ class Settings(Bunch):
 
             return
 
-        save_to_file(file, self.dumpFields(), blanklines=blanklines)
+        save_to_file(
+            file, self.dumpFields(), blanklines=blanklines, main=self.sectionName()
+        )
 
     def load(self, file: IO[str]) -> None:
         """
