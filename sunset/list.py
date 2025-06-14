@@ -16,6 +16,7 @@ from sunset.lock import SettingsLock
 from sunset.notifier import Notifier
 from sunset.protocols import BaseField, UpdateNotifier
 from sunset.sets import WeakNonHashableSet
+from sunset.stringutils import collate_by_prefix, split_on
 
 ListItemT = TypeVar("ListItemT", bound=Bunch | Key[Any])
 
@@ -231,7 +232,8 @@ class List(MutableSequence[ListItemT], BaseField):
     def _indexForLabel(label: str) -> int | None:
         if not label.isdigit():
             return None
-        return int(label) - 1
+        index = int(label) - 1
+        return index if index >= 0 else None
 
     @SettingsLock.with_write_lock
     def setParent(self, parent: Self | None) -> None:
@@ -414,29 +416,46 @@ class List(MutableSequence[ListItemT], BaseField):
         return ret
 
     @SettingsLock.with_write_lock
-    def restoreField(self, path: str, value: str | None) -> bool:
+    def restoreFields(self, fields: Iterable[tuple[str, str | None]]) -> bool:
         """
         Internal.
         """
 
-        if self._PATH_SEPARATOR in path:
-            field_label, path = path.split(self._PATH_SEPARATOR, 1)
-        else:
-            field_label, path = path, ""
+        any_change = False
+
+        by_label = collate_by_prefix(fields, split_on(self._PATH_SEPARATOR))
+        by_index = {
+            index: value
+            for label, value in by_label.items()
+            if (index := self._indexForLabel(label)) is not None
+        }
+        max_index = max(by_index.keys(), default=-1)
 
         with self._update_notifier.inhibit():
-            index = self._indexForLabel(field_label)
-            if index is not None and index >= 0:
-                self._ensureMinimumLength(index + 1)
-                return self[index].restoreField(path, value)
+            if self._lastIndex > max_index:
+                del self[max_index + 1 :]
+                any_change = True
+            else:
+                any_change = self._ensureIndexExists(max_index)
 
-        return False
+            for i, field in enumerate(self):
+                any_change = field.restoreFields(by_index.get(i, [])) or any_change
 
-    def _ensureMinimumLength(self, length: int) -> None:
-        missing_count = length - len(self)
+        return any_change
+
+    @SettingsLock.with_write_lock
+    def _ensureIndexExists(self, index: int) -> bool:
+        missing_count = index - self._lastIndex
 
         if missing_count > 0:
             self.extend(self._newItem() for _ in range(missing_count))
+            return True
+
+        return False
+
+    @property
+    def _lastIndex(self) -> int:
+        return len(self) - 1
 
     def _typeHint(self) -> GenericAlias:
         return GenericAlias(type(self), type(self._template))

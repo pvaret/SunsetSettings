@@ -14,8 +14,11 @@ from sunset.bunch import Bunch
 from sunset.exporter import load_from_file, normalize, save_to_file
 from sunset.lock import SettingsLock
 from sunset.sets import NonHashableSet
+from sunset.stringutils import collate_by_prefix, split_on
 
 _MAIN = "main"
+
+_FieldItemT = tuple[str, str | None]
 
 
 class Settings(Bunch):
@@ -326,7 +329,7 @@ class Settings(Bunch):
         return name if self.parent() is not None else self.MAIN
 
     @SettingsLock.with_write_lock
-    def setParent(self, parent: Self | None) -> None:
+    def setParent(self, parent: Self | None) -> None:  # type: ignore  # noqa: PGH003
         """
         Makes the given Settings instance the parent of this one. If None,
         remove this instance's parent, if any.
@@ -415,29 +418,46 @@ class Settings(Bunch):
         return ret
 
     @SettingsLock.with_write_lock
-    def restoreField(self, path: str, value: str | None) -> bool:
+    def restoreFields(self, fields: Iterable[_FieldItemT]) -> bool:
         """
         Internal.
         """
 
-        if self._SECTION_SEPARATOR not in path:
-            return False
+        previous_subsections = {
+            section.sectionName(): section for section in self.sections()
+        }
 
-        section_name, path = path.split(self._SECTION_SEPARATOR, 1)
-        if self.sectionName() != section_name:
-            return False
+        fields = list(fields)
+
+        sep = self._SECTION_SEPARATOR
+        bunch_fields = [(path, value) for path, value in fields if sep not in path]
+        by_section = collate_by_prefix(
+            [(path, value) for path, value in fields if sep in path],
+            split_on(sep),
+        )
 
         with self._update_notifier.inhibit():
-            if self._SECTION_SEPARATOR in path:
-                subsection_name, _ = path.split(self._SECTION_SEPARATOR, 1)
-                if subsection_name:
-                    section = self.getOrCreateSection(subsection_name)
-                    return section.restoreField(path, value)
+            any_change = super().restoreFields(bunch_fields)
 
-            else:
-                return super().restoreField(path, value)
+            for subsection_name, subsection in previous_subsections.items():
+                if subsection_name not in by_section:
+                    subsection.setParent(None)
+                    subsection.clear()
+                    any_change = True
+                    continue
 
-        return False
+                any_change = (
+                    subsection.restoreFields(by_section.pop(subsection_name))
+                    or any_change
+                )
+
+            for subsection_name, subsection_fields in by_section.items():
+                if not subsection_name:
+                    continue
+                subsection = self.getOrCreateSection(subsection_name)
+                any_change = subsection.restoreFields(subsection_fields) or any_change
+
+        return any_change
 
     def save(self, file: IO[str], *, blanklines: bool = False) -> None:
         """
@@ -470,17 +490,13 @@ class Settings(Bunch):
         If the text file object contains multiple headings, those headings will
         be used to create subsections with the corresponding names.
 
-        Loading settings from a file does not reset the existing settings or
-        sections. Which means you can split your configuration into multiple
-        files if needed and load each file in turn to reconstruct the full
-        settings.
+        Note that loading new settings resets the current settings.
 
         Args:
             file: A text file open in reading mode.
         """
 
-        for path, dump in load_from_file(file, self.sectionName()):
-            self.restoreField(path, dump)
+        self.restoreFields(load_from_file(file, self.sectionName()))
 
     def setAutosaverClass(self, class_: type[AutoSaver]) -> None:
         """

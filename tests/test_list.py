@@ -153,56 +153,31 @@ class TestList:
             ("key_list.1", "test public"),
         ]
 
-    def test_restore_field(self, mocker: MockerFixture) -> None:
+    def test_restore_field_with_valid_inputs(self, mocker: MockerFixture) -> None:
         callback = mocker.stub()
+        test_list = List(Key("default"))
+        test_list.onUpdateCall(callback)
 
         # Test restoring one value. Also, restoring a field should not trigger a
         # callback.
 
-        test_list1 = List(Key("default"))
-        test_list1.onUpdateCall(callback)
-        assert test_list1.restoreField("1", "test")
-        assert len(test_list1) == 1
-        assert test_list1[0].get() == "test"
+        assert test_list.restoreFields([("1", "test")])
+        assert len(test_list) == 1
+        assert test_list[0].get() == "test"
         callback.assert_not_called()
 
         # Test overwriting a restored value.
 
-        assert test_list1.restoreField("1", "other test")
-        assert len(test_list1) == 1
-        assert test_list1[0].get() == "other test"
+        assert test_list.restoreFields([("1", "other test")])
+        assert len(test_list) == 1
+        assert test_list[0].get() == "other test"
         callback.assert_not_called()
 
         # Test restoring a value that requires extending the List.
 
-        assert test_list1.restoreField("5", "extension test")
-        assert len(test_list1) == 5
-        assert test_list1[4].get() == "extension test"
-        callback.assert_not_called()
-
-        # Test different kinds of invalid restore paths.
-
-        test_list2 = List(Key("default"))
-        test_list2.onUpdateCall(callback)
-
-        assert not test_list2.restoreField("", "test")
-        assert len(test_list2) == 0
-        callback.assert_not_called()
-
-        assert not test_list2.restoreField("invalid", "test")
-        assert len(test_list2) == 0
-        callback.assert_not_called()
-
-        assert not test_list2.restoreField("invalid.1", "test")
-        assert len(test_list2) == 0
-        callback.assert_not_called()
-
-        assert not test_list2.restoreField(".", "test")
-        assert len(test_list2) == 0
-        callback.assert_not_called()
-
-        assert not test_list2.restoreField("0", "test")
-        assert len(test_list2) == 0
+        assert test_list.restoreFields([("5", "extension test")])
+        assert len(test_list) == 5
+        assert test_list[4].get() == "extension test"
         callback.assert_not_called()
 
         # Test indirect restore path.
@@ -212,30 +187,63 @@ class TestList:
 
         bunch = TestBunch()
         bunch.str_list.onUpdateCall(callback)
-        assert bunch.restoreField("str_list.1", "test")
+        assert bunch.restoreFields([("str_list.1", "test")])
         assert len(bunch.str_list) == 1
         assert bunch.str_list[0].get() == "test"
         callback.assert_not_called()
 
-        # Test an invalid restore value.
-
-        test_list3 = List(Key("default"))
-        test_list3.onUpdateCall(callback)
-        assert not test_list3.restoreField(".size", "invalid")
-        assert len(test_list3) == 0
-        callback.assert_not_called()
-
         # Test restoring a List with empty items.
 
-        test_list4 = List(Key("default"))
-        test_list4.onUpdateCall(callback)
-        assert test_list4.restoreField("1", None)
-        assert test_list4.restoreField("2", "")
-        assert test_list4.restoreField("3", None)
-        assert len(test_list4) == 3
-        assert not test_list4[0].isSet()
-        assert test_list4[1].isSet() and test_list4[1].get() == ""
-        assert not test_list4[2].isSet()
+        assert test_list.restoreFields([("2", ""), ("3", None)])
+        assert len(test_list) == 3
+        assert not test_list[0].isSet()
+        assert test_list[1].isSet() and test_list[1].get() == ""
+        assert not test_list[2].isSet()
+        callback.assert_not_called()
+
+        # Test overwriting a List with empty items.
+
+        assert test_list.restoreFields(
+            [("1", "test"), ("2", "test"), ("3", "test"), ("4", "test")]
+        )
+        assert len(test_list) == 4
+        assert test_list[0].get() == "test"
+        assert test_list[1].get() == "test"
+        assert test_list[2].get() == "test"
+        assert test_list[3].get() == "test"
+
+        assert test_list.restoreFields([("2", ""), ("3", None)])
+        assert len(test_list) == 3
+        assert not test_list[0].isSet()
+        assert test_list[1].isSet() and test_list[1].get() == ""
+        assert not test_list[2].isSet()
+        callback.assert_not_called()
+
+    def test_restore_field_with_invalid_inputs(self, mocker: MockerFixture) -> None:
+        callback = mocker.stub()
+        test_list = List(Key("default"))
+        test_list.onUpdateCall(callback)
+
+        # Test different kinds of invalid restore paths.
+
+        assert not test_list.restoreFields([("", "test")])
+        assert len(test_list) == 0
+        callback.assert_not_called()
+
+        assert not test_list.restoreFields([("invalid", "test")])
+        assert len(test_list) == 0
+        callback.assert_not_called()
+
+        assert not test_list.restoreFields([("invalid.1", "test")])
+        assert len(test_list) == 0
+        callback.assert_not_called()
+
+        assert not test_list.restoreFields([(".", "test")])
+        assert len(test_list) == 0
+        callback.assert_not_called()
+
+        assert not test_list.restoreFields([("0", "test")])
+        assert len(test_list) == 0
         callback.assert_not_called()
 
     def test_persistence(self) -> None:

@@ -155,15 +155,18 @@ def load_from_file(file: IO[str], main: str) -> Iterable[tuple[str, str | None]]
             if not current_section:
                 continue
 
-            if current_section != main:
-                current_section = main + _SECTION_SEPARATOR + current_section
+            if current_section == main:
+                current_section = ""
 
-            yield current_section + _SECTION_SEPARATOR, ""
+            if current_section:
+                yield current_section + _SECTION_SEPARATOR, ""
 
         elif "=" in line:
             path, dump = line.split("=", 1)
             path = cleanup_path(path)
             dump = dump.strip()
-            if path and current_section:
+            if path:
                 payload = unescape(dump) if dump else None
-                yield (current_section + _SECTION_SEPARATOR + path, payload)
+                if current_section:
+                    path = _SECTION_SEPARATOR.join((current_section, path))
+                yield (path, payload)

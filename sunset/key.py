@@ -426,28 +426,49 @@ class Key(Generic[_T], BaseField):
         return []
 
     @SettingsLock.with_write_lock
-    def restoreField(self, path: str, value: str | None) -> bool:
-        if value is None:
-            # Note that doing nothing when the given value is None, is
-            # considered a success.
-            return True
-
-        if path != "":
-            # Keys don't have sub-fields. If a path was given, then the path is
-            # incorrect.
-            return False
+    def restoreFields(self, fields: Iterable[tuple[str, str | None]]) -> bool:
+        any_change = False
 
         with self._update_notifier.inhibit():
-            if (val := self._serializer.fromStr(value)) is not None:
-                return self.set(val)
+            if not fields:
+                any_change = self.isSet()
+                self.clear()
+                return any_change
 
-            # Keep track of the value that failed to restore, so that we can dump it
-            # again when saving. That way, if a user makes a typo while editing the
-            # settings file, the faulty entry is not entirely lost when we save.
+            # There should normally be only one value to be restored for a Key, but
+            # mistakes happen. There's no perfect way to deal with that. So we loop over
+            # fields until we find one with a path that strictly corresponds to this
+            # Key. If there are more fields in the list with values for this Key, they
+            # are ignored. In other words, if a settings file contains multiple entries
+            # for a Key, only the first one is taken into account.
 
-            logging.error("Invalid value for Key %r: %s", self, value)
-            self._bad_value_string = value
-            return False
+            for label, value in fields:
+                if label != "":
+                    # Keys don't have sub-fields. If a label was given, then the path is
+                    # incorrect and does not correspond to this Key.
+                    continue
+
+                if value is None:
+                    any_change = self.isSet()
+                    self.clear()
+
+                elif (val := self._serializer.fromStr(value)) is not None and self.set(
+                    val
+                ):
+                    any_change = True
+
+                else:
+                    # Keep track of the value that failed to restore, so that we can
+                    # dump it again when saving. That way, if a user makes a typo while
+                    # editing the settings file, the faulty entry is not entirely lost
+                    # when we save.
+
+                    logging.error("Invalid value for Key %r: %s", self, value)
+                    self._bad_value_string = value
+
+                break
+
+        return any_change
 
     def _notifyParentValueChanged(self) -> None:
         if self.isSet():

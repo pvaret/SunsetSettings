@@ -17,6 +17,7 @@ from sunset.lock import SettingsLock
 from sunset.notifier import Notifier
 from sunset.protocols import BaseField, Field, ItemTemplate, UpdateNotifier
 from sunset.sets import WeakNonHashableSet
+from sunset.stringutils import collate_by_prefix, split_on
 
 
 class Bunch(BaseField):
@@ -316,6 +317,10 @@ class Bunch(BaseField):
 
         return any(field.isSet() for field in self._fields.values())
 
+    @SettingsLock.with_write_lock
+    def clear(self) -> None:
+        [field.clear() for field in self._fields.values()]
+
     @SettingsLock.with_read_lock
     def dumpFields(self) -> Iterable[tuple[str, str | None]]:
         """
@@ -334,21 +339,26 @@ class Bunch(BaseField):
         return ret
 
     @SettingsLock.with_write_lock
-    def restoreField(self, path: str, value: str | None) -> bool:
+    def restoreFields(self, fields: Iterable[tuple[str, str | None]]) -> bool:
         """
         Internal.
         """
 
+        any_change = False
+        by_field = collate_by_prefix(fields, split_on(self._PATH_SEPARATOR))
+
         with self._update_notifier.inhibit():
-            if self._PATH_SEPARATOR in path:
-                field_label, path = path.split(self._PATH_SEPARATOR, 1)
-            else:
-                field_label, path = path, ""
+            for field_name, field in self._fields.items():
+                if field_name not in by_field:
+                    # If the field is not in the fields to restore, clear it.
 
-            if (field := self._fields.get(field_label)) is not None:
-                return field.restoreField(path, value)
+                    any_change = any_change or field.isSet()
+                    field.clear()
 
-        return False
+                else:
+                    any_change = field.restoreFields(by_field[field_name]) or any_change
+
+        return any_change
 
     def _typeHint(self) -> type:
         return type(self)

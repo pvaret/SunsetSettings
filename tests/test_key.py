@@ -119,7 +119,7 @@ class TestKey:
         key.set("value")
         assert list(key.dumpFields()) == [("", "value-TEST")]
 
-        key.restoreField("", "other value-TEST")
+        key.restoreFields([("", "other value-TEST")])
         assert key.get() == "other value"
 
     def test_validator(self) -> None:
@@ -134,10 +134,10 @@ class TestKey:
         assert key.set(2)
         assert key.get() == 2
 
-        assert not key.restoreField("", "3")
+        assert not key.restoreFields([("", "3")])
         assert key.get() == 2
 
-        assert key.restoreField("", "4")
+        assert key.restoreFields([("", "4")])
         assert key.get() == 4
 
         def isOdd(i: int) -> bool:
@@ -444,74 +444,89 @@ class TestKey:
         # well, restoring a field should not trigger a callback.
 
         assert not key.isSet()
-        assert key.restoreField("", "1")
+        assert key.restoreFields([("", "1")])
         assert key.isSet()
         assert key.get() == 1
         callback.assert_not_called()
 
         key.clear()
         callback.reset_mock()
-        assert not key.restoreField("invalid", "1")
+        assert not key.restoreFields([("invalid", "1")])
         assert not key.isSet()
         callback.assert_not_called()
-        assert not key.restoreField(".invalid", "1")
+        assert not key.restoreFields([(".invalid", "1")])
         assert not key.isSet()
         callback.assert_not_called()
-        assert not key.restoreField("invalid.", "1")
+        assert not key.restoreFields([("invalid.", "1")])
         assert not key.isSet()
         callback.assert_not_called()
-        assert not key.restoreField(".", "1")
+        assert not key.restoreFields([(".", "1")])
         assert not key.isSet()
         callback.assert_not_called()
 
-        # If multiple values are set, the last one sticks.
+        # If multiple values are set, the first one sticks.
 
         key.clear()
         callback.reset_mock()
-        assert key.restoreField("", "1")
-        assert key.restoreField("", "2")
-        assert key.get() == 2
+        assert key.restoreFields([("", "1"), ("", "2")])
+        assert key.get() == 1
+        callback.assert_not_called()
+
+        # None is a valid value that clears the Key.
+
+        assert key.isSet()
+        assert key.restoreFields([("", None)])
+        assert not key.isSet()
+        callback.assert_not_called()
+
+        # Restoring an empty list of fields clears the Key.
+
+        key.set(123)
+        assert key.isSet()
+        callback.reset_mock()
+        assert key.restoreFields([])
+        assert not key.isSet()
         callback.assert_not_called()
 
         # Invalid values do not update the Key.
 
         key.clear()
         callback.reset_mock()
-        assert not key.restoreField("", "?")
+        assert not key.restoreFields([("", "?")])
         assert not key.isSet()
         callback.assert_not_called()
-        assert not key.restoreField("", "")
+        assert not key.restoreFields([("", "")])
         assert not key.isSet()
         callback.assert_not_called()
-        assert key.restoreField("", None)
+        assert not key.restoreFields([("", None)])
         assert not key.isSet()
         callback.assert_not_called()
 
     def test_restore_field_serialization(self) -> None:
         key_str: Key[str] = Key(default="")
-        assert key_str.restoreField("", "test")
+        assert key_str.restoreFields([("", "test")])
         assert key_str.get() == "test"
 
         key_int: Key[int] = Key(default=0)
-        assert key_int.restoreField("", "12")
+        assert key_int.restoreFields([("", "12")])
         assert key_int.get() == 12
 
         key_float: Key[float] = Key(default=1.2)
-        assert key_float.restoreField("", "3.4")
+        assert key_float.restoreFields([("", "3.4")])
         assert key_float.get() == 3.4
 
         key_bool: Key[bool] = Key(default=False)
-        assert key_bool.restoreField("", "true")
+        assert key_bool.restoreFields([("", "true")])
         assert key_bool.get()
 
         key_custom: Key[ExampleSerializable] = Key(default=ExampleSerializable(""))
-        assert key_custom.restoreField("", "test")
+        assert key_custom.restoreFields([("", "test")])
         assert key_custom.get().toStr() == "test"
 
     def test_invalid_restore_value_is_still_dumped(self) -> None:
         key = Key[int](default=0)
 
-        assert not key.restoreField("", "12error")
+        assert not key.restoreFields([("", "12error")])
         assert key.get() == 0
 
         assert list(key.dumpFields()) == [("", "12error")]
@@ -521,7 +536,7 @@ class TestKey:
         key.clear()
         assert list(key.dumpFields()) == []
 
-        assert not key.restoreField("", "12error")
+        assert not key.restoreFields([("", "12error")])
         key.set(0)
         assert list(key.dumpFields()) == [("", "0")]
 

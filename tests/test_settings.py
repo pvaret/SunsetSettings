@@ -1,4 +1,5 @@
 import io
+import textwrap
 
 from pytest_mock import MockerFixture
 
@@ -149,27 +150,27 @@ class TestSettings:
         settings = ExampleSettings()
         settings.onUpdateCall(callback)
         assert settings.a.get() == ""
-        assert settings.restoreField("main/a", "test main a")
+        assert settings.restoreFields([("a", "test main a")])
         assert settings.a.get() == "test main a"
         callback.assert_not_called()
 
         # Test restoring a field on an inner Bunch.
 
         assert settings.inner_bunch.c.get() == 0
-        assert settings.restoreField("main/inner_bunch.c", "123")
+        assert settings.restoreFields([("inner_bunch.c", "123")])
         assert settings.inner_bunch.c.get() == 123
         callback.assert_not_called()
 
         # Test restoring a field on a subsection.
 
         assert settings.getSection("section1") is None
-        assert settings.restoreField("main/section1/a", "test section1 a")
+        assert settings.restoreFields([("section1/a", "test section1 a")])
         section1 = settings.getSection("section1")
         assert section1 is not None
         assert section1.a.get() == "test section1 a"
         callback.assert_not_called()
 
-        assert settings.restoreField("main/section2/subsection/a", "test subsection a")
+        assert settings.restoreFields([("section2/subsection/a", "test subsection a")])
         section2 = settings.getSection("section2")
         assert section2 is not None
         subsection = section2.getSection("subsection")
@@ -177,46 +178,24 @@ class TestSettings:
         assert subsection.a.get() == "test subsection a"
         callback.assert_not_called()
 
-        # Test restoring fields on a renamed Settings.
-
-        renamed_settings = ExampleSettings()
-        renamed_settings.setSectionName("renamed")
-        renamed_settings.onUpdateCall(callback)
-        assert renamed_settings.restoreField("renamed/a", "test renamed a")
-        assert renamed_settings.a.get() == "test renamed a"
-        callback.assert_not_called()
-
-        assert renamed_settings.b.get() == ""
-        assert not renamed_settings.restoreField("main/b", "test invalid b")
-        assert renamed_settings.b.get() == ""
-        callback.assert_not_called()
-
         # Test restorting with an invalid path.
 
         other_settings = ExampleSettings()
         other_settings.onUpdateCall(callback)
         assert not other_settings.isSet()
-        assert not other_settings.restoreField("invalid/a", "test invalid a")
+        assert not other_settings.restoreFields([("/a", "test invalid a")])
         assert not other_settings.isSet()
         callback.assert_not_called()
 
-        assert not other_settings.restoreField("main/invalid", "test invalid a")
+        assert not other_settings.restoreFields([("/invalid/a", "test invalid a")])
         assert not other_settings.isSet()
         callback.assert_not_called()
 
-        assert not other_settings.restoreField("invalid", "test invalid a")
+        assert not other_settings.restoreFields([("/", "test invalid a")])
         assert not other_settings.isSet()
         callback.assert_not_called()
 
-        assert not other_settings.restoreField("/a", "test invalid a")
-        assert not other_settings.isSet()
-        callback.assert_not_called()
-
-        assert not other_settings.restoreField("a/invalid", "test invalid a")
-        assert not other_settings.isSet()
-        callback.assert_not_called()
-
-        assert not other_settings.restoreField("a", "test invalid a")
+        assert not other_settings.restoreFields([("", "test invalid a")])
         assert not other_settings.isSet()
         callback.assert_not_called()
 
@@ -265,29 +244,28 @@ class TestSettings:
         file = io.StringIO()
         settings.save(file, blanklines=True)
 
-        assert (
-            file.getvalue()
-            == """\
-[main]
-a = a
-bunch_list.1.c = 100
+        assert file.getvalue() == textwrap.dedent(
+            """\
+            [main]
+            a = a
+            bunch_list.1.c = 100
 
-[empty]
+            [empty]
 
-[level1]
-a = sub a
-b = sub b
-bunch_list.1.c = 1000
-key_list.1 = one
-key_list.2 =
-key_list.3 = ""
+            [level1]
+            a = sub a
+            b = sub b
+            bunch_list.1.c = 1000
+            key_list.1 = one
+            key_list.2 =
+            key_list.3 = ""
 
-[level1/level2]
-inner_bunch.c = 200
+            [level1/level2]
+            inner_bunch.c = 200
 
-[otherlevel1]
-inner_bunch.d = false
-"""
+            [otherlevel1]
+            inner_bunch.d = false
+            """
         )
 
     def test_load(self, mocker: MockerFixture) -> None:
@@ -297,24 +275,24 @@ inner_bunch.d = false
         settings.load(
             io.StringIO(
                 """\
-[main]
-a = a
-bunch_list.1.c = 100
+                [main]
+                a = a
+                bunch_list.1.c = 100
 
-[level1]
-a = sub a
-b = sub b
-key_list.1 = one
-key_list.2 =
-key_list.3 = ""
-bunch_list.1.c = 1000
+                [level1]
+                a = sub a
+                b = sub b
+                key_list.1 = one
+                key_list.2 =
+                key_list.3 = ""
+                bunch_list.1.c = 1000
 
-[level1/level2]
-inner_bunch.c = 200
+                [level1/level2]
+                inner_bunch.c = 200
 
-[otherlevel1]
-inner_bunch.d = false
-"""
+                [otherlevel1]
+                inner_bunch.d = false
+                """
             )
         )
 
@@ -349,72 +327,74 @@ inner_bunch.d = false
 
         assert level2.inner_bunch.c.get() == 200
 
-    def test_load_invalid_no_section(self) -> None:
+    def test_load_no_section_means_main(self) -> None:
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
                 """\
-a = no bunch header
-"""
+                a = no main section
+                """
             )
         )
 
-        assert settings.a.get() == ""
+        assert settings.a.get() == "no main section"
 
     def test_load_invalid_repeated_key(self) -> None:
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
                 """\
-[main]
-a = repeated key
-a = last value should be used
-"""
+                [main]
+                a = repeated key
+                a = first value should be used
+                """
             )
         )
 
-        assert settings.a.get() == "last value should be used"
+        assert settings.a.get() == "repeated key"
 
-    def test_load_invalid_repeated_section(self) -> None:
+    def test_load_repeated_sections_are_merged(self) -> None:
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
                 """\
-[main]
-a = repeated bunch
+                [main]
+                a = repeated section
 
-[main]
-a = bunch values will be merged, last takes precedence
-"""
+                [main]
+                a = section values will be merged, first takes precedence
+                b = merged value
+                """
             )
         )
 
-        assert settings.a.get() == "bunch values will be merged, last takes precedence"
+        assert settings.a.get() == "repeated section"
+        assert settings.b.get() == "merged value"
 
-    def test_load_invalid_missing_main(self) -> None:
+    def test_load_sections_valid_when_missing_main(self) -> None:
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
                 """\
-[level1]
-a = main bunch is implicitly created if needed
-"""
+                [level1]
+                a = main section is implicitly created if needed
+                """
             )
         )
 
         sections = list(settings.sections())
         assert len(sections) == 1
-        assert sections[0].a.get() == "main bunch is implicitly created if needed"
+        assert sections[0].a.get() == "main section is implicitly created if needed"
 
     def test_load_invalid_extra_section_separators(self) -> None:
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
                 """\
-[main]
-[level1///level2]
-a = extra separators should be skipped
-"""
+                [main]
+                [level1///level2]
+                a = extra separators should be skipped
+                """
             )
         )
 
@@ -428,10 +408,10 @@ a = extra separators should be skipped
         settings.load(
             io.StringIO(
                 """\
-[main]
-[/level1]
-a = extra separators should be skipped
-"""
+                [main]
+                [/level1]
+                a = extra separators should be skipped
+                """
             )
         )
 
@@ -443,10 +423,10 @@ a = extra separators should be skipped
         settings.load(
             io.StringIO(
                 """\
-[main]
-[level1/]
-a = extra separators should be skipped
-"""
+                [main]
+                [level1/]
+                a = extra separators should be skipped
+                """
             )
         )
 
@@ -459,12 +439,12 @@ a = extra separators should be skipped
         settings.load(
             io.StringIO(
                 """\
-[main]
-a = main
+                [main]
+                a = main
 
-[!%$?]
-a = bad bunch
-"""
+                [!%$?]
+                a = bad bunch
+                """
             )
         )
 
@@ -477,30 +457,32 @@ a = bad bunch
         settings.load(
             io.StringIO(
                 """\
-[main]
-a = main
+                [main]
+                a = main
 
-[ M? a*i*n ]
-a = merged
-"""
+                [ M? a*i*n ]
+                a = first entry still prevails
+                b = merged
+                """
             )
         )
 
         sections = list(settings.sections())
         assert len(sections) == 0
-        assert settings.a.get() == "merged"
+        assert settings.a.get() == "main"
+        assert settings.b.get() == "merged"
 
     def test_load_invalid_empty_section_is_skipped(self) -> None:
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
                 """\
-[main]
-a = main
+                [main]
+                a = main
 
-[]
-a = skipped
-"""
+                []
+                a = skipped
+                """
             )
         )
 
@@ -513,9 +495,9 @@ a = skipped
         settings.load(
             io.StringIO(
                 """\
-[main]
-= should be skipped
-"""
+                [main]
+                = should be skipped
+                """
             )
         )
 
@@ -525,9 +507,9 @@ a = skipped
         settings.load(
             io.StringIO(
                 """\
-[main]
-??a = should be loaded
-"""
+                [main]
+                ??a = should be loaded
+                """
             )
         )
 
@@ -537,9 +519,9 @@ a = skipped
         settings.load(
             io.StringIO(
                 """\
-[main]
-[a] = should be loaded
-"""
+                [main]
+                [a] = should be loaded
+                """
             )
         )
 
@@ -549,9 +531,9 @@ a = skipped
         settings.load(
             io.StringIO(
                 """\
-[main]
-doesnotexist = should be skipped
-"""
+                [main]
+                doesnotexist = should be skipped
+                """
             )
         )
 
@@ -561,9 +543,9 @@ doesnotexist = should be skipped
         settings.load(
             io.StringIO(
                 """\
-[main]
-. = should be skipped
-"""
+                [main]
+                . = should be skipped
+                """
             )
         )
 
@@ -573,9 +555,9 @@ doesnotexist = should be skipped
         settings.load(
             io.StringIO(
                 """\
-[main]
-.a = should be loaded
-"""
+                [main]
+                .a = should be loaded
+                """
             )
         )
 
@@ -585,9 +567,9 @@ doesnotexist = should be skipped
         settings.load(
             io.StringIO(
                 """\
-[main]
-a.. = should be loaded
-"""
+                [main]
+                a.. = should be loaded
+                """
             )
         )
 
@@ -598,8 +580,8 @@ a.. = should be loaded
         settings.load(
             io.StringIO(
                 """\
-[shouldexist]
-"""
+                [shouldexist]
+                """
             )
         )
         assert settings.getSection("shouldexist") is not None
@@ -611,9 +593,9 @@ a.. = should be loaded
         settings.load(
             io.StringIO(
                 """\
-[renamed]
-a = value
-"""
+                [renamed]
+                a = value
+                """
             )
         )
 
