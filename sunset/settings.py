@@ -4,7 +4,7 @@ from collections.abc import Callable, Iterable, MutableSet
 from pathlib import Path
 from typing import IO, Any
 
-if sys.version_info < (3, 11):
+if sys.version_info < (3, 11):  # pragma: no cover
     from typing_extensions import Self
 else:
     from typing import Self
@@ -501,18 +501,13 @@ class Settings(Bunch):
 
         self.restoreFields(load_from_file(file, self.sectionName()))
 
-    def setAutosaverClass(self, class_: type[AutoSaver]) -> None:
-        """
-        Internal.
-        """
-        self._autosaver_class = class_
-
     def autosave(
         self,
         path: str | Path,
         *,
         save_on_update: bool = True,
         save_delay: int = 0,
+        raise_on_error: bool = False,
         logger: logging.Logger | None = None,
     ) -> AutoSaver:
         """
@@ -539,6 +534,10 @@ class Settings(Bunch):
                 before triggering a save. If set to 0, the save is triggered
                 immediately. Default: 0.
 
+            raise_on_error: Whether OS errors occurring while loading and saving the
+                settings should raise an exception. If False, errors will only be
+                logged. Default: False.
+
             logger: A logger instance that will be used to log OS errors, if
                 any, while loading or saving settings. If none is given, the
                 default root logger will be used.
@@ -555,6 +554,7 @@ class Settings(Bunch):
             path,
             save_on_update=save_on_update,
             save_delay=save_delay,
+            raise_on_error=raise_on_error,
             logger=logger,
         )
         return self._autosaver

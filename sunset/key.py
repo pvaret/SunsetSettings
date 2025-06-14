@@ -205,7 +205,7 @@ class Key(Generic[_T], BaseField):
             return False
 
         if not self._validator(value):
-            logging.debug("Validator rejected value for Key %r: %r", self, value)
+            logging.debug("Validator rejected value for Key %r: %r", self, value)  # noqa: LOG015
             return False
 
         # Setting a Key's value programmatically always resets bad values.
@@ -463,7 +463,7 @@ class Key(Generic[_T], BaseField):
                     # editing the settings file, the faulty entry is not entirely lost
                     # when we save.
 
-                    logging.error("Invalid value for Key %r: %s", self, value)
+                    logging.error("Invalid value for Key %r: %s", self, value)  # noqa: LOG015
                     self._bad_value_string = value
 
                 break

@@ -1,5 +1,3 @@
-# pyright: reportMissingTypeStubs=false
-
 from typing import Any
 
 import pytest

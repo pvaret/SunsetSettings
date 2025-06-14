@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from types import GenericAlias
 from typing import Generic, Protocol, TypeVar, runtime_checkable
 
-if sys.version_info < (3, 11):
+if sys.version_info < (3, 11):  # pragma: no cover
     from typing_extensions import Self
 else:
     from typing import Self

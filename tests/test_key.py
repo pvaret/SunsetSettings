@@ -104,6 +104,7 @@ class TestKey:
         key = Key(default=NotSerializable(), serializer=Serializer())
         key.set(NotSerializable())
         assert list(key.dumpFields()) == [("", "test")]
+        assert key.restoreFields([("", "")])
 
     def test_serializer_override(self) -> None:
         class Serializer:
@@ -119,7 +120,10 @@ class TestKey:
         key.set("value")
         assert list(key.dumpFields()) == [("", "value-TEST")]
 
-        key.restoreFields([("", "other value-TEST")])
+        assert key.restoreFields([("", "other value-TEST")])
+        assert key.get() == "other value"
+
+        assert not key.restoreFields([("", "(invalid)")])
         assert key.get() == "other value"
 
     def test_validator(self) -> None:
@@ -268,11 +272,9 @@ class TestKey:
         class Dummy:
             pass
 
-        def callback1(_: Key[str]) -> Dummy:
-            return Dummy()
+        def callback1(_: Key[str]) -> Dummy: ...
 
-        def callback2(_: str) -> Dummy:
-            return Dummy()
+        def callback2(_: str) -> Dummy: ...
 
         key.onUpdateCall(callback1)
         key.onValueChangeCall(callback2)
@@ -557,31 +559,31 @@ class TestKey:
         assert level1.parent() is None
         assert len(list(level1.children())) == 0
 
-    def test_new_instance_non_serializable(self) -> None:
-        class NotSerializable:
+    def test_custom_serializer_passed_to_new_instances(self) -> None:
+        class NeedsSerializer:
             pass
 
-        class Serializer:
-            def toStr(self, value: NotSerializable) -> str:
+        class CustomSerializer:
+            def toStr(self, value: NeedsSerializer) -> str:
                 return "test"
 
-            def fromStr(self, string: str) -> NotSerializable:
-                return NotSerializable()
+            def fromStr(self, string: str) -> NeedsSerializer | None:
+                return NeedsSerializer() if string == "custom" else None
 
-        key = Key(default=NotSerializable(), serializer=Serializer())
+        key = Key(default=NeedsSerializer(), serializer=CustomSerializer())
         other_key = key._newInstance()
-        other_key.set(NotSerializable())
+        other_key.set(NeedsSerializer())
 
         assert list(other_key.dumpFields()) == [("", "test")]
+        assert other_key.restoreFields([("", "custom")])
+        assert not other_key.restoreFields([("", "invalid")])
 
     def test_complex_key_type_with_subclasses(self) -> None:
         class BaseClass:
-            def toStr(self) -> str:
-                return ""
+            def toStr(self) -> str: ...
 
             @classmethod
-            def fromStr(cls, string: str) -> "BaseClass":
-                return cls()
+            def fromStr(cls, string: str) -> "BaseClass": ...
 
         class Derived1(BaseClass):
             pass
@@ -610,12 +612,10 @@ class TestKey:
 
     def test_explicit_key_type_transmitted_to_new_instances(self) -> None:
         class BaseClass:
-            def toStr(self) -> str:
-                return ""
+            def toStr(self) -> str: ...
 
             @classmethod
-            def fromStr(cls, string: str) -> "BaseClass":
-                return cls()
+            def fromStr(cls, string: str) -> "BaseClass": ...
 
         class Derived1(BaseClass):
             pass

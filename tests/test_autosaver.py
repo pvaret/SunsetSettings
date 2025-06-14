@@ -145,7 +145,9 @@ class TestAutosaver:
         saver2 = AutoSaver(ExampleSettings(), "~/with/tilde", load_on_init=False)
         assert str(saver2.path()) == "HOME/with/tilde"
 
-    def test_exceptions(self, tmp_path: pathlib.Path, mocker: MockerFixture) -> None:
+    def test_no_exception_raised_if_logger_provided(
+        self, tmp_path: pathlib.Path, mocker: MockerFixture
+    ) -> None:
         settings_file = tmp_path / "actually_a_folder"
         settings_file.mkdir(parents=True)
 
@@ -158,11 +160,31 @@ class TestAutosaver:
             logger=logger_stub,
         )
 
-        logger_stub.exception.assert_not_called()
+        logger_stub.error.assert_not_called()
         assert settings_file.exists()
         assert not saver.doLoad()
-        logger_stub.exception.assert_called_once()
-        logger_stub.exception.reset_mock()
+        logger_stub.error.assert_called_once()
+        logger_stub.error.reset_mock()
 
         assert not saver.doSave()
-        logger_stub.exception.assert_called_once()
+        logger_stub.error.assert_called_once()
+
+    def test_exception_raised_if_raise_on_exception(
+        self, tmp_path: pathlib.Path, mocker: MockerFixture
+    ) -> None:
+        settings_file = tmp_path / "actually_a_folder"
+        settings_file.mkdir(parents=True)
+
+        logger_stub = mocker.MagicMock(logging.Logger)
+
+        saver = AutoSaver(
+            ExampleSettings(),
+            settings_file,
+            load_on_init=False,
+            raise_on_error=True,
+            logger=logger_stub,
+        )
+
+        assert settings_file.exists()
+        with pytest.raises(OSError):
+            saver.doLoad()

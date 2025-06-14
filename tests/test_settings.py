@@ -1,4 +1,5 @@
 import io
+import logging
 import textwrap
 
 from pytest_mock import MockerFixture
@@ -707,23 +708,27 @@ class TestSettings:
 
     def test_autosave(self, mocker: MockerFixture) -> None:
         sentinel = object()
-        stub = mocker.Mock(return_value=sentinel)
+        autosaver_stub = mocker.Mock(return_value=sentinel)
+        logger_stub = mocker.Mock(logging.Logger)
 
         settings = ExampleSettings()
-        settings.setAutosaverClass(stub)
+        settings._autosaver_class = autosaver_stub
         ret = settings.autosave(
             "/tmp/test",
             save_delay=12,
+            raise_on_error=True,
+            logger=logger_stub,
         )
 
         assert ret is sentinel
 
-        stub.assert_called_once_with(
+        autosaver_stub.assert_called_once_with(
             settings,
             "/tmp/test",
             save_delay=12,
             save_on_update=True,
-            logger=None,
+            raise_on_error=True,
+            logger=logger_stub,
         )
 
     def test_callback_type_is_flexible(self) -> None:
@@ -732,8 +737,7 @@ class TestSettings:
         class Dummy:
             pass
 
-        def callback(_: ExampleSettings) -> Dummy:
-            return Dummy()
+        def callback(_: ExampleSettings) -> Dummy: ...
 
         settings.onUpdateCall(callback)
 
@@ -883,6 +887,15 @@ class TestSettings:
         assert len(list(parent.children())) == len(
             set(child.sectionName() for child in parent.children())
         )
+
+    def test_get_invalid_section_string_returns_none(self) -> None:
+        class TestSettings(Settings):
+            pass
+
+        settings = TestSettings()
+        assert settings.newSection("") is not None
+        assert settings.getSection("") is None
+        assert settings.getSection("?!*") is None
 
     def test_section_name_made_unique_when_changing_parent(self) -> None:
         class TestSettings(Settings):

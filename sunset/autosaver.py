@@ -5,16 +5,15 @@ from pathlib import Path
 from types import TracebackType
 from typing import IO, Any, Protocol
 
-from sunset.timer import PersistentTimer, TimerProtocol
+from .autoloader import LoadableProtocol, doLoad
+from .timer import PersistentTimer, TimerProtocol
 
 
-class _SavableProtocol(Protocol):
+class SavableProtocol(LoadableProtocol, Protocol):
     """
-    This protocol lets AutoSaver know how to use a Settings instance without
-    having to import the actual Settings class.
+    This protocol lets AutoSaver know how to use a Settings instance without having to
+    import the actual Settings class.
     """
-
-    def load(self, file: IO[str]) -> None: ...
 
     def save(self, file: IO[str], *, blanklines: bool = False) -> None: ...
 
@@ -23,52 +22,55 @@ class _SavableProtocol(Protocol):
 
 class AutoSaver:
     """
-    AutoSaver is a helper class that can take care of loading and saving
-    settings automatically and safely.
+    AutoSaver is a helper class that can take care of loading and saving settings
+    automatically and safely.
 
-    On instantiation, it automatically loads settings from the given file path,
-    if that file exists, unless the `load_on_init` argument is set to False.
+    On instantiation, it automatically loads settings from the given file path, if that
+    file exists, unless the `load_on_init` argument is set to False.
 
-    When saving, it uses a two-steps mechanism to ensure the atomicity of the
-    operation. That is to say, the operation either entirely succeeds or
-    entirely fails; AutoSaver will never write an incomplete settings file.
+    When saving, it uses a two-steps mechanism to ensure the atomicity of the operation.
+    That is to say, the operation either entirely succeeds or entirely fails; AutoSaver
+    will never write an incomplete settings file.
 
-    Saving automatically creates the parent directories of the target path if
-    those don't exist yet.
+    Saving automatically creates the parent directories of the target path if those
+    don't exist yet.
 
-    If the `save_on_update` argument is set to True, AutoSaver will save the
-    settings whenever they are updated. If the `save_on_delete` argument is set
-    to True, AutoSaver will save the settings when its own instance is about to
-    get deleted.
+    If the `save_on_update` argument is set to True, AutoSaver will save the settings
+    whenever they are updated from inside the application. If the `save_on_delete`
+    argument is set to True, AutoSaver will save the settings when its own instance is
+    about to get deleted.
 
-    AutoSaver can also be used as a context manager. Using it as a context
-    manager is the recommended usage.
+    AutoSaver can also be used as a context manager. Using it as a context manager is
+    the recommended usage.
 
     Args:
         settings: The Settings instance to load to and save from.
 
-        path: The full path to the file to load the settings from and save
-            them to. If this file does not exist yet, it will be created when
-            saving for the first time.
+        path: The full path to the file from which to load and save the settings. If
+            this file does not exist yet, it will be created when saving for the first
+            time.
 
-        save_on_update: Whether to save the settings when they
-            are updated in any way. Default: True.
+        save_on_update: Whether to save the settings when they are updated in any way.
+            Default: True.
 
-        save_on_delete: Whether to save the settings when this AutoSaver
-            instance is deleted. Default: True.
+        save_on_delete: Whether to save the settings when this AutoSaver instance is
+            garbage collected. Default: True.
 
-        load_on_init: Whether to load the settings when instantiating this
-            AutoSaver, provided the settings path exists. Default: True.
+        load_on_init: Whether to load the settings when instantiating this AutoSaver,
+            provided the settings path exists. Default: True.
 
-        save_delay: How long to wait, in seconds, before actually saving the
-            settings when `save_on_update` is True and an update occurs. Setting
-            this to a few seconds will batch updates for that long before
-            triggering a save. If set to 0, the save is triggered immediately.
-            Default: 0.
+        save_delay: How long to wait, in seconds, before actually saving the settings
+            when `save_on_update` is True and an update occurs. Setting this to a few
+            seconds will batch updates for that long before triggering a save. If set to
+            0, the save is triggered immediately. Default: 0.
 
-        logger: A logger instance that will be used to log OS errors, if any,
-            while loading or saving settings. If none is given, the default root
-            logger will be used.
+        raise_on_error: Whether OS errors occurring while loading and saving the
+            settings should raise an exception. If False, errors will only be logged.
+            Default: False.
+
+        logger: A logger instance that will be used to log OS errors, if any, while
+            loading or saving settings. If none is given, the default root logger will
+            be used.
 
     Example:
 
@@ -85,42 +87,37 @@ class AutoSaver:
     _ENCODING: str = "UTF-8"
 
     _path: Path
-    _settings: _SavableProtocol
+    _settings: SavableProtocol
     _dirty: bool
     _save_on_update: bool
     _save_on_delete: bool
     _save_delay: float
     _save_timer: TimerProtocol
+    _raise_on_error: bool
     _logger: logging.Logger
 
     def __init__(  # noqa: PLR0913
         self,
-        settings: _SavableProtocol,
+        settings: SavableProtocol,
         path: Path | str,
         *,
         save_on_update: bool = True,
         save_on_delete: bool = True,
         load_on_init: bool = True,
         save_delay: float = 0.0,
+        raise_on_error: bool = False,
         logger: logging.Logger | None = None,
     ) -> None:
-        if isinstance(path, str):
-            path = Path(path)
-
-        path = path.expanduser()
-
-        if logger is None:
-            logger = logging.getLogger()
-
         self._dirty = False
-        self._path = path
+        self._path = Path(path).expanduser()
         self._save_on_update = save_on_update
         self._save_on_delete = save_on_delete
         self._save_delay = save_delay
+        self._raise_on_error = raise_on_error
         self._save_timer = PersistentTimer()
         self._settings = settings
         self._settings.onUpdateCall(self._onSettingsUpdated)
-        self._logger = logger
+        self._logger = logger or logging.getLogger()
 
         if load_on_init:
             self.doLoad()
@@ -137,51 +134,53 @@ class AutoSaver:
 
     def doLoad(self) -> bool:
         """
-        Load the settings from this AutoSaver's settings file path, if it
-        exists.
+        Load the settings from this AutoSaver's settings file path, if it exists.
 
         Unsaved settings, if any, will be lost.
 
+        OS errors occurring while loading, if any, will be logged to the logger provided
+        to this AutoLoader's constructor.
+
+        If this AutoSaver was constructed with the parameter `raise_on_error` set to
+        True, these OS errors will then be re-raised.
+
+        Note that a missing file is not considered an error.
+
         Returns:
-            True if loading succeeded, else False. If an unexpected error
-            occurred, the error will be logged using the logger passed during
-            initialization. Note that it's not considered an error if the
-            settings file path does not exist yet.
+            True if loading succeeded, else False.
 
         Note:
-            Prefer letting AutoSaver load the settings during its initialization
-            in order to avoid race conditions.
+            Prefer letting AutoSaver load the settings during its initialization in
+            order to avoid race conditions.
         """
 
-        try:
-            if (path := self._path).exists():
-                self._logger.debug("Loading settings file '%s'...", path)
-                with Path(path).open(encoding=self._ENCODING) as f:
-                    self._settings.load(f)
-                self._logger.debug("Loaded.")
-                return True
-            self._logger.error("Path %s not found.", path)
-
-        except OSError:
-            self._logger.exception("Error while loading from '%s':", self._path)
-
-        return False
+        return doLoad(
+            self._path,
+            self._settings,
+            raise_on_error=self._raise_on_error,
+            logger=self._logger,
+            encoding=self._ENCODING,
+        )
 
     def doSave(self) -> bool:
         """
         Unconditionally saves the settings attached to this AutoSaver instance.
 
-        This method uses a two-steps mechanism to perform the save, in order to
-        make the save atomic. The settings are first saved to a temporary file,
-        and if successful, that temporary file then replaces the actual settings
-        file.
+        This method uses a two-steps mechanism to perform the save, in order to make the
+        save atomic. The settings are first saved to a temporary file, and if
+        successful, that temporary file then replaces the actual settings file.
 
-        If the directory where the settings file is located does not exist, this
-        method automatically creates it.
+        If the directory where the settings file is located does not exist, this method
+        automatically creates it.
+
+        OS errors occurring while saving, if any, will be logged to the logger provided
+        to this AutoLoader's constructor.
+
+        If this AutoSaver was constructed with the parameter `raise_on_error` set to
+        True, these OS errors will then be re-raised.
 
         Returns:
-            True if saving succeeded, else False. If False, the error will be
-            logged using the logger passed during initialization.
+            True if saving succeeded, else False.
         """
 
         self._save_timer.cancel()
@@ -204,8 +203,13 @@ class AutoSaver:
                 tmp_path.rename(self._path)
                 self._logger.debug("Saved.")
 
-        except OSError:
-            self._logger.exception("Error while saving to '%s':", self._path)
+        except OSError as e:
+            msg = f"Failed to save settings to {self._path}: {e}"
+            self._logger.error(msg)  # noqa: TRY400
+
+            if self._raise_on_error:
+                raise
+
             return False
 
         self._dirty = False
@@ -224,10 +228,7 @@ class AutoSaver:
 
         self._save_timer.cancel()
 
-        if save_needed:
-            return self.doSave()
-
-        return save_needed
+        return self.doSave() if save_needed else False
 
     def _onSettingsUpdated(self, _: Any) -> None:  # noqa: ANN401
         self._dirty = True

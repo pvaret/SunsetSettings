@@ -371,8 +371,7 @@ class TestBunch:
         class Dummy:
             pass
 
-        def callback(_: ExampleBunch) -> Dummy:
-            return Dummy()
+        def callback(_: ExampleBunch) -> Dummy: ...
 
         bunch.onUpdateCall(callback)
 
