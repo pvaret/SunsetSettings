@@ -34,7 +34,7 @@ Home          = "https://github.com/pvaret/SunsetSettings"
 Documentation = "https://sunsetsettings.readthedocs.io/"
 
 [project.optional-dependencies]
-tests = ["coverage[toml]", "pytest", "pytest-case", "pytest-mock", "pytest-skip-slow"]
+tests = ["coverage[toml]", "pytest", "pytest-cov", "pytest-mock", "pytest-skip-slow"]
 docs  = ["sphinx", "sphinx_rtd_theme"]
 
 [tool.pytest.ini_options]
@@ -66,7 +66,6 @@ extend-exclude = ["docs/"]
 select = ["ALL"]
 exclude = ["tests/*"]
 ignore = [
-    "ANN101", # Deprecated check that doesn't add value.
     "COM812", # Can confuse the Ruff formatter.
     "ISC001", # Can confuse the Ruff formatter.
     "N802",   # We use camelCase method names.
