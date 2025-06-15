@@ -97,6 +97,10 @@ API Reference
 
     .. automethod:: saveIfNeeded
 
+.. autoclass:: sunset.AutoLoader
+
+    .. automethod:: doLoad
+
 .. autoclass:: sunset.Serializer
 
     .. automethod:: toStr

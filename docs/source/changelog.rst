@@ -4,6 +4,8 @@ Changelog
 Latest
 ---------------------------------
 
+  - Added :code:`AutoLoader` context manager, which reloads the settings file when it is
+    modified.
   - Removed :code:`onLoadedCall()` methods. Use the regular :code:`onUpdateCall()`
     methods instead.
   - Methods that returned Iterators now return Iterables. Usage of Iterators was an
