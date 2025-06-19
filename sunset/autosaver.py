@@ -3,11 +3,9 @@ import tempfile
 from collections.abc import Callable
 from pathlib import Path
 from types import TracebackType
-from typing import IO, Any, Protocol, TypeVar
+from typing import IO, Any, Protocol
 
 from sunset.timer import PersistentTimer, TimerProtocol
-
-_TimerT = TypeVar("_TimerT", bound=TimerProtocol)
 
 
 class _SavableProtocol(Protocol):
@@ -119,7 +117,7 @@ class AutoSaver:
         self._save_on_update = save_on_update
         self._save_on_delete = save_on_delete
         self._save_delay = save_delay
-        self._save_timer = PersistentTimer(self.saveIfNeeded)
+        self._save_timer = PersistentTimer()
         self._settings = settings
         self._settings.onUpdateCall(self._onSettingsUpdated)
         self._logger = logger
@@ -234,16 +232,7 @@ class AutoSaver:
     def _onSettingsUpdated(self, _: Any) -> None:  # noqa: ANN401
         self._dirty = True
         if self._save_on_update:
-            self._save_timer.start(self._save_delay)
-
-    def setSaveTimerClass(self, timer_class: type[_TimerT]) -> _TimerT:
-        """
-        Internal.
-        """
-
-        timer = timer_class(self.saveIfNeeded)
-        self._save_timer = timer
-        return timer
+            self._save_timer.start(self._save_delay, self.saveIfNeeded)
 
     def __del__(self) -> None:
         if self._save_on_delete:
