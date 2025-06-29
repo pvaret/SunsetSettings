@@ -37,6 +37,12 @@ Documentation = "https://sunsetsettings.readthedocs.io/"
 tests = ["coverage[toml]", "pytest", "pytest-cov", "pytest-mock", "pytest-skip-slow"]
 docs  = ["sphinx", "sphinx_rtd_theme"]
 
+[tool.hatch.build.targets.sdist]
+only-include = ["sunset/", "tests/", "docs/"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["sunset/"]
+
 [tool.pytest.ini_options]
 addopts = "-vv --doctest-modules --doctest-glob=README.md --doctest-glob=docs/*.rst --cov --cov-branch --cov-report=xml"
 
@@ -80,9 +86,6 @@ docstring-code-format = false
 
 [tool.hatch.version]
 path = "sunset/__init__.py"
-
-[tool.hatch.build.targets.wheel]
-packages = ["sunset"]
 
 [tool.hatch.envs.hatch-test]
 # This forces hatch test to use the pytest ini options listed above.
