@@ -1,5 +1,16 @@
+# Tooling directories.
+
+.jj/
+.vscode/
+
+# Build and test artifacts.
+
 .coverage*
 coverage.xml
 dist/*
 docs/build/*
+
+# Local-only files.
+
 TODO.txt
+*.code-workspace
