@@ -1,4 +1,6 @@
 import io
+import logging
+import textwrap
 
 from pytest_mock import MockerFixture
 
@@ -41,19 +43,19 @@ class TestSettings:
         assert othersection is section
 
     def test_dump_fields(self) -> None:
-        # When no field is set, the name of the section should still be dumped.
+        # When no field is set, the section should still be dumped.
 
         settings = ExampleSettings()
         assert list(settings.dumpFields()) == [
-            ("main/", None),
+            ("", None),
         ]
 
         # This applies to subsections too.
 
         settings.newSection("empty")
         assert list(settings.dumpFields()) == [
-            ("main/", None),
-            ("main/empty/", None),
+            ("", None),
+            ("empty/", None),
         ]
 
         # Set fields should be dumped, in alphabetic order.
@@ -69,15 +71,15 @@ class TestSettings:
         settings.key_list.appendOne()
         settings.key_list.appendOne().set("three")
         assert list(settings.dumpFields()) == [
-            ("main/a", "new a"),
-            ("main/b", "new b"),
-            ("main/bunch_list.1.c", "100"),
-            ("main/bunch_list.2.d", "true"),
-            ("main/inner_bunch.c", "40"),
-            ("main/inner_bunch.d", "true"),
-            ("main/key_list.1", "one"),
-            ("main/key_list.2", None),
-            ("main/key_list.3", "three"),
+            ("a", "new a"),
+            ("b", "new b"),
+            ("bunch_list.1.c", "100"),
+            ("bunch_list.2.d", "true"),
+            ("inner_bunch.c", "40"),
+            ("inner_bunch.d", "true"),
+            ("key_list.1", "one"),
+            ("key_list.2", None),
+            ("key_list.3", "three"),
         ]
 
         # Anonymous sections, and subsections of anonymous sections, should not
@@ -105,26 +107,13 @@ class TestSettings:
         subsection.inner_bunch.c.set(200)
 
         assert list(settings.dumpFields()) == [
-            ("main/a", "a"),
-            ("main/bunch_list.1.c", "100"),
-            ("main/section1/a", "sub a"),
-            ("main/section1/b", "sub b"),
-            ("main/section1/bunch_list.1.c", "1000"),
-            ("main/section1/subsection/inner_bunch.c", "200"),
-            ("main/section2/inner_bunch.d", "false"),
-        ]
-
-        # Settings with a custom section name should use that name in dumps.
-
-        settings.setSectionName("new")
-        assert list(settings.dumpFields()) == [
-            ("new/a", "a"),
-            ("new/bunch_list.1.c", "100"),
-            ("new/section1/a", "sub a"),
-            ("new/section1/b", "sub b"),
-            ("new/section1/bunch_list.1.c", "1000"),
-            ("new/section1/subsection/inner_bunch.c", "200"),
-            ("new/section2/inner_bunch.d", "false"),
+            ("a", "a"),
+            ("bunch_list.1.c", "100"),
+            ("section1/a", "sub a"),
+            ("section1/b", "sub b"),
+            ("section1/bunch_list.1.c", "1000"),
+            ("section1/subsection/inner_bunch.c", "200"),
+            ("section2/inner_bunch.d", "false"),
         ]
 
         # Section should be dumped in alphabetic order.
@@ -134,10 +123,10 @@ class TestSettings:
         settings.newSection("mm")
         settings.newSection("aaa")
         assert list(settings.dumpFields()) == [
-            ("main/", None),
-            ("main/aaa/", None),
-            ("main/mm/", None),
-            ("main/z/", None),
+            ("", None),
+            ("aaa/", None),
+            ("mm/", None),
+            ("z/", None),
         ]
 
     def test_restore_field(self, mocker: MockerFixture) -> None:
@@ -149,27 +138,27 @@ class TestSettings:
         settings = ExampleSettings()
         settings.onUpdateCall(callback)
         assert settings.a.get() == ""
-        assert settings.restoreField("main/a", "test main a")
+        assert settings.restoreFields([("a", "test main a")])
         assert settings.a.get() == "test main a"
         callback.assert_not_called()
 
         # Test restoring a field on an inner Bunch.
 
         assert settings.inner_bunch.c.get() == 0
-        assert settings.restoreField("main/inner_bunch.c", "123")
+        assert settings.restoreFields([("inner_bunch.c", "123")])
         assert settings.inner_bunch.c.get() == 123
         callback.assert_not_called()
 
         # Test restoring a field on a subsection.
 
         assert settings.getSection("section1") is None
-        assert settings.restoreField("main/section1/a", "test section1 a")
+        assert settings.restoreFields([("section1/a", "test section1 a")])
         section1 = settings.getSection("section1")
         assert section1 is not None
         assert section1.a.get() == "test section1 a"
         callback.assert_not_called()
 
-        assert settings.restoreField("main/section2/subsection/a", "test subsection a")
+        assert settings.restoreFields([("section2/subsection/a", "test subsection a")])
         section2 = settings.getSection("section2")
         assert section2 is not None
         subsection = section2.getSection("subsection")
@@ -177,46 +166,24 @@ class TestSettings:
         assert subsection.a.get() == "test subsection a"
         callback.assert_not_called()
 
-        # Test restoring fields on a renamed Settings.
-
-        renamed_settings = ExampleSettings()
-        renamed_settings.setSectionName("renamed")
-        renamed_settings.onUpdateCall(callback)
-        assert renamed_settings.restoreField("renamed/a", "test renamed a")
-        assert renamed_settings.a.get() == "test renamed a"
-        callback.assert_not_called()
-
-        assert renamed_settings.b.get() == ""
-        assert not renamed_settings.restoreField("main/b", "test invalid b")
-        assert renamed_settings.b.get() == ""
-        callback.assert_not_called()
-
         # Test restorting with an invalid path.
 
         other_settings = ExampleSettings()
         other_settings.onUpdateCall(callback)
         assert not other_settings.isSet()
-        assert not other_settings.restoreField("invalid/a", "test invalid a")
+        assert not other_settings.restoreFields([("/a", "test invalid a")])
         assert not other_settings.isSet()
         callback.assert_not_called()
 
-        assert not other_settings.restoreField("main/invalid", "test invalid a")
+        assert not other_settings.restoreFields([("/invalid/a", "test invalid a")])
         assert not other_settings.isSet()
         callback.assert_not_called()
 
-        assert not other_settings.restoreField("invalid", "test invalid a")
+        assert not other_settings.restoreFields([("/", "test invalid a")])
         assert not other_settings.isSet()
         callback.assert_not_called()
 
-        assert not other_settings.restoreField("/a", "test invalid a")
-        assert not other_settings.isSet()
-        callback.assert_not_called()
-
-        assert not other_settings.restoreField("a/invalid", "test invalid a")
-        assert not other_settings.isSet()
-        callback.assert_not_called()
-
-        assert not other_settings.restoreField("a", "test invalid a")
+        assert not other_settings.restoreFields([("", "test invalid a")])
         assert not other_settings.isSet()
         callback.assert_not_called()
 
@@ -265,29 +232,145 @@ class TestSettings:
         file = io.StringIO()
         settings.save(file, blanklines=True)
 
-        assert (
-            file.getvalue()
-            == """\
-[main]
-a = a
-bunch_list.1.c = 100
+        assert file.getvalue() == textwrap.dedent(
+            """\
+            [main]
+            a = a
+            bunch_list.1.c = 100
 
-[empty]
+            [empty]
 
-[level1]
-a = sub a
-b = sub b
-bunch_list.1.c = 1000
-key_list.1 = one
-key_list.2 =
-key_list.3 = ""
+            [level1]
+            a = sub a
+            b = sub b
+            bunch_list.1.c = 1000
+            key_list.1 = one
+            key_list.2 =
+            key_list.3 = ""
 
-[level1/level2]
-inner_bunch.c = 200
+            [level1/level2]
+            inner_bunch.c = 200
 
-[otherlevel1]
-inner_bunch.d = false
-"""
+            [otherlevel1]
+            inner_bunch.d = false
+            """
+        )
+
+    def test_load_to_save_idempotency(self) -> None:
+        settings = ExampleSettings()
+        settings.load(
+            io.StringIO(
+                """\
+                [main]
+                a = a
+                bunch_list.1.c = 100
+
+                [level1]
+                a = sub a
+                b = sub b
+                bunch_list.1.c = 1000
+                key_list.1 = one
+                key_list.2 =
+                key_list.3 = ""
+
+                [level1/level2]
+                inner_bunch.c = 200
+
+                [otherlevel1]
+                inner_bunch.d = false
+                """
+            )
+        )
+
+        file = io.StringIO()
+        settings.save(file, blanklines=True)
+
+        assert file.getvalue() == textwrap.dedent(
+            """\
+            [main]
+            a = a
+            bunch_list.1.c = 100
+
+            [level1]
+            a = sub a
+            b = sub b
+            bunch_list.1.c = 1000
+            key_list.1 = one
+            key_list.2 =
+            key_list.3 = ""
+
+            [level1/level2]
+            inner_bunch.c = 200
+
+            [otherlevel1]
+            inner_bunch.d = false
+            """
+        )
+
+    def test_dump_to_restore_idempotency(self) -> None:
+        settings = ExampleSettings()
+        settings.a.set("a")
+        settings.bunch_list.appendOne().c.set(100)
+
+        section1 = settings.newSection(name="Level 1")
+        section1.a.set("sub a")
+        section1.b.set("sub b")
+        section1.bunch_list.appendOne().c.set(1000)
+        section1.key_list.appendOne().set("one")
+        section1.key_list.appendOne()
+        section1.key_list.appendOne().set("")
+
+        section2 = settings.newSection(name="Other level 1")
+        section2.inner_bunch.d.set(False)
+
+        subsection1 = section1.newSection(name="Level 2")
+        subsection1.inner_bunch.c.set(200)
+
+        expected_fields: list[tuple[str, str | None]] = [
+            ("a", "a"),
+            ("bunch_list.1.c", "100"),
+            ("level1/a", "sub a"),
+            ("level1/b", "sub b"),
+            ("level1/bunch_list.1.c", "1000"),
+            ("level1/key_list.1", "one"),
+            ("level1/key_list.2", None),
+            ("level1/key_list.3", ""),
+            ("level1/level2/inner_bunch.c", "200"),
+            ("otherlevel1/inner_bunch.d", "false"),
+        ]
+        assert list(settings.dumpFields()) == expected_fields
+
+        restored = ExampleSettings()
+        restored.restoreFields(expected_fields)
+        assert list(restored.dumpFields()) == expected_fields
+
+        restored.restoreFields(expected_fields)
+        assert list(restored.dumpFields()) == expected_fields
+
+    def test_save_non_default_toplevel_section_name(self) -> None:
+        settings = ExampleSettings()
+        settings.setSectionName("renamed")
+        settings.a.set("a")
+        settings.bunch_list.appendOne().c.set(100)
+
+        section1 = settings.newSection(name="Level 1")
+        section1.b.set("sub b")
+        section1.newSection("Level 2")
+
+        file = io.StringIO()
+        settings.save(file, blanklines=True)
+
+        assert file.getvalue() == textwrap.dedent(
+            """\
+            [renamed]
+            a = a
+            bunch_list.1.c = 100
+
+            [level1]
+            b = sub b
+
+            [level1/level2]
+            """
         )
 
     def test_load(self, mocker: MockerFixture) -> None:
@@ -297,24 +380,24 @@ inner_bunch.d = false
         settings.load(
             io.StringIO(
                 """\
-[main]
-a = a
-bunch_list.1.c = 100
+                [main]
+                a = a
+                bunch_list.1.c = 100
 
-[level1]
-a = sub a
-b = sub b
-key_list.1 = one
-key_list.2 =
-key_list.3 = ""
-bunch_list.1.c = 1000
+                [level1]
+                a = sub a
+                b = sub b
+                key_list.1 = one
+                key_list.2 =
+                key_list.3 = ""
+                bunch_list.1.c = 1000
 
-[level1/level2]
-inner_bunch.c = 200
+                [level1/level2]
+                inner_bunch.c = 200
 
-[otherlevel1]
-inner_bunch.d = false
-"""
+                [otherlevel1]
+                inner_bunch.d = false
+                """
             )
         )
 
@@ -349,72 +432,74 @@ inner_bunch.d = false
 
         assert level2.inner_bunch.c.get() == 200
 
-    def test_load_invalid_no_section(self) -> None:
+    def test_load_no_section_means_main(self) -> None:
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
                 """\
-a = no bunch header
-"""
+                a = no main section
+                """
             )
         )
 
-        assert settings.a.get() == ""
+        assert settings.a.get() == "no main section"
 
     def test_load_invalid_repeated_key(self) -> None:
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
                 """\
-[main]
-a = repeated key
-a = last value should be used
-"""
+                [main]
+                a = repeated key
+                a = first value should be used
+                """
             )
         )
 
-        assert settings.a.get() == "last value should be used"
+        assert settings.a.get() == "repeated key"
 
-    def test_load_invalid_repeated_section(self) -> None:
+    def test_load_repeated_sections_are_merged(self) -> None:
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
                 """\
-[main]
-a = repeated bunch
+                [main]
+                a = repeated section
 
-[main]
-a = bunch values will be merged, last takes precedence
-"""
+                [main]
+                a = section values will be merged, first takes precedence
+                b = merged value
+                """
             )
         )
 
-        assert settings.a.get() == "bunch values will be merged, last takes precedence"
+        assert settings.a.get() == "repeated section"
+        assert settings.b.get() == "merged value"
 
-    def test_load_invalid_missing_main(self) -> None:
+    def test_load_sections_valid_when_missing_main(self) -> None:
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
                 """\
-[level1]
-a = main bunch is implicitly created if needed
-"""
+                [level1]
+                a = main section is implicitly created if needed
+                """
             )
         )
 
         sections = list(settings.sections())
         assert len(sections) == 1
-        assert sections[0].a.get() == "main bunch is implicitly created if needed"
+        assert sections[0].a.get() == "main section is implicitly created if needed"
 
     def test_load_invalid_extra_section_separators(self) -> None:
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
                 """\
-[main]
-[level1///level2]
-a = extra separators should be skipped
-"""
+                [main]
+                [level1///level2]
+                a = extra separators should be skipped
+                """
             )
         )
 
@@ -428,10 +513,10 @@ a = extra separators should be skipped
         settings.load(
             io.StringIO(
                 """\
-[main]
-[/level1]
-a = extra separators should be skipped
-"""
+                [main]
+                [/level1]
+                a = extra separators should be skipped
+                """
             )
         )
 
@@ -443,10 +528,10 @@ a = extra separators should be skipped
         settings.load(
             io.StringIO(
                 """\
-[main]
-[level1/]
-a = extra separators should be skipped
-"""
+                [main]
+                [level1/]
+                a = extra separators should be skipped
+                """
             )
         )
 
@@ -459,12 +544,12 @@ a = extra separators should be skipped
         settings.load(
             io.StringIO(
                 """\
-[main]
-a = main
+                [main]
+                a = main
 
-[!%$?]
-a = bad bunch
-"""
+                [!%$?]
+                a = bad bunch
+                """
             )
         )
 
@@ -477,30 +562,32 @@ a = bad bunch
         settings.load(
             io.StringIO(
                 """\
-[main]
-a = main
+                [main]
+                a = main
 
-[ M? a*i*n ]
-a = merged
-"""
+                [ M? a*i*n ]
+                a = first entry still prevails
+                b = merged
+                """
             )
         )
 
         sections = list(settings.sections())
         assert len(sections) == 0
-        assert settings.a.get() == "merged"
+        assert settings.a.get() == "main"
+        assert settings.b.get() == "merged"
 
     def test_load_invalid_empty_section_is_skipped(self) -> None:
         settings = ExampleSettings()
         settings.load(
             io.StringIO(
                 """\
-[main]
-a = main
+                [main]
+                a = main
 
-[]
-a = skipped
-"""
+                []
+                a = skipped
+                """
             )
         )
 
@@ -513,9 +600,9 @@ a = skipped
         settings.load(
             io.StringIO(
                 """\
-[main]
-= should be skipped
-"""
+                [main]
+                = should be skipped
+                """
             )
         )
 
@@ -525,9 +612,9 @@ a = skipped
         settings.load(
             io.StringIO(
                 """\
-[main]
-??a = should be loaded
-"""
+                [main]
+                ??a = should be loaded
+                """
             )
         )
 
@@ -537,9 +624,9 @@ a = skipped
         settings.load(
             io.StringIO(
                 """\
-[main]
-[a] = should be loaded
-"""
+                [main]
+                [a] = should be loaded
+                """
             )
         )
 
@@ -549,9 +636,9 @@ a = skipped
         settings.load(
             io.StringIO(
                 """\
-[main]
-doesnotexist = should be skipped
-"""
+                [main]
+                doesnotexist = should be skipped
+                """
             )
         )
 
@@ -561,9 +648,9 @@ doesnotexist = should be skipped
         settings.load(
             io.StringIO(
                 """\
-[main]
-. = should be skipped
-"""
+                [main]
+                . = should be skipped
+                """
             )
         )
 
@@ -573,9 +660,9 @@ doesnotexist = should be skipped
         settings.load(
             io.StringIO(
                 """\
-[main]
-.a = should be loaded
-"""
+                [main]
+                .a = should be loaded
+                """
             )
         )
 
@@ -585,9 +672,9 @@ doesnotexist = should be skipped
         settings.load(
             io.StringIO(
                 """\
-[main]
-a.. = should be loaded
-"""
+                [main]
+                a.. = should be loaded
+                """
             )
         )
 
@@ -598,8 +685,8 @@ a.. = should be loaded
         settings.load(
             io.StringIO(
                 """\
-[shouldexist]
-"""
+                [shouldexist]
+                """
             )
         )
         assert settings.getSection("shouldexist") is not None
@@ -611,9 +698,9 @@ a.. = should be loaded
         settings.load(
             io.StringIO(
                 """\
-[renamed]
-a = value
-"""
+                [renamed]
+                a = value
+                """
             )
         )
 
@@ -621,23 +708,27 @@ a = value
 
     def test_autosave(self, mocker: MockerFixture) -> None:
         sentinel = object()
-        stub = mocker.Mock(return_value=sentinel)
+        autosaver_stub = mocker.Mock(return_value=sentinel)
+        logger_stub = mocker.Mock(logging.Logger)
 
         settings = ExampleSettings()
-        settings.setAutosaverClass(stub)
+        settings._autosaver_class = autosaver_stub
         ret = settings.autosave(
             "/tmp/test",
             save_delay=12,
+            raise_on_error=True,
+            logger=logger_stub,
         )
 
         assert ret is sentinel
 
-        stub.assert_called_once_with(
+        autosaver_stub.assert_called_once_with(
             settings,
             "/tmp/test",
             save_delay=12,
             save_on_update=True,
-            logger=None,
+            raise_on_error=True,
+            logger=logger_stub,
         )
 
     def test_callback_type_is_flexible(self) -> None:
@@ -646,8 +737,7 @@ a = value
         class Dummy:
             pass
 
-        def callback(_: ExampleSettings) -> Dummy:
-            return Dummy()
+        def callback(_: ExampleSettings) -> Dummy: ...
 
         settings.onUpdateCall(callback)
 
@@ -797,6 +887,15 @@ a = value
         assert len(list(parent.children())) == len(
             set(child.sectionName() for child in parent.children())
         )
+
+    def test_get_invalid_section_string_returns_none(self) -> None:
+        class TestSettings(Settings):
+            pass
+
+        settings = TestSettings()
+        assert settings.newSection("") is not None
+        assert settings.getSection("") is None
+        assert settings.getSection("?!*") is None
 
     def test_section_name_made_unique_when_changing_parent(self) -> None:
         class TestSettings(Settings):

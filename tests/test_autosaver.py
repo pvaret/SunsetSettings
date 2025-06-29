@@ -1,37 +1,12 @@
 import logging
 import pathlib
-from collections.abc import Callable
-from typing import Any
 
 import pytest
 from pytest_mock import MockerFixture
 
 from sunset import AutoSaver, Key, Settings
 
-
-class MockTimer:
-    _clock: float
-    _interval: float
-    _function: Callable[[], None]
-
-    def __init__(self, function: Callable[[], Any]) -> None:
-        self._function = function
-        self._interval = 0
-        self._clock = -1.0
-
-    def cancel(self) -> None:
-        self._clock = -1.0
-
-    def start(self, interval: float) -> None:
-        if self._clock < 0:
-            self._interval = interval
-            self._clock = 0.0
-
-    def advanceTime(self, time: float) -> None:
-        if self._clock >= 0:
-            self._clock += time
-            if self._clock >= self._interval:
-                self._function()
+from .test_timer import MockTimer
 
 
 class ExampleSettings(Settings):
@@ -136,7 +111,8 @@ class TestAutosaver:
             settings, settings_file, save_on_delete=False, save_delay=2.0
         )
 
-        mock_timer = autosaver.setSaveTimerClass(MockTimer)
+        mock_timer = MockTimer()
+        autosaver._save_timer = mock_timer
 
         assert not settings_file.exists()
 
@@ -169,7 +145,9 @@ class TestAutosaver:
         saver2 = AutoSaver(ExampleSettings(), "~/with/tilde", load_on_init=False)
         assert str(saver2.path()) == "HOME/with/tilde"
 
-    def test_exceptions(self, tmp_path: pathlib.Path, mocker: MockerFixture) -> None:
+    def test_no_exception_raised_if_logger_provided(
+        self, tmp_path: pathlib.Path, mocker: MockerFixture
+    ) -> None:
         settings_file = tmp_path / "actually_a_folder"
         settings_file.mkdir(parents=True)
 
@@ -182,11 +160,31 @@ class TestAutosaver:
             logger=logger_stub,
         )
 
-        logger_stub.exception.assert_not_called()
+        logger_stub.error.assert_not_called()
         assert settings_file.exists()
         assert not saver.doLoad()
-        logger_stub.exception.assert_called_once()
-        logger_stub.exception.reset_mock()
+        logger_stub.error.assert_called_once()
+        logger_stub.error.reset_mock()
 
         assert not saver.doSave()
-        logger_stub.exception.assert_called_once()
+        logger_stub.error.assert_called_once()
+
+    def test_exception_raised_if_raise_on_exception(
+        self, tmp_path: pathlib.Path, mocker: MockerFixture
+    ) -> None:
+        settings_file = tmp_path / "actually_a_folder"
+        settings_file.mkdir(parents=True)
+
+        logger_stub = mocker.MagicMock(logging.Logger)
+
+        saver = AutoSaver(
+            ExampleSettings(),
+            settings_file,
+            load_on_init=False,
+            raise_on_error=True,
+            logger=logger_stub,
+        )
+
+        assert settings_file.exists()
+        with pytest.raises(OSError):
+            saver.doLoad()

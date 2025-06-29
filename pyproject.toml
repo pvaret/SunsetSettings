@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "SunsetSettings"
-description = "Type-safe, extensible settings library."
+description = "A type-safe, extensible INI-style settings library."
 authors = [{ name = "P. Varet", email = "p.varet@gmail.com" }]
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -34,7 +34,7 @@ Home          = "https://github.com/pvaret/SunsetSettings"
 Documentation = "https://sunsetsettings.readthedocs.io/"
 
 [project.optional-dependencies]
-tests = ["coverage[toml]", "pytest", "pytest-mock", "pytest-skip-slow"]
+tests = ["coverage[toml]", "pytest", "pytest-cov", "pytest-mock", "pytest-skip-slow"]
 docs  = ["sphinx", "sphinx_rtd_theme"]
 
 [tool.pytest.ini_options]
@@ -66,10 +66,10 @@ extend-exclude = ["docs/"]
 select = ["ALL"]
 exclude = ["tests/*"]
 ignore = [
-    "ANN101", # Deprecated check that doesn't add value.
     "COM812", # Can confuse the Ruff formatter.
     "ISC001", # Can confuse the Ruff formatter.
     "N802",   # We use camelCase method names.
+    "TC006",  # Obsoleted by PEP 563.
     "D",      # Ignore docstring style linting for now. Revisit later.
 ]
 
@@ -114,3 +114,11 @@ detached = true
 
 [tool.hatch.envs.docs.scripts]
 html = "make -C ./docs html"
+
+[tool.hatch.envs.hatch-static-analysis]
+# Require a version of Ruff that agrees with the linting parameters above.
+dependencies = ["ruff>=0.12.1"]
+
+# Disable Hatch's custom Ruff defaults so that our linting parameters above are the
+# entirety of what is used.
+config-path = "none"

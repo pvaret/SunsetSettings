@@ -1,4 +1,4 @@
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable
 from typing import IO
 
 _SECTION_SEPARATOR = "/"
@@ -104,18 +104,16 @@ def save_to_file(
     data: Iterable[tuple[str, str | None]],
     *,
     blanklines: bool,
+    main: str = "main",
 ) -> None:
     need_space = False
     current_section = ""
 
     def extract_section(path: str) -> tuple[str, str]:
         if _SECTION_SEPARATOR not in path:
-            return "", ""
+            return main, path
 
         section, path = path.rsplit(_SECTION_SEPARATOR, 1)
-        if _SECTION_SEPARATOR in section:
-            _, section = section.split(_SECTION_SEPARATOR, 1)
-
         return section, path
 
     for full_path, dump in data:
@@ -139,7 +137,7 @@ def save_to_file(
             file.write("\n")
 
 
-def load_from_file(file: IO[str], main: str) -> Iterator[tuple[str, str | None]]:
+def load_from_file(file: IO[str], main: str) -> Iterable[tuple[str, str | None]]:
     main = normalize(main)
 
     current_section = ""
@@ -155,15 +153,18 @@ def load_from_file(file: IO[str], main: str) -> Iterator[tuple[str, str | None]]
             if not current_section:
                 continue
 
-            if current_section != main:
-                current_section = main + _SECTION_SEPARATOR + current_section
+            if current_section == main:
+                current_section = ""
 
-            yield current_section + _SECTION_SEPARATOR, ""
+            if current_section:
+                yield current_section + _SECTION_SEPARATOR, ""
 
         elif "=" in line:
             path, dump = line.split("=", 1)
             path = cleanup_path(path)
             dump = dump.strip()
-            if path and current_section:
+            if path:
                 payload = unescape(dump) if dump else None
-                yield (current_section + _SECTION_SEPARATOR + path, payload)
+                if current_section:
+                    path = _SECTION_SEPARATOR.join((current_section, path))
+                yield (path, payload)

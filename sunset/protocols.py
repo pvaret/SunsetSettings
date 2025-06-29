@@ -1,11 +1,11 @@
 import sys
 import weakref
-from collections.abc import Callable, Iterator
+from collections.abc import Iterable
 from dataclasses import dataclass
 from types import GenericAlias
-from typing import Any, Generic, Protocol, TypeVar, runtime_checkable
+from typing import Generic, Protocol, TypeVar, runtime_checkable
 
-if sys.version_info < (3, 11):
+if sys.version_info < (3, 11):  # pragma: no cover
     from typing_extensions import Self
 else:
     from typing import Self
@@ -82,28 +82,23 @@ class Inheriter(Protocol):
 
     def parent(self) -> Self | None: ...
 
-    def children(self) -> Iterator[Self]: ...
+    def children(self) -> Iterable[Self]: ...
 
 
 @runtime_checkable
 class Dumpable(Protocol):
-    def dumpFields(self) -> Iterator[tuple[str, str | None]]: ...
+    def dumpFields(self) -> Iterable[tuple[str, str | None]]: ...
 
-    def restoreField(self, path: str, value: str | None) -> bool: ...
+    def restoreFields(self, fields: Iterable[tuple[str, str | None]]) -> bool: ...
 
     def isSet(self) -> bool: ...
+
+    def clear(self) -> None: ...
 
 
 @runtime_checkable
 class UpdateNotifier(Protocol):
     _update_notifier: Notifier[["UpdateNotifier"]]
-
-
-@runtime_checkable
-class LoadedNotifier(Protocol):
-    _loaded_notifier: Notifier[[]]
-
-    def onLoadedCall(self, callback: Callable[[], Any]) -> None: ...
 
 
 @runtime_checkable
@@ -159,7 +154,6 @@ class Field(
     Inheriter,
     ItemTemplate,
     UpdateNotifier,
-    LoadedNotifier,
     Protocol,
 ): ...
 

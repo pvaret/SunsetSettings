@@ -2,7 +2,7 @@ import dataclasses
 import inspect
 import sys
 import weakref
-from collections.abc import Callable, Iterator, MutableSet
+from collections.abc import Callable, Iterable, MutableSet
 from typing import TYPE_CHECKING, Any, cast
 
 if sys.version_info < (3, 11):
@@ -13,9 +13,11 @@ else:
 if TYPE_CHECKING:
     from types import GenericAlias
 
+from sunset.lock import SettingsLock
 from sunset.notifier import Notifier
 from sunset.protocols import BaseField, Field, ItemTemplate, UpdateNotifier
 from sunset.sets import WeakNonHashableSet
+from sunset.stringutils import collate_by_prefix, split_on
 
 
 class Bunch(BaseField):
@@ -53,7 +55,6 @@ class Bunch(BaseField):
     _children_set: MutableSet["Bunch"]
     _fields: dict[str, Field]
     _update_notifier: Notifier[[UpdateNotifier]]
-    _loaded_notifier: Notifier[[]]
 
     def __new__(cls) -> Self:
         # Build and return a dataclass constructed from this class. Keep a
@@ -188,14 +189,12 @@ class Bunch(BaseField):
         self._children_set = WeakNonHashableSet[Bunch]()
         self._fields = {}
         self._update_notifier = Notifier()
-        self._loaded_notifier = Notifier()
 
         for label, field in vars(self).items():
             if isinstance(field, Field):
                 self._fields[label] = field
                 field.meta().update(label=label, container=self)
                 field._update_notifier.add(self._update_notifier.trigger)  # noqa: SLF001
-                self._loaded_notifier.add(field._loaded_notifier.trigger)  # noqa: SLF001
 
         self.__post_init__()
 
@@ -206,6 +205,7 @@ class Bunch(BaseField):
         Use __init__() instead.
         """
 
+    @SettingsLock.with_write_lock
     def setParent(self, parent: Self | None) -> None:
         """
         Makes the given Bunch the parent of this one. If None, remove this
@@ -259,6 +259,7 @@ class Bunch(BaseField):
             assert type(field) is type(parent_field)  # noqa: S101
             field.setParent(parent_field)
 
+    @SettingsLock.with_read_lock
     def parent(self) -> Self | None:
         """
         Returns the parent of this Bunch, if any.
@@ -273,20 +274,17 @@ class Bunch(BaseField):
         parent = cast(weakref.ref[Self] | None, self._parent_ref)
         return parent() if parent is not None else None
 
-    def children(self) -> Iterator[Self]:
+    @SettingsLock.with_read_lock
+    def children(self) -> Iterable[Self]:
         """
-        Returns an iterator over the Bunch instances that have this Bunch
-        as their parent.
+        Returns an iterable with the Bunch instances that have this Bunch as their
+        parent.
 
         Returns:
-            An iterator over Bunch instances of the same type as this one.
+            An iterable of Bunch instances of the same type as this one.
         """
 
-        # Note that we iterate on a copy so that this will not break if a
-        # different thread updates the contents during the iteration.
-
-        for child in list(self._children_set):
-            yield cast(Self, child)
+        return [cast(Self, child) for child in self._children_set]
 
     def onUpdateCall(self, callback: Callable[[Any], Any]) -> None:
         """
@@ -308,21 +306,7 @@ class Bunch(BaseField):
 
         self._update_notifier.add(callback)
 
-    def onLoadedCall(self, callback: Callable[[], Any]) -> None:
-        """
-        Adds a callback to be called whenever settings were just loaded. This
-        Bunch itself may or may not have been modified during the load.
-
-        Args:
-            callback: A callable that takes no argument.
-
-        Note:
-            This method does not increase the reference count of the given
-            callback.
-        """
-
-        self._loaded_notifier.add(callback)
-
+    @SettingsLock.with_read_lock
     def isSet(self) -> bool:
         """
         Indicates whether this Bunch holds any field that is set.
@@ -333,34 +317,48 @@ class Bunch(BaseField):
 
         return any(field.isSet() for field in self._fields.values())
 
-    def dumpFields(self) -> Iterator[tuple[str, str | None]]:
+    @SettingsLock.with_write_lock
+    def clear(self) -> None:
+        [field.clear() for field in self._fields.values()]
+
+    @SettingsLock.with_read_lock
+    def dumpFields(self) -> Iterable[tuple[str, str | None]]:
         """
         Internal.
         """
 
+        ret: list[tuple[str, str | None]] = []
         sep = self._PATH_SEPARATOR
         if not self.skipOnSave():
             for label, field in sorted(self._fields.items()):
-                yield from (
+                ret.extend(
                     (label + sep + path if path else label, item)
                     for path, item in field.dumpFields()
                 )
 
-    def restoreField(self, path: str, value: str | None) -> bool:
+        return ret
+
+    @SettingsLock.with_write_lock
+    def restoreFields(self, fields: Iterable[tuple[str, str | None]]) -> bool:
         """
         Internal.
         """
 
+        any_change = False
+        by_field = collate_by_prefix(fields, split_on(self._PATH_SEPARATOR))
+
         with self._update_notifier.inhibit():
-            if self._PATH_SEPARATOR in path:
-                field_label, path = path.split(self._PATH_SEPARATOR, 1)
-            else:
-                field_label, path = path, ""
+            for field_name, field in self._fields.items():
+                if field_name not in by_field:
+                    # If the field is not in the fields to restore, clear it.
 
-            if (field := self._fields.get(field_label)) is not None:
-                return field.restoreField(path, value)
+                    any_change = any_change or field.isSet()
+                    field.clear()
 
-        return False
+                else:
+                    any_change = field.restoreFields(by_field[field_name]) or any_change
+
+        return any_change
 
     def _typeHint(self) -> type:
         return type(self)

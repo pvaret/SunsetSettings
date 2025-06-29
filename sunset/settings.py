@@ -1,10 +1,10 @@
 import logging
 import sys
-from collections.abc import Callable, Iterator, MutableSet
+from collections.abc import Callable, Iterable, MutableSet
 from pathlib import Path
 from typing import IO, Any
 
-if sys.version_info < (3, 11):
+if sys.version_info < (3, 11):  # pragma: no cover
     from typing_extensions import Self
 else:
     from typing import Self
@@ -12,13 +12,16 @@ else:
 from sunset.autosaver import AutoSaver
 from sunset.bunch import Bunch
 from sunset.exporter import load_from_file, normalize, save_to_file
-from sunset.lockable import Lockable
+from sunset.lock import SettingsLock
 from sunset.sets import NonHashableSet
+from sunset.stringutils import collate_by_prefix, split_on
 
 _MAIN = "main"
 
+_FieldItemT = tuple[str, str | None]
 
-class Settings(Bunch, Lockable):
+
+class Settings(Bunch):
     """
     A collection of keys that can be saved to and loaded from text, and supports
     subsections.
@@ -142,7 +145,7 @@ class Settings(Bunch, Lockable):
         self._children_set = NonHashableSet()
         self._autosaver_class = AutoSaver
 
-    @Lockable.with_lock
+    @SettingsLock.with_write_lock
     def newSection(self, name: str = "") -> Self:
         """
         Creates and returns a new instance of this class. Each key of the new
@@ -177,7 +180,7 @@ class Settings(Bunch, Lockable):
 
         return new
 
-    @Lockable.with_lock
+    @SettingsLock.with_write_lock
     def getOrCreateSection(self, name: str) -> Self:
         """
         Finds and returns the section of these Settings with the given name if
@@ -201,6 +204,7 @@ class Settings(Bunch, Lockable):
             else self.newSection(name=name)
         )
 
+    @SettingsLock.with_read_lock
     def getSection(self, name: str) -> Self | None:
         """
         Finds and returns a section of this instance with the given name, if it
@@ -223,18 +227,20 @@ class Settings(Bunch, Lockable):
 
         return None
 
-    def sections(self) -> Iterator[Self]:
+    @SettingsLock.with_read_lock
+    def sections(self) -> Iterable[Self]:
         """
-        Returns an iterator over the subsections of this Settings instance. Note
-        that the subsections are only looked up one level deep, that is to say,
-        no recursing into the section hierarchy occurs.
+        Returns an iterable with the subsections of this Settings instance. Note that
+        the subsections are only looked up one level deep, that is to say, no recursing
+        into the section hierarchy occurs.
 
         Returns:
-            An iterator over Settings instances of the same type as this one.
+            An iterable of Settings instances of the same type as this one.
         """
 
-        yield from sorted(self.children())
+        return sorted(self.children())
 
+    @SettingsLock.with_write_lock
     def setSectionName(self, name: str) -> str:
         """
         Sets the unique name under which this Settings instance will be
@@ -292,7 +298,6 @@ class Settings(Bunch, Lockable):
 
         return self.sectionName()
 
-    @Lockable.with_lock
     def _setUniqueNameForSection(self, name: str, section: Self) -> None:
         candidate = name = normalize(name)
 
@@ -308,6 +313,7 @@ class Settings(Bunch, Lockable):
             section._section_name = candidate  # noqa: SLF001
             section._update_notifier.trigger(section)  # noqa: SLF001
 
+    @SettingsLock.with_read_lock
     def sectionName(self) -> str:
         """
         Returns the current name of this Settings instance. This name will be
@@ -322,8 +328,8 @@ class Settings(Bunch, Lockable):
 
         return name if self.parent() is not None else self.MAIN
 
-    @Lockable.with_lock
-    def setParent(self, parent: Self | None) -> None:
+    @SettingsLock.with_write_lock
+    def setParent(self, parent: Self | None) -> None:  # type: ignore  # noqa: PGH003
         """
         Makes the given Settings instance the parent of this one. If None,
         remove this instance's parent, if any.
@@ -388,48 +394,71 @@ class Settings(Bunch, Lockable):
     def skipOnSave(self) -> bool:
         return self.sectionName() == ""
 
-    def dumpFields(self) -> Iterator[tuple[str, str | None]]:
+    @SettingsLock.with_read_lock
+    def dumpFields(self) -> Iterable[tuple[str, str | None]]:
         """
         Internal.
         """
 
+        ret: list[tuple[str, str | None]] = []
         if not self.skipOnSave():
-            # Ensure the section is dumped event if empty. Dumping an empty
-            # section is valid.
-
-            label = (self.sectionName() or "?") + self._SECTION_SEPARATOR
+            # Ensure the section is dumped even if empty. Dumping an empty section is
+            # valid.
 
             if not self.isSet():
-                yield label, None
+                ret.append(("", None))
             else:
-                yield from ((label + path, item) for path, item in super().dumpFields())
+                ret.extend((path, item) for path, item in super().dumpFields())
 
             for section in self.sections():
-                yield from ((label + path, item) for path, item in section.dumpFields())
+                ret.extend(
+                    (section.sectionName() + self._SECTION_SEPARATOR + path, item)
+                    for path, item in section.dumpFields()
+                )
 
-    def restoreField(self, path: str, value: str | None) -> bool:
+        return ret
+
+    @SettingsLock.with_write_lock
+    def restoreFields(self, fields: Iterable[_FieldItemT]) -> bool:
         """
         Internal.
         """
 
-        if self._SECTION_SEPARATOR not in path:
-            return False
+        previous_subsections = {
+            section.sectionName(): section for section in self.sections()
+        }
 
-        section_name, path = path.split(self._SECTION_SEPARATOR, 1)
-        if self.sectionName() != section_name:
-            return False
+        fields = list(fields)
+
+        sep = self._SECTION_SEPARATOR
+        bunch_fields = [(path, value) for path, value in fields if sep not in path]
+        by_section = collate_by_prefix(
+            [(path, value) for path, value in fields if sep in path],
+            split_on(sep),
+        )
 
         with self._update_notifier.inhibit():
-            if self._SECTION_SEPARATOR in path:
-                subsection_name, _ = path.split(self._SECTION_SEPARATOR, 1)
-                if subsection_name:
-                    section = self.getOrCreateSection(subsection_name)
-                    return section.restoreField(path, value)
+            any_change = super().restoreFields(bunch_fields)
 
-            else:
-                return super().restoreField(path, value)
+            for subsection_name, subsection in previous_subsections.items():
+                if subsection_name not in by_section:
+                    subsection.setParent(None)
+                    subsection.clear()
+                    any_change = True
+                    continue
 
-        return False
+                any_change = (
+                    subsection.restoreFields(by_section.pop(subsection_name))
+                    or any_change
+                )
+
+            for subsection_name, subsection_fields in by_section.items():
+                if not subsection_name:
+                    continue
+                subsection = self.getOrCreateSection(subsection_name)
+                any_change = subsection.restoreFields(subsection_fields) or any_change
+
+        return any_change
 
     def save(self, file: IO[str], *, blanklines: bool = False) -> None:
         """
@@ -448,7 +477,9 @@ class Settings(Bunch, Lockable):
 
             return
 
-        save_to_file(file, self.dumpFields(), blanklines=blanklines)
+        save_to_file(
+            file, self.dumpFields(), blanklines=blanklines, main=self.sectionName()
+        )
 
     def load(self, file: IO[str]) -> None:
         """
@@ -462,25 +493,13 @@ class Settings(Bunch, Lockable):
         If the text file object contains multiple headings, those headings will
         be used to create subsections with the corresponding names.
 
-        Loading settings from a file does not reset the existing settings or
-        sections. Which means you can split your configuration into multiple
-        files if needed and load each file in turn to reconstruct the full
-        settings.
+        Note that loading new settings resets the current settings.
 
         Args:
             file: A text file open in reading mode.
         """
 
-        for path, dump in load_from_file(file, self.sectionName()):
-            self.restoreField(path, dump)
-
-        self._loaded_notifier.trigger()
-
-    def setAutosaverClass(self, class_: type[AutoSaver]) -> None:
-        """
-        Internal.
-        """
-        self._autosaver_class = class_
+        self.restoreFields(load_from_file(file, self.sectionName()))
 
     def autosave(
         self,
@@ -488,6 +507,7 @@ class Settings(Bunch, Lockable):
         *,
         save_on_update: bool = True,
         save_delay: int = 0,
+        raise_on_error: bool = False,
         logger: logging.Logger | None = None,
     ) -> AutoSaver:
         """
@@ -514,6 +534,10 @@ class Settings(Bunch, Lockable):
                 before triggering a save. If set to 0, the save is triggered
                 immediately. Default: 0.
 
+            raise_on_error: Whether OS errors occurring while loading and saving the
+                settings should raise an exception. If False, errors will only be
+                logged. Default: False.
+
             logger: A logger instance that will be used to log OS errors, if
                 any, while loading or saving settings. If none is given, the
                 default root logger will be used.
@@ -530,6 +554,7 @@ class Settings(Bunch, Lockable):
             path,
             save_on_update=save_on_update,
             save_delay=save_delay,
+            raise_on_error=raise_on_error,
             logger=logger,
         )
         return self._autosaver

@@ -12,9 +12,11 @@ else:
 
 from sunset.bunch import Bunch
 from sunset.key import Key
+from sunset.lock import SettingsLock
 from sunset.notifier import Notifier
 from sunset.protocols import BaseField, UpdateNotifier
 from sunset.sets import WeakNonHashableSet
+from sunset.stringutils import collate_by_prefix, split_on
 
 ListItemT = TypeVar("ListItemT", bound=Bunch | Key[Any])
 
@@ -84,7 +86,6 @@ class List(MutableSequence[ListItemT], BaseField):
     _children_ref: WeakNonHashableSet["List[ListItemT]"]
     _iter_order: IterOrder
     _update_notifier: Notifier[[UpdateNotifier]]
-    _loaded_notifier: Notifier[[]]
     _template: ListItemT
 
     def __init__(
@@ -98,9 +99,9 @@ class List(MutableSequence[ListItemT], BaseField):
         self._children_ref = WeakNonHashableSet()
         self._iter_order = order
         self._update_notifier = Notifier()
-        self._loaded_notifier = Notifier()
         self._template = template
 
+    @SettingsLock.with_write_lock
     def insert(self, index: SupportsIndex, value: ListItemT) -> None:
         self._contents.insert(index, value)
         self._relabelItems()
@@ -112,6 +113,7 @@ class List(MutableSequence[ListItemT], BaseField):
     @overload
     def __getitem__(self, index: slice) -> list[ListItemT]: ...
 
+    @SettingsLock.with_read_lock
     def __getitem__(self, index: SupportsIndex | slice) -> ListItemT | list[ListItemT]:
         return self._contents[index]
 
@@ -121,6 +123,7 @@ class List(MutableSequence[ListItemT], BaseField):
     @overload
     def __setitem__(self, index: slice, value: Iterable[ListItemT]) -> None: ...
 
+    @SettingsLock.with_write_lock
     def __setitem__(
         self, index: SupportsIndex | slice, value: ListItemT | Iterable[ListItemT]
     ) -> None:
@@ -137,24 +140,29 @@ class List(MutableSequence[ListItemT], BaseField):
         self._relabelItems()
         self._update_notifier.trigger(self)
 
+    @SettingsLock.with_write_lock
     def __delitem__(self, index: SupportsIndex | slice) -> None:
         self._clearMetadata(self._contents[index])
         del self._contents[index]
         self._relabelItems()
         self._update_notifier.trigger(self)
 
+    @SettingsLock.with_write_lock
     def extend(self, values: Iterable[ListItemT]) -> None:
         self._contents.extend(values)
         self._relabelItems()
         self._update_notifier.trigger(self)
 
+    @SettingsLock.with_write_lock
     def append(self, value: ListItemT) -> None:
         self.extend((value,))
 
+    @SettingsLock.with_write_lock
     def __iadd__(self, values: Iterable[ListItemT]) -> Self:
         self.extend(values)
         return self
 
+    @SettingsLock.with_write_lock
     def clear(self) -> None:
         del self[:]
 
@@ -162,7 +170,6 @@ class List(MutableSequence[ListItemT], BaseField):
         for field in fields if isinstance(fields, list) else [fields]:
             field.meta().clear()
             field._update_notifier.discard(self._update_notifier.trigger)  # noqa: SLF001
-            self._loaded_notifier.discard(field._loaded_notifier.trigger)  # noqa: SLF001
 
     def __len__(self) -> int:
         return len(self._contents)
@@ -170,6 +177,7 @@ class List(MutableSequence[ListItemT], BaseField):
     def _newItem(self) -> ListItemT:
         return self._template._newInstance()  # noqa: SLF001
 
+    @SettingsLock.with_read_lock
     def isSet(self) -> bool:
         """
         Indicates whether this List holds any item that is set.
@@ -180,6 +188,7 @@ class List(MutableSequence[ListItemT], BaseField):
 
         return any(item.isSet() for item in self._contents)
 
+    @SettingsLock.with_write_lock
     def appendOne(self) -> ListItemT:
         """
         Creates a new item of the type contained in this List, appends it to
@@ -193,6 +202,7 @@ class List(MutableSequence[ListItemT], BaseField):
         self.append(item)
         return item
 
+    @SettingsLock.with_write_lock
     def insertOne(self, index: int) -> ListItemT:
         """
         Creates a new item of the type contained in this List, inserts it in
@@ -213,7 +223,6 @@ class List(MutableSequence[ListItemT], BaseField):
         for i, item in enumerate(self._contents):
             item.meta().update(label=self._labelForIndex(i), container=self)
             item._update_notifier.add(self._update_notifier.trigger)  # noqa: SLF001
-            self._loaded_notifier.add(item._loaded_notifier.trigger)  # noqa: SLF001
 
     @staticmethod
     def _labelForIndex(index: SupportsIndex) -> str:
@@ -223,8 +232,10 @@ class List(MutableSequence[ListItemT], BaseField):
     def _indexForLabel(label: str) -> int | None:
         if not label.isdigit():
             return None
-        return int(label) - 1
+        index = int(label) - 1
+        return index if index >= 0 else None
 
+    @SettingsLock.with_write_lock
     def setParent(self, parent: Self | None) -> None:
         """
         Makes the given List the parent of this one. If None, remove this List's
@@ -260,23 +271,24 @@ class List(MutableSequence[ListItemT], BaseField):
             self._parent_ref = weakref.ref(parent)
             parent._children_ref.add(self)  # noqa: SLF001
 
-    def iter(self, order: IterOrder | None = None) -> Iterator[ListItemT]:
+    @SettingsLock.with_read_lock
+    def iter(self, order: IterOrder | None = None) -> Iterable[ListItemT]:
         """
-        Yields the elements contained in this List, and optionally in its
-        parents, if any.
+        Returns the elements contained in this List, and optionally in its parents, if
+        any.
 
         Args:
             order: One of `List.NO_PARENT`, `List.PARENT_FIRST`,
                 `List.PARENT_LAST`, or None.
 
-                - If `List.NO_PARENT`, this method only yields the contents of
-                  this List instance.
+                - If `List.NO_PARENT`, this method only returns the contents of this
+                  List instance.
 
-                - If `List.PARENT_FIRST`, it yields from this List's parents, if
-                  any, then this List itself.
+                - If `List.PARENT_FIRST`, it recursively returns items from this List's
+                  parents, if any, then from this List itself.
 
-                - If `List.PARENT_LAST`, it yields from this List itself, then
-                  from its parents, if any.
+                - If `List.PARENT_LAST`, it returns items from this List itself, then
+                  recursively from its parents, if any.
 
                 - If None, the order set on the List itself at creation time
                   will be used.
@@ -284,8 +296,7 @@ class List(MutableSequence[ListItemT], BaseField):
                 Default: None.
 
         Returns:
-            An iterator over the items contained in this List and optionally its
-            parents.
+            An iterable on the items contained in this List and optionally its parents.
 
         Example:
 
@@ -314,19 +325,27 @@ class List(MutableSequence[ListItemT], BaseField):
         [3, 4, 1, 2]
         """
 
+        ret: list[ListItemT] = []
         parent = self.parent()
 
         if order is None:
             order = self._iter_order
 
         if parent is not None and order == IterOrder.PARENT_FIRST:
-            yield from parent.iter(order)
+            ret.extend(parent.iter(order))
 
-        yield from self._contents
+        ret.extend(self._contents)
 
         if parent is not None and order == IterOrder.PARENT_LAST:
-            yield from parent.iter(order)
+            ret.extend(parent.iter(order))
 
+        return ret
+
+    def __iter__(self) -> Iterator[ListItemT]:
+        items = self.iter(IterOrder.NO_PARENT)
+        yield from items
+
+    @SettingsLock.with_read_lock
     def parent(self) -> Self | None:
         """
         Returns the parent of this List, if any.
@@ -341,17 +360,16 @@ class List(MutableSequence[ListItemT], BaseField):
         parent = cast(weakref.ref[Self] | None, self._parent_ref)
         return parent() if parent is not None else None
 
-    def children(self) -> Iterator[Self]:
+    @SettingsLock.with_read_lock
+    def children(self) -> Iterable[Self]:
         """
-        Returns an iterator over the List instances that have this List
-        as their parent.
+        Returns an iterable with the List instances that have this List as their parent.
 
         Returns:
-            An iterator over List instances of the same type as this one.
+            An iterable of List instances of the same type as this one.
         """
 
-        for child in self._children_ref:
-            yield cast(Self, child)
+        return [cast(Self, child) for child in self._children_ref]
 
     def onUpdateCall(self, callback: Callable[[Any], Any]) -> None:
         """
@@ -376,61 +394,68 @@ class List(MutableSequence[ListItemT], BaseField):
 
         self._update_notifier.add(callback)
 
-    def onLoadedCall(self, callback: Callable[[], Any]) -> None:
-        """
-        Adds a callback to be called whenever settings were just loaded. This
-        List itself may or may not have been modified during the load.
-
-        Args:
-            callback: A callable that takes no argument.
-
-        Note:
-            This method does not increase the reference count of the given
-            callback.
-        """
-
-        self._loaded_notifier.add(callback)
-
-    def dumpFields(self) -> Iterator[tuple[str, str | None]]:
+    @SettingsLock.with_read_lock
+    def dumpFields(self) -> Iterable[tuple[str, str | None]]:
         """
         Internal.
         """
 
+        ret: list[tuple[str, str | None]] = []
         sep = self._PATH_SEPARATOR
         if not self.skipOnSave():
             for i, item in enumerate(self._contents, start=1):
                 label = str(i)
                 if not item.isSet():
-                    yield label, None
+                    ret.append((label, None))
                 else:
-                    yield from (
+                    ret.extend(
                         (label + sep + path if path else label, child_item)
                         for path, child_item in item.dumpFields()
                     )
 
-    def restoreField(self, path: str, value: str | None) -> bool:
+        return ret
+
+    @SettingsLock.with_write_lock
+    def restoreFields(self, fields: Iterable[tuple[str, str | None]]) -> bool:
         """
         Internal.
         """
 
-        if self._PATH_SEPARATOR in path:
-            field_label, path = path.split(self._PATH_SEPARATOR, 1)
-        else:
-            field_label, path = path, ""
+        any_change = False
+
+        by_label = collate_by_prefix(fields, split_on(self._PATH_SEPARATOR))
+        by_index = {
+            index: value
+            for label, value in by_label.items()
+            if (index := self._indexForLabel(label)) is not None
+        }
+        max_index = max(by_index.keys(), default=-1)
 
         with self._update_notifier.inhibit():
-            index = self._indexForLabel(field_label)
-            if index is not None and index >= 0:
-                self._ensureMinimumLength(index + 1)
-                return self[index].restoreField(path, value)
+            if self._lastIndex > max_index:
+                del self[max_index + 1 :]
+                any_change = True
+            else:
+                any_change = self._ensureIndexExists(max_index)
 
-        return False
+            for i, field in enumerate(self):
+                any_change = field.restoreFields(by_index.get(i, [])) or any_change
 
-    def _ensureMinimumLength(self, length: int) -> None:
-        missing_count = length - len(self)
+        return any_change
+
+    @SettingsLock.with_write_lock
+    def _ensureIndexExists(self, index: int) -> bool:
+        missing_count = index - self._lastIndex
 
         if missing_count > 0:
             self.extend(self._newItem() for _ in range(missing_count))
+            return True
+
+        return False
+
+    @property
+    def _lastIndex(self) -> int:
+        return len(self) - 1
 
     def _typeHint(self) -> GenericAlias:
         return GenericAlias(type(self), type(self._template))

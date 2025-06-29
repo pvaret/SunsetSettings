@@ -1,7 +1,7 @@
 import logging
 import sys
 import weakref
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterable
 from types import GenericAlias
 from typing import (
     Any,
@@ -16,7 +16,7 @@ else:
     from typing import Self
 
 from sunset.exporter import maybe_escape
-from sunset.lockable import Lockable
+from sunset.lock import SettingsLock
 from sunset.notifier import Notifier
 from sunset.protocols import BaseField, Serializer, UpdateNotifier
 from sunset.serializers import lookup
@@ -24,7 +24,7 @@ from sunset.serializers import lookup
 _T = TypeVar("_T")
 
 
-class Key(Generic[_T], BaseField, Lockable):
+class Key(Generic[_T], BaseField):
     """
     A single setting key containing a typed value.
 
@@ -100,7 +100,6 @@ class Key(Generic[_T], BaseField, Lockable):
     _bad_value_string: str | None
     _value_change_notifier: Notifier[_T]
     _update_notifier: Notifier[[UpdateNotifier]]
-    _loaded_notifier: Notifier[[]]
     _parent_ref: weakref.ref["Key[_T]"] | None
     _children_ref: weakref.WeakSet["Key[_T]"]
     _type: type[_T]
@@ -154,11 +153,11 @@ class Key(Generic[_T], BaseField, Lockable):
 
         self._value_change_notifier = Notifier()
         self._update_notifier = Notifier()
-        self._loaded_notifier = Notifier()
 
         self._parent_ref = None
         self._children_ref = weakref.WeakSet()
 
+    @SettingsLock.with_read_lock
     def get(self) -> _T:
         """
         Returns the current value of this Key.
@@ -173,6 +172,7 @@ class Key(Generic[_T], BaseField, Lockable):
 
         return self.fallback() if (value := self._value) is None else value
 
+    @SettingsLock.with_read_lock
     def fallback(self) -> _T:
         """
         Returns the value that this Key will fall back to when it does not have
@@ -184,6 +184,7 @@ class Key(Generic[_T], BaseField, Lockable):
 
         return self._default if (parent := self.parent()) is None else parent.get()
 
+    @SettingsLock.with_write_lock
     def set(self, value: _T) -> bool:
         """
         Sets the given value on this Key.
@@ -204,7 +205,7 @@ class Key(Generic[_T], BaseField, Lockable):
             return False
 
         if not self._validator(value):
-            logging.debug("Validator rejected value for Key %r: %r", self, value)
+            logging.debug("Validator rejected value for Key %r: %r", self, value)  # noqa: LOG015
             return False
 
         # Setting a Key's value programmatically always resets bad values.
@@ -226,6 +227,7 @@ class Key(Generic[_T], BaseField, Lockable):
 
         return True
 
+    @SettingsLock.with_write_lock
     def clear(self) -> None:
         """
         Clears the value currently set on this Key, if any.
@@ -248,7 +250,7 @@ class Key(Generic[_T], BaseField, Lockable):
 
         self._update_notifier.trigger(self)
 
-    @Lockable.with_lock
+    @SettingsLock.with_write_lock
     def updateValue(self, updater: Callable[[_T], _T]) -> None:
         """
         Atomically updates this Key's value using the given update function. The
@@ -262,6 +264,7 @@ class Key(Generic[_T], BaseField, Lockable):
 
         self.set(updater(self.get()))
 
+    @SettingsLock.with_read_lock
     def isSet(self) -> bool:
         """
         Returns whether there is a value currently set on this Key.
@@ -287,7 +290,6 @@ class Key(Generic[_T], BaseField, Lockable):
         Key newly created with a default value of `0`, callbacks added with
         :meth:`onUpdateCall()` are called and callbacks added with
         :meth:`onValueChangeCall()` are not.
-
 
         Args:
             callback: A callable that takes one argument of the same type as the
@@ -325,21 +327,6 @@ class Key(Generic[_T], BaseField, Lockable):
 
         self._update_notifier.add(callback)  # type: ignore[arg-type]
 
-    def onLoadedCall(self, callback: Callable[[], Any]) -> None:
-        """
-        Adds a callback to be called whenever settings were just loaded. This
-        Key itself may or may not have been modified during the load.
-
-        Args:
-            callback: A callable that takes no argument.
-
-        Note:
-            This method does not increase the reference count of the given
-            callback.
-        """
-
-        self._loaded_notifier.add(callback)
-
     def setValidator(self, validator: Callable[[_T], bool]) -> None:
         """
         Replaces this Key's validator.
@@ -352,6 +339,7 @@ class Key(Generic[_T], BaseField, Lockable):
 
         self._validator = validator
 
+    @SettingsLock.with_write_lock
     def setParent(self, parent: Self | None) -> None:
         """
         Makes the given Key the parent of this one. If None, remove this
@@ -395,6 +383,7 @@ class Key(Generic[_T], BaseField, Lockable):
         parent._children_ref.add(self)  # noqa: SLF001
         self._parent_ref = weakref.ref(parent)
 
+    @SettingsLock.with_read_lock
     def parent(self) -> Self | None:
         """
         Returns the parent of this Key, if any.
@@ -409,53 +398,77 @@ class Key(Generic[_T], BaseField, Lockable):
         parent = cast(weakref.ref[Self] | None, self._parent_ref)
         return parent() if parent is not None else None
 
-    def children(self) -> Iterator[Self]:
+    @SettingsLock.with_read_lock
+    def children(self) -> Iterable[Self]:
         """
-        Returns an iterator over the Keys that have this Key as their parent.
+        Returns an iterable with the Keys that have this Key as their parent.
 
         Returns:
-            An iterator over Keys of the same type as this one.
+            An iterable of Keys of the same type as this one.
         """
 
-        for child in self._children_ref:
-            yield cast(Self, child)
+        return [cast(Self, child) for child in self._children_ref]
 
-    def dumpFields(self) -> Iterator[tuple[str, str | None]]:
+    @SettingsLock.with_read_lock
+    def dumpFields(self) -> Iterable[tuple[str, str | None]]:
         if not self.skipOnSave():
             if self.isSet():
-                yield "", self._serializer.toStr(self.get())
+                return [("", self._serializer.toStr(self.get()))]
 
-            elif self._bad_value_string is not None:
+            if self._bad_value_string is not None:
                 # If a bad value was set in the settings file for this Key, and
                 # the Key was not modified since, then save the bad value again.
                 # This way, typos in the settings file don't outright destroy
                 # the entry.
 
-                yield "", self._bad_value_string
+                return [("", self._bad_value_string)]
 
-    def restoreField(self, path: str, value: str | None) -> bool:
-        if value is None:
-            # Note that doing nothing when the given value is None, is
-            # considered a success.
+        return []
 
-            return True
-
-        if path != "":
-            # Keys don't have sub-fields. If a path was given, then the path is
-            # incorrect.
-            return False
+    @SettingsLock.with_write_lock
+    def restoreFields(self, fields: Iterable[tuple[str, str | None]]) -> bool:
+        any_change = False
 
         with self._update_notifier.inhibit():
-            if (val := self._serializer.fromStr(value)) is not None:
-                return self.set(val)
+            if not fields:
+                any_change = self.isSet()
+                self.clear()
+                return any_change
 
-            # Keep track of the value that failed to restore, so that we can dump it
-            # again when saving. That way, if a user makes a typo while editing the
-            # settings file, the faulty entry is not entirely lost when we save.
+            # There should normally be only one value to be restored for a Key, but
+            # mistakes happen. There's no perfect way to deal with that. So we loop over
+            # fields until we find one with a path that strictly corresponds to this
+            # Key. If there are more fields in the list with values for this Key, they
+            # are ignored. In other words, if a settings file contains multiple entries
+            # for a Key, only the first one is taken into account.
 
-            logging.error("Invalid value for Key %r: %s", self, value)
-            self._bad_value_string = value
-            return False
+            for label, value in fields:
+                if label != "":
+                    # Keys don't have sub-fields. If a label was given, then the path is
+                    # incorrect and does not correspond to this Key.
+                    continue
+
+                if value is None:
+                    any_change = self.isSet()
+                    self.clear()
+
+                elif (val := self._serializer.fromStr(value)) is not None and self.set(
+                    val
+                ):
+                    any_change = True
+
+                else:
+                    # Keep track of the value that failed to restore, so that we can
+                    # dump it again when saving. That way, if a user makes a typo while
+                    # editing the settings file, the faulty entry is not entirely lost
+                    # when we save.
+
+                    logging.error("Invalid value for Key %r: %s", self, value)  # noqa: LOG015
+                    self._bad_value_string = value
+
+                break
+
+        return any_change
 
     def _notifyParentValueChanged(self) -> None:
         if self.isSet():

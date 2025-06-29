@@ -1,4 +1,5 @@
 import io
+import textwrap
 
 from sunset import exporter
 
@@ -48,32 +49,31 @@ def test_escape_reversible() -> None:
 
 def test_save() -> None:
     input = [
-        ("main/a", "1"),
-        ("main/b.c", "test"),
-        ("main/d.1.e", "test 2\ntest 2"),
-        ("main/d.2.e", "  "),
-        ("main/level1/b.c", "sub test"),
-        ("main/level1/level2/a", "sub sub test"),
+        ("a", "1"),
+        ("b.c", "test"),
+        ("d.1.e", "test 2\ntest 2"),
+        ("d.2.e", "  "),
+        ("level1/b.c", "sub test"),
+        ("level1/level2/a", "sub sub test"),
     ]
 
     file = io.StringIO()
 
     exporter.save_to_file(file, input, blanklines=True)
-    assert (
-        file.getvalue()
-        == """\
-[main]
-a = 1
-b.c = test
-d.1.e = "test 2\\ntest 2"
-d.2.e = "  "
+    assert file.getvalue() == textwrap.dedent(
+        """\
+        [main]
+        a = 1
+        b.c = test
+        d.1.e = "test 2\\ntest 2"
+        d.2.e = "  "
 
-[level1]
-b.c = sub test
+        [level1]
+        b.c = sub test
 
-[level1/level2]
-a = sub sub test
-"""
+        [level1/level2]
+        a = sub sub test
+        """
     )
 
 
@@ -82,33 +82,32 @@ def test_load() -> None:
 
     input = io.StringIO(
         """\
-[main]
-a = 1
-b.c = test
-d.1.e = "test 2\\ntest 2"
-d.2.e = "  "
+        [main]
+        a = 1
+        b.c = test
+        d.1.e = "test 2\\ntest 2"
+        d.2.e = "  "
 
-[level1]
-b.c = sub test
+        [level1]
+        b.c = sub test
 
-[level1/level2]
-a = sub sub test
+        [level1/level2]
+        a = sub sub test
 
-[empty]
-"""
+        [empty]
+        """
     )
 
     assert list(exporter.load_from_file(input, _main)) == [
-        ("main/", ""),
-        ("main/a", "1"),
-        ("main/b.c", "test"),
-        ("main/d.1.e", "test 2\ntest 2"),
-        ("main/d.2.e", "  "),
-        ("main/level1/", ""),
-        ("main/level1/b.c", "sub test"),
-        ("main/level1/level2/", ""),
-        ("main/level1/level2/a", "sub sub test"),
-        ("main/empty/", ""),
+        ("a", "1"),
+        ("b.c", "test"),
+        ("d.1.e", "test 2\ntest 2"),
+        ("d.2.e", "  "),
+        ("level1/", ""),
+        ("level1/b.c", "sub test"),
+        ("level1/level2/", ""),
+        ("level1/level2/a", "sub sub test"),
+        ("empty/", ""),
     ]
 
 
