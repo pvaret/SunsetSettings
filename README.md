@@ -2,6 +2,8 @@
 
 [![Build Status](https://github.com/pvaret/SunsetSettings/actions/workflows/python-build.yml/badge.svg?branch=main)](https://github.com/pvaret/SunsetSettings/actions/workflows/python-build.yml)
 [![Documentation Status](https://readthedocs.org/projects/sunsetsettings/badge/?version=latest)](https://sunsetsettings.readthedocs.io/en/latest/?badge=latest)
+[![PyPI - Version](https://img.shields.io/pypi/v/SunsetSettings)](https://pypi.org/project/SunsetSettings)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/SunsetSettings)
 
 SunsetSettings is a library that provides facilities to declare and use settings
 for an interactive application in a *type-safe* manner, and load and save them

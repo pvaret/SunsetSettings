@@ -10,7 +10,7 @@ from typing import (
     cast,
 )
 
-if sys.version_info < (3, 11):
+if sys.version_info < (3, 11):  # pragma: no cover
     from typing_extensions import Self
 else:
     from typing import Self
@@ -363,7 +363,7 @@ class Key(Generic[_T], BaseField):
 
         # Runtime check to affirm the type check of the method.
 
-        if parent is not None and type(self) is not type(parent):
+        if parent is not None and type(self) is not type(parent):  # pragma: no cover
             return
 
         old_parent = self.parent()

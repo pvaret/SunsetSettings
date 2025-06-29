@@ -38,7 +38,7 @@ tests = ["coverage[toml]", "pytest", "pytest-cov", "pytest-mock", "pytest-skip-s
 docs  = ["sphinx", "sphinx_rtd_theme"]
 
 [tool.pytest.ini_options]
-addopts = "-vv --doctest-modules --doctest-glob=README.md --doctest-glob=docs/*.rst"
+addopts = "-vv --doctest-modules --doctest-glob=README.md --doctest-glob=docs/*.rst --cov --cov-branch --cov-report=xml"
 
 [tool.coverage.run]
 # Also measure tests. Helps detect tests that are not properly executed.
@@ -51,10 +51,11 @@ branch = true
 parallel = true
 
 [tool.coverage.report]
-exclude_lines = [
+exclude_also = [
     "^ *\\.\\.\\.$", # Ignore ellipsis lines.
     "^ *pass$",      # Ignore pass lines.
 ]
+omit = ["tests/demo_*.py"]
 
 [tool.ruff]
 # Use the default line length.
@@ -86,9 +87,12 @@ packages = ["sunset"]
 [tool.hatch.envs.hatch-test]
 # This forces hatch test to use the pytest ini options listed above.
 default-args = []
+
 # This makes this environment use the "tests" optional dependencies above. Hatch
 # installs its own set by default, but explicit is better than implicit.
+
 features = ["tests"]
+
 # Parallelizes test execution.
 parallel = true
 
@@ -101,14 +105,17 @@ python = ["3.10", "3.11", "3.12", "3.13"]
 
 # Add test-related dependencies to the dev environment.
 features = ["tests"]
+
 # This environment is also where we exercise type checks.
 dependencies = ["pyright"]
+
 # This environment does not need the code built and installed.
 detached = true
 
 [tool.hatch.envs.docs]
 # This makes this environment use the "docs" optional dependencies above.
 features = ["docs"]
+
 # This environment does not need the code built and installed.
 detached = true
 

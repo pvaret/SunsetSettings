@@ -5,12 +5,12 @@ import weakref
 from collections.abc import Callable, Iterable, MutableSet
 from typing import TYPE_CHECKING, Any, cast
 
-if sys.version_info < (3, 11):
+if sys.version_info < (3, 11):  # pragma: no cover
     from typing_extensions import Self
 else:
     from typing import Self
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from types import GenericAlias
 
 from sunset.lock import SettingsLock
@@ -174,10 +174,12 @@ class Bunch(BaseField):
         # Then look up the fields stored in the dataclass.
 
         for field in fields.values():
-            if getattr(field, "_field_type", None) is not field_type:
+            if (
+                getattr(field, "_field_type", None) is not field_type
+            ):  # pragma: no cover
                 continue
 
-            if field.default_factory is dataclasses.MISSING:
+            if field.default_factory is dataclasses.MISSING:  # pragma: no cover
                 continue
 
             setattr(self, field.name, field.default_factory())
@@ -230,7 +232,7 @@ class Bunch(BaseField):
 
         # Runtime check to affirm the type check of the method.
 
-        if parent is not None and type(self) is not type(parent):
+        if parent is not None and type(self) is not type(parent):  # pragma: no cover
             return
 
         old_parent = self.parent()
@@ -249,7 +251,7 @@ class Bunch(BaseField):
                 continue
 
             parent_field = parent._fields.get(label)
-            if parent_field is None:
+            if parent_field is None:  # pragma: no cover
                 # This is a safety check, but it shouldn't happen. By
                 # construction self should be of the same type as parent, so
                 # they should have the same attributes.
