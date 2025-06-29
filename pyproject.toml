@@ -114,3 +114,11 @@ detached = true
 
 [tool.hatch.envs.docs.scripts]
 html = "make -C ./docs html"
+
+[tool.hatch.envs.hatch-static-analysis]
+# Require a version of Ruff that agrees with the linting parameters above.
+dependencies = ["ruff>=0.12.1"]
+
+# Disable Hatch's custom Ruff defaults so that our linting parameters above are the
+# entirety of what is used.
+config-path = "none"
