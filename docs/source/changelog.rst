@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Latest
+SunsetSettings 0.7.o (2025-06-29)
 ---------------------------------
 
   - Added :code:`AutoLoader` context manager, which reloads the settings file when it is
