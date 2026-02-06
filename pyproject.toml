@@ -36,15 +36,20 @@ Documentation = "https://sunsetsettings.readthedocs.io/"
 [project.optional-dependencies]
 tests = ["coverage[toml]", "pytest", "pytest-cov", "pytest-mock", "pytest-skip-slow"]
 docs  = ["sphinx", "sphinx_rtd_theme"]
-
-[tool.hatch.build.targets.sdist]
-only-include = ["sunset/", "tests/", "docs/"]
-
-[tool.hatch.build.targets.wheel]
-packages = ["sunset/"]
+dev   = ["mypy", "ruff", "ty"]
 
 [tool.pytest.ini_options]
-addopts = "-vv --doctest-modules --doctest-glob=README.md --doctest-glob=docs/*.rst --cov --cov-branch --cov-report=xml"
+addopts = [
+    "--import-mode=importlib",
+    "-vv",
+    "--doctest-modules",
+    "--doctest-glob=README.md",
+    "--doctest-glob=docs/*.rst",
+    "--cov",
+    "--cov-branch",
+    "--cov-report=term-missing",
+    "--cov-report=xml",
+]
 
 [tool.coverage.run]
 # Also measure tests. Helps detect tests that are not properly executed.
@@ -62,6 +67,13 @@ exclude_also = [
     "^ *pass$",      # Ignore pass lines.
 ]
 omit = ["tests/demo_*.py"]
+
+[tool.mypy]
+packages              = ["sunset"]
+strict                = true
+show_error_context    = true
+show_error_code_links = true
+pretty                = true
 
 [tool.ruff]
 # Use the default line length.
@@ -87,6 +99,12 @@ docstring-code-format = false
 [tool.hatch.version]
 path = "sunset/__init__.py"
 
+[tool.hatch.build.targets.sdist]
+only-include = ["sunset/", "tests/", "docs/"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["sunset"]
+
 [tool.hatch.envs.hatch-test]
 # This forces hatch test to use the pytest ini options listed above.
 default-args = []
@@ -106,14 +124,16 @@ python = ["3.10", "3.11", "3.12", "3.13"]
 # Use this environment for development purposes. I.e. point VSCode to the Python
 # interpreter in this environment.
 
-# Add test-related dependencies to the dev environment.
-features = ["tests"]
+# Add all dev-related dependencies to the dev environment.
+features = ["dev", "tests", "docs"]
 
-# This environment is also where we exercise type checks.
-dependencies = ["pyright"]
-
-# This environment does not need the code built and installed.
-detached = true
+[tool.hatch.envs.dev.scripts]
+check-all = """\
+    hatch run hatch-static-analysis:format-check \
+    && hatch run hatch-static-analysis:lint-check \
+    && hatch run dev:ty check\
+    && hatch run dev:mypy \
+    """
 
 [tool.hatch.envs.docs]
 # This makes this environment use the "docs" optional dependencies above.
@@ -126,8 +146,9 @@ detached = true
 html = "make -C ./docs html"
 
 [tool.hatch.envs.hatch-static-analysis]
-# Require a version of Ruff that agrees with the linting parameters above.
-dependencies = ["ruff>=0.12.1"]
+# Use the version of Ruff that's in our dev environment. Don't add it as a special dependency.
+features     = ["dev"]
+dependencies = []
 
 # Disable Hatch's custom Ruff defaults so that our linting parameters above are the
 # entirety of what is used.

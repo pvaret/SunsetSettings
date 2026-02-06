@@ -32,12 +32,9 @@ class TestMonitor:
         mstats = mocker.Mock()
         mstats.st_mtime = 0
         path.stat.return_value = mstats
-        mocker.patch("sunset.autoloader.PersistentTimer", MockTimer)
-        monitor = MonitorForChange(path, callback)
+        timer = MockTimer()
+        monitor = MonitorForChange(path, callback, _timer_factory=lambda looping: timer)
         monitor.start()
-        timer = monitor._timer
-        assert timer is not None
-        timer = cast(MockTimer, timer)
 
         # Simulate timer ticks by advancing time
         timer.advanceTime(1.0)
@@ -95,15 +92,10 @@ class TestMonitor:
         path.stat = mocker.stub()
         path.stat.side_effect = OSError("File not found")
 
-        mocker.patch("sunset.autoloader.PersistentTimer", MockTimer)
-
         callback = mocker.stub()
-        monitor = MonitorForChange(path, callback)
+        timer = MockTimer(looping=True)
+        monitor = MonitorForChange(path, callback, _timer_factory=lambda looping: timer)
         monitor.start()
-
-        timer = monitor._timer
-        assert timer is not None
-        timer = cast(MockTimer, timer)
 
         callback.assert_not_called()
 
@@ -146,25 +138,26 @@ class TestMonitor:
         callback = mocker.Mock()
         mock_timer = mocker.Mock(TimerProtocol)
 
-        mocker.patch("sunset.autoloader.PersistentTimer", mock_timer)
-        monitor = MonitorForChange(path, callback)
+        monitor = MonitorForChange(
+            path, callback, _timer_factory=lambda looping: mock_timer
+        )
 
-        mock_timer().start.assert_not_called()
-
-        monitor.start()
-        mock_timer().start.assert_called_once()
-        mock_timer().start.reset_mock()
+        mock_timer.start.assert_not_called()
 
         monitor.start()
-        mock_timer().start.assert_not_called()
-        mock_timer().cancel.assert_not_called()
+        mock_timer.start.assert_called_once()
+        mock_timer.start.reset_mock()
+
+        monitor.start()
+        mock_timer.start.assert_not_called()
+        mock_timer.cancel.assert_not_called()
 
         monitor.stop()
-        mock_timer().cancel.assert_called_once()
-        mock_timer().cancel.reset_mock()
+        mock_timer.cancel.assert_called_once()
+        mock_timer.cancel.reset_mock()
 
         monitor.stop()
-        mock_timer().cancel.assert_not_called()
+        mock_timer.cancel.assert_not_called()
 
 
 class TestAutoLoader:

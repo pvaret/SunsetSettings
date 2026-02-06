@@ -269,7 +269,8 @@ class TestList:
         class Dummy:
             pass
 
-        def callback(_: List[Key[str]]) -> Dummy: ...
+        def callback(_: List[Key[str]]) -> Dummy:
+            return Dummy()
 
         key_list.onUpdateCall(callback)
 

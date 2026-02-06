@@ -11,6 +11,10 @@ class TimerProtocol(Protocol):
     def cancel(self) -> None: ...
 
 
+class TimerFactory(Protocol):
+    def __call__(self, *, looping: bool) -> TimerProtocol: ...
+
+
 class PersistentTimer:
     _timer: threading.Timer | None
     _lock: threading.Lock

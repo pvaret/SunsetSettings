@@ -737,7 +737,8 @@ class TestSettings:
         class Dummy:
             pass
 
-        def callback(_: ExampleSettings) -> Dummy: ...
+        def callback(_: ExampleSettings) -> Dummy:
+            return Dummy()
 
         settings.onUpdateCall(callback)
 

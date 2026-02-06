@@ -50,8 +50,8 @@ class NonHashableSet(MutableSet[_T]):
         except KeyError:
             pass
 
-    def __contains__(self, obj: object) -> bool:
-        return self._computeHash(obj) in self._contents
+    def __contains__(self, x: object) -> bool:
+        return self._computeHash(x) in self._contents
 
     def __iter__(self) -> Iterator[_T]:
         with self._lock:
@@ -93,17 +93,16 @@ class WeakCallableSet(MutableSet[_C]):
 
     def add(self, value: _C) -> None:
         if isinstance(value, MethodType):
-            r: weakref.ReferenceType[_C] = weakref.WeakMethod(
-                cast(_C, value), self._onExpire
+            r = cast(
+                weakref.ReferenceType[_C], weakref.WeakMethod(value, self._onExpire)
             )
-
         else:
             r = weakref.ref(value, self._onExpire)
 
-        self._content.add(r)
+        self._content.add(r)  # ty:ignore[invalid-argument-type]
 
-    def __contains__(self, value: object) -> bool:
-        return any(self._isSameCallable(candidate, value) for candidate in self)
+    def __contains__(self, x: object) -> bool:
+        return any(self._isSameCallable(candidate, x) for candidate in self)
 
     def __iter__(self) -> Iterator[_C]:
         for ref in self._content:

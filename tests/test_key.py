@@ -272,9 +272,11 @@ class TestKey:
         class Dummy:
             pass
 
-        def callback1(_: Key[str]) -> Dummy: ...
+        def callback1(_: Key[str]) -> Dummy:
+            return Dummy()
 
-        def callback2(_: str) -> Dummy: ...
+        def callback2(_: str) -> Dummy:
+            return Dummy()
 
         key.onUpdateCall(callback1)
         key.onValueChangeCall(callback2)
@@ -580,10 +582,12 @@ class TestKey:
 
     def test_complex_key_type_with_subclasses(self) -> None:
         class BaseClass:
-            def toStr(self) -> str: ...
+            def toStr(self) -> str:
+                return ""
 
             @classmethod
-            def fromStr(cls, string: str) -> "BaseClass": ...
+            def fromStr(cls, string: str) -> "BaseClass":
+                return cls()
 
         class Derived1(BaseClass):
             pass
@@ -612,10 +616,12 @@ class TestKey:
 
     def test_explicit_key_type_transmitted_to_new_instances(self) -> None:
         class BaseClass:
-            def toStr(self) -> str: ...
+            def toStr(self) -> str:
+                return ""
 
             @classmethod
-            def fromStr(cls, string: str) -> "BaseClass": ...
+            def fromStr(cls, string: str) -> "BaseClass":
+                return cls()
 
         class Derived1(BaseClass):
             pass

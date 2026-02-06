@@ -4,12 +4,18 @@ import logging
 from pathlib import Path
 from typing import IO, TYPE_CHECKING, Protocol
 
-from .timer import PersistentTimer
+from .timer import PersistentTimer, TimerFactory, TimerProtocol
 
 if TYPE_CHECKING:  # pragma: no cover
+    import sys
     from collections.abc import Callable
     from types import TracebackType
-    from typing import Any, Self
+    from typing import Any
+
+    if sys.version_info < (3, 11):
+        from typing_extensions import Self
+    else:
+        from typing import Self
 
     from sunset import Settings
 
@@ -43,18 +49,21 @@ class MonitorForChange:
     _path: Path
     _callback: Callable[[], Any]
     _monitor_period_s: int
-    _timer: PersistentTimer | None = None
+    _timer: TimerProtocol | None = None
+    _timer_factory: TimerFactory = PersistentTimer
 
     def __init__(
         self,
         path: Path,
         callback: Callable[[], Any],
         monitor_period_s: int = 1,
+        _timer_factory: TimerFactory | None = None,
     ) -> None:
         self._path = path
         self._callback = callback
         self._monitor_period_s = monitor_period_s
-        self._timer = None
+        if _timer_factory is not None:
+            self._timer_factory = _timer_factory
 
     def start(self) -> None:
         if self._timer is not None:
@@ -83,7 +92,7 @@ class MonitorForChange:
                     pending_update = True
                 last_modified = new_last_modified
 
-        self._timer = PersistentTimer(looping=True)
+        self._timer = self._timer_factory(looping=True)
         self._timer.start(self._monitor_period_s, loop)
 
     def stop(self) -> None:

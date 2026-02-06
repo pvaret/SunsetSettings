@@ -1,4 +1,5 @@
 import logging
+import sys
 import tempfile
 from collections.abc import Callable
 from pathlib import Path
@@ -7,6 +8,11 @@ from typing import IO, Any, Protocol
 
 from .autoloader import LoadableProtocol, doLoad
 from .timer import PersistentTimer, TimerProtocol
+
+if sys.version_info < (3, 11):  # pragma: no cover
+    from typing_extensions import Self
+else:
+    from typing import Self
 
 
 class SavableProtocol(LoadableProtocol, Protocol):
@@ -239,7 +245,7 @@ class AutoSaver:
         if self._save_on_delete:
             self.saveIfNeeded()
 
-    def __enter__(self) -> "AutoSaver":
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(
