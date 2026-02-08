@@ -4,7 +4,7 @@ Changelog
 Latest
 ---------------------------------
 
-Nothing yet.
+  - Added Python 3.14 to supported versions.
 
 SunsetSettings 0.7.0 (2025-06-29)
 ---------------------------------
