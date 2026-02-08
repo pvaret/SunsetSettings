@@ -9,23 +9,17 @@ on:
 
 jobs:
   test-all:
-    name: Tests for Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    name: Tests for all Python versions on ${{ matrix.os }}
 
     runs-on: ${{ matrix.os }}-latest
 
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
         os: [ubuntu, macos, windows]
 
     steps:
       - name: Check out the code
         uses: actions/checkout@main
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@main
-        with:
-          python-version: ${{ matrix.python-version }}
 
       - name: Install UV
         uses: astral-sh/setup-uv@v7
@@ -36,17 +30,11 @@ jobs:
       - name: Report Hatch status
         run: hatch status
 
-      - name: Check linting
-        run: hatch fmt --linter --check
+      - name: Run all lint and type checks
+        run: hatch run dev:check-all
 
-      - name: Check formatting
-        run: hatch fmt --formatter --check
-
-      - name: Check types
-        run: hatch run dev:mypy
-
-      - name: Run test suite
-        run: hatch test -py=${{ matrix.python-version }} --slow
+      - name: Run test suite for all Python versions
+        run: hatch test --all --slow
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5

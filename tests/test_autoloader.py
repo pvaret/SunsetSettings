@@ -243,9 +243,9 @@ class TestAutoLoader:
         autoloader1 = AutoLoader(
             ExampleSettings(), "/no/tilde", _monitor_factory=DummyMonitor
         )
-        assert str(autoloader1.path()) == "/no/tilde"
+        assert autoloader1.path().as_posix() == "/no/tilde"
 
         autoloader2 = AutoLoader(
             ExampleSettings(), "~/with/tilde", _monitor_factory=DummyMonitor
         )
-        assert str(autoloader2.path()) == "HOME/with/tilde"
+        assert autoloader2.path().as_posix() == "HOME/with/tilde"

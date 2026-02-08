@@ -133,17 +133,17 @@ class TestAutosaver:
 
     def test_expand_user(self, monkeypatch: pytest.MonkeyPatch) -> None:
         def expanduser(path: pathlib.Path) -> pathlib.Path:
-            if not str(path).startswith("~"):
+            if not path.as_posix().startswith("~"):
                 return path
-            return pathlib.Path("HOME") / str(path).lstrip("~").lstrip("/")
+            return pathlib.Path("HOME") / path.as_posix().lstrip("~").lstrip("/")
 
         monkeypatch.setattr(pathlib.Path, "expanduser", expanduser)
 
         saver1 = AutoSaver(ExampleSettings(), "/no/tilde", load_on_init=False)
-        assert str(saver1.path()) == "/no/tilde"
+        assert saver1.path().as_posix() == "/no/tilde"
 
         saver2 = AutoSaver(ExampleSettings(), "~/with/tilde", load_on_init=False)
-        assert str(saver2.path()) == "HOME/with/tilde"
+        assert saver2.path().as_posix() == "HOME/with/tilde"
 
     def test_no_exception_raised_if_logger_provided(
         self, tmp_path: pathlib.Path, mocker: MockerFixture

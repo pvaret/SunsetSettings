@@ -129,12 +129,12 @@ python = ["3.10", "3.11", "3.12", "3.13", "3.14"]
 features = ["dev", "tests", "docs"]
 
 [tool.hatch.envs.dev.scripts]
-check-all = """\
-    hatch run hatch-static-analysis:format-check \
-    && hatch run hatch-static-analysis:lint-check \
-    && hatch run dev:ty check\
-    && hatch run dev:mypy \
-    """
+check-all = [
+    "hatch run hatch-static-analysis:format-check",
+    "hatch run hatch-static-analysis:lint-check",
+    "hatch run dev:ty check",
+    "hatch run dev:mypy",
+]
 
 [tool.hatch.envs.docs]
 # This makes this environment use the "docs" optional dependencies above.
