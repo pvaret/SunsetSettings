@@ -1,3 +1,4 @@
+import re
 import sys
 import warnings
 import pytest
@@ -38,7 +39,13 @@ class TestBunch:
         class FaultyBunch(Bunch):
             inner = InnerBunch
 
-        with pytest.raises(TypeError):
+        with pytest.raises(
+            TypeError,
+            match=re.escape(
+                "Field 'inner' in the definition of 'FaultyBunch' is uninstantiated."
+                " Did you mean 'InnerBunch()'?"
+            ),
+        ):
             FaultyBunch()
 
     def test_inner_bunch_definition_is_fine(self) -> None:
@@ -51,14 +58,19 @@ class TestBunch:
         FineBunch()
 
     def test_fields_cant_override_existing_attributes(self) -> None:
-        # "__init__" is an attribute that happens to exist on the class.
+        class ParentBunch(Bunch):
+            test: Key[int] = Key(0)
 
-        assert getattr(Bunch, "__init__", None) is not None
+        class FaultyBunch(ParentBunch):
+            parent: Key[int] = Key(default="test")  # type: ignore[assignment,arg-type]
 
-        class FaultyBunch(Bunch):
-            __init__ = Key(default="test")  # type: ignore[assignment]
-
-        with pytest.raises(TypeError):
+        with pytest.raises(
+            TypeError,
+            match=(
+                r"Field 'parent' in the definition of 'FaultyBunch'"
+                r" overrides attribute of the same name.*"
+            ),
+        ):
             FaultyBunch()
 
     def test_inheritance(self) -> None:
@@ -371,7 +383,8 @@ class TestBunch:
         class Dummy:
             pass
 
-        def callback(_: ExampleBunch) -> Dummy: ...
+        def callback(_: ExampleBunch) -> Dummy:
+            return Dummy()
 
         bunch.onUpdateCall(callback)
 

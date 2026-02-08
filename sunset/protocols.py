@@ -48,7 +48,7 @@ class Serializable(Protocol):
         ...
 
 
-class Serializer(Generic[_T], Protocol):
+class Serializer(Protocol, Generic[_T]):
     """
     A protocol that describes a way to serialize and deserialize an arbitrary
     type.

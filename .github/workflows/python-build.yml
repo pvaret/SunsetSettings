@@ -27,8 +27,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Install UV
+        uses: astral-sh/setup-uv@v7
+
       - name: Install Hatch
-        uses: pypa/hatch@install
+        run: uv tool install hatch
 
       - name: Report Hatch status
         run: hatch status
@@ -40,7 +43,7 @@ jobs:
         run: hatch fmt --formatter --check
 
       - name: Check types
-        run: hatch run dev:pyright --verbose
+        run: hatch run dev:mypy
 
       - name: Run test suite
         run: hatch test -py=${{ matrix.python-version }} --slow

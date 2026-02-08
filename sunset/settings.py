@@ -329,7 +329,7 @@ class Settings(Bunch):
         return name if self.parent() is not None else self.MAIN
 
     @SettingsLock.with_write_lock
-    def setParent(self, parent: Self | None) -> None:  # type: ignore  # noqa: PGH003
+    def setParent(self, parent: Self | None) -> None:
         """
         Makes the given Settings instance the parent of this one. If None,
         remove this instance's parent, if any.

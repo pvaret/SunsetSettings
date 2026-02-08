@@ -1,25 +1,31 @@
 import enum
-from typing import Generic, TypeVar
+from typing import Generic, Protocol, TypeVar, cast
 
 from sunset.enum_serializer import EnumSerializer
 from sunset.protocols import Serializable, Serializer
 
 _T = TypeVar("_T")
 _Serializable = TypeVar("_Serializable", bound=Serializable)
-_Castable = TypeVar("_Castable", int, float, str)
 _Bool = TypeVar("_Bool", bound=bool)
 
 
-class StraightCastSerializer(Generic[_Castable]):
-    _type: type[_Castable]
+class _Castable(Protocol):
+    def __init__(self, obj: str) -> None: ...
 
-    def __init__(self, type_: type[_Castable]) -> None:
+
+_CastableT = TypeVar("_CastableT", bound=_Castable)
+
+
+class StraightCastSerializer(Generic[_CastableT]):
+    _type: type[_CastableT]
+
+    def __init__(self, type_: type[_CastableT]) -> None:
         self._type = type_
 
-    def toStr(self, value: _Castable) -> str:
+    def toStr(self, value: _CastableT) -> str:
         return str(value)
 
-    def fromStr(self, string: str) -> _Castable | None:
+    def fromStr(self, string: str) -> _CastableT | None:
         try:
             return self._type(string)
         except ValueError:
@@ -57,13 +63,13 @@ class SerializableSerializer(Generic[_Serializable]):
 
 def lookup(type_: type[_T]) -> Serializer[_T] | None:
     if issubclass(type_, Serializable):
-        return SerializableSerializer(type_)
+        return cast(Serializer[_T], SerializableSerializer(type_))
 
     if issubclass(type_, bool):
-        return BoolSerializer(type_)
+        return cast(Serializer[_T], BoolSerializer(type_))
 
     if issubclass(type_, enum.Enum):
-        return EnumSerializer(type_)
+        return cast(Serializer[_T], EnumSerializer(type_))
 
     # Note: these need to come after the Enum case, because Enum can be a
     # subclass of these.

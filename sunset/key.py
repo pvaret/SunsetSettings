@@ -24,7 +24,7 @@ from sunset.serializers import lookup
 _T = TypeVar("_T")
 
 
-class Key(Generic[_T], BaseField):
+class Key(BaseField, Generic[_T]):
     """
     A single setting key containing a typed value.
 

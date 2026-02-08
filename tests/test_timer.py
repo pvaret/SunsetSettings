@@ -3,7 +3,7 @@ import threading
 from typing import Any
 
 from pytest import MonkeyPatch
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockType
 
 from sunset import PersistentTimer
 
@@ -36,7 +36,7 @@ class TestPersistentTimer:
     def test_timer_with_delay(
         self, mocker: MockerFixture, monkeypatch: MonkeyPatch
     ) -> None:
-        mock = mocker.MagicMock(threading.Timer, autospec=True)
+        mock: MockType = mocker.MagicMock(spec=threading.Timer)
         mock.return_value = mock
         monkeypatch.setattr(threading, "Timer", mock)
 
@@ -59,7 +59,7 @@ class TestPersistentTimer:
     def test_timer_looping(
         self, mocker: MockerFixture, monkeypatch: MonkeyPatch
     ) -> None:
-        timer_mock = mocker.MagicMock(threading.Timer, autospec=True)
+        timer_mock: MockType = mocker.MagicMock(spec=threading.Timer)
 
         def mock_factory(
             interval: float, function: Callable[[], Any], args: list[Any]

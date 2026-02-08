@@ -12,10 +12,11 @@ from sunset.autoloader import AutoLoader
 from sunset.autosaver import AutoSaver
 from sunset.bunch import Bunch
 from sunset.enum_serializer import SerializableEnum, SerializableFlag
+from sunset.exporter import normalize
 from sunset.key import Key
 from sunset.list import List
 from sunset.protocols import Serializable, Serializer
-from sunset.settings import Settings, normalize
+from sunset.settings import Settings
 from sunset.timer import PersistentTimer
 
 

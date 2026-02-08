@@ -15,7 +15,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 from sunset.lock import SettingsLock
 from sunset.notifier import Notifier
-from sunset.protocols import BaseField, Field, ItemTemplate, UpdateNotifier
+from sunset.protocols import BaseField, Field, UpdateNotifier
 from sunset.sets import WeakNonHashableSet
 from sunset.stringutils import collate_by_prefix, split_on
 
@@ -81,16 +81,12 @@ class Bunch(BaseField):
             # one here.
 
             cls_parents = cls.__bases__
-            dataclass_fields: list[tuple[str, type | GenericAlias, ItemTemplate]] = []
-            potential_fields = [
-                (name, getattr(cls, name, None))
-                for name in dir(cls)
-                if not name.startswith("__")
-            ]
+            dataclass_fields: list[tuple[str, type | GenericAlias, Field]] = []
+            potential_fields = [(name, getattr(cls, name, None)) for name in dir(cls)]
 
             for name, attr in potential_fields:
-                if inspect.isclass(attr):
-                    if attr.__name__ == name:
+                if inspect.isclass(attr) and issubclass(attr, Bunch):
+                    if name in (attr.__name__, dataclass_attr):
                         # This is probably a class definition that just happens
                         # to be located inside the containing Bunch definition.
                         # This is fine.
@@ -99,29 +95,32 @@ class Bunch(BaseField):
 
                     msg = (
                         f"Field '{name}' in the definition of '{cls.__name__}' is"
-                        " uninstantiated. Did you forget the parentheses?"
+                        f" uninstantiated. Did you mean '{attr.__name__}()'?"
                     )
                     raise TypeError(msg)
 
-                if isinstance(attr, ItemTemplate):
-                    # Safety check: make sure the user isn't accidentally overriding an
-                    # existing attribute. We do however allow overriding an attribute
-                    # with an attribute of the same type, which allows the user to
-                    # override a Key with a Key of the same type but a different
-                    # default value, for instance.
+                if not isinstance(attr, Field):
+                    # Not actually a field, then.
+                    continue
 
-                    for cls_parent in cls_parents:
-                        if (
-                            parent_attr := getattr(cls_parent, name, None)
-                        ) is not None and type(parent_attr) is not type(attr):
-                            msg = (
-                                f"Field '{name}' in the definition of"
-                                f" '{cls.__name__}' overrides attribute of the"
-                                " same name declared in parent class"
-                                f" '{cls_parent.__name__}'; consider renaming"
-                                f" this field to '{name}_' for instance"
-                            )
-                            raise TypeError(msg)
+                # Safety check: make sure the user isn't accidentally overriding an
+                # existing attribute. We do however allow overriding an attribute
+                # with an attribute of the same type, which allows the user to
+                # override a Key with a Key of the same type but a different
+                # default value, for instance.
+
+                for cls_parent in cls_parents:
+                    if (
+                        parent_attr := getattr(cls_parent, name, None)
+                    ) is not None and type(parent_attr) is not type(attr):
+                        msg = (
+                            f"Field '{name}' in the definition of"
+                            f" '{cls.__name__}' overrides attribute of the"
+                            " same name declared in parent class"
+                            f" '{cls_parent.__name__}'; consider renaming"
+                            f" this field to '{name}_' for instance"
+                        )
+                        raise TypeError(msg)
 
                     # Create a proper field from the attribute.
 
@@ -156,7 +155,7 @@ class Bunch(BaseField):
 
         # Create an instance of the dataclass.
 
-        new_cls = super().__new__(dataclass_class)
+        new_cls: Self = super().__new__(dataclass_class)
 
         # Set up the fields that were identified above as instance attributes.
 
@@ -321,7 +320,8 @@ class Bunch(BaseField):
 
     @SettingsLock.with_write_lock
     def clear(self) -> None:
-        [field.clear() for field in self._fields.values()]
+        for field in self._fields.values():
+            field.clear()
 
     @SettingsLock.with_read_lock
     def dumpFields(self) -> Iterable[tuple[str, str | None]]:

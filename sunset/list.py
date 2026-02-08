@@ -10,15 +10,13 @@ if sys.version_info < (3, 11):  # pragma: no cover
 else:
     from typing import Self
 
-from sunset.bunch import Bunch
-from sunset.key import Key
 from sunset.lock import SettingsLock
 from sunset.notifier import Notifier
-from sunset.protocols import BaseField, UpdateNotifier
+from sunset.protocols import BaseField, Field, UpdateNotifier
 from sunset.sets import WeakNonHashableSet
 from sunset.stringutils import collate_by_prefix, split_on
 
-ListItemT = TypeVar("ListItemT", bound=Bunch | Key[Any])
+ListItemT = TypeVar("ListItemT", bound=Field)
 
 
 class IterOrder(Enum):
@@ -130,6 +128,7 @@ class List(MutableSequence[ListItemT], BaseField):
         self._clearMetadata(self._contents[index])
         if isinstance(index, slice):
             assert isinstance(value, Iterable)  # noqa: S101
+            assert not isinstance(value, Field)  # noqa: S101
             self._contents[index] = value
 
         else:

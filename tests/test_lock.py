@@ -52,7 +52,8 @@ class TestRWLock:
         # the readers are holding the read lock.
         assert read_locks_all_held.wait(timeout=1.0)
 
-        [task.join(timeout=1.0) for task in tasks]
+        for task in tasks:
+            task.join(timeout=1.0)
         assert all(not task.is_alive() for task in tasks)
 
     def test_readers_dont_block_readers(self) -> None:
@@ -188,7 +189,8 @@ class TestRWLock:
         # And then let the reader threads proceed.
         unpause.release(reader_count)
 
-        [task.join(timeout=1.0) for task in tasks]
+        for task in tasks:
+            task.join(timeout=1.0)
         assert not any(task.is_alive() for task in tasks)
 
     def test_releasing_not_held_lock_raises_runtimeerror(self) -> None:
