@@ -111,9 +111,11 @@ class List(MutableSequence[ListItemT], BaseField):
     @overload
     def __getitem__(self, index: slice) -> list[ListItemT]: ...
 
-    @SettingsLock.with_read_lock
     def __getitem__(self, index: SupportsIndex | slice) -> ListItemT | list[ListItemT]:
-        return self._contents[index]
+        # WORKAROUND: Do the locking manually until
+        # https://github.com/astral-sh/ty/issues/2278 is fixed.
+        with SettingsLock.lock_reads():
+            return self._contents[index]
 
     @overload
     def __setitem__(self, index: SupportsIndex, value: ListItemT) -> None: ...
@@ -121,23 +123,25 @@ class List(MutableSequence[ListItemT], BaseField):
     @overload
     def __setitem__(self, index: slice, value: Iterable[ListItemT]) -> None: ...
 
-    @SettingsLock.with_write_lock
     def __setitem__(
         self, index: SupportsIndex | slice, value: ListItemT | Iterable[ListItemT]
     ) -> None:
-        self._clearMetadata(self._contents[index])
-        if isinstance(index, slice):
-            assert isinstance(value, Iterable)  # noqa: S101
-            assert not isinstance(value, Field)  # noqa: S101
-            self._contents[index] = value
+        # WORKAROUND: Do the locking manually until
+        # https://github.com/astral-sh/ty/issues/2278 is fixed.
+        with SettingsLock.lock_writes():
+            self._clearMetadata(self._contents[index])
+            if isinstance(index, slice):
+                assert isinstance(value, Iterable)  # noqa: S101
+                assert not isinstance(value, Field)  # noqa: S101
+                self._contents[index] = value
 
-        else:
-            assert isinstance(index, SupportsIndex)  # noqa: S101
-            assert not isinstance(value, Iterable)  # noqa: S101
-            self._contents[index] = value
+            else:
+                assert isinstance(index, SupportsIndex)  # noqa: S101
+                assert not isinstance(value, Iterable)  # noqa: S101
+                self._contents[index] = value
 
-        self._relabelItems()
-        self._update_notifier.trigger(self)
+            self._relabelItems()
+            self._update_notifier.trigger(self)
 
     @SettingsLock.with_write_lock
     def __delitem__(self, index: SupportsIndex | slice) -> None:

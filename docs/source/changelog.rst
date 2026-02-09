@@ -5,6 +5,8 @@ Latest
 ---------------------------------
 
   - Added Python 3.14 to supported versions.
+  - Added temporary workaround to let :code:`List` indexing and slicing
+    typecheck correctly with ty.
 
 SunsetSettings 0.7.0 (2025-06-29)
 ---------------------------------
