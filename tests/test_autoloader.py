@@ -232,20 +232,26 @@ class TestAutoLoader:
         monitor().start.assert_not_called()
         monitor().stop.assert_called_once()
 
-    def test_expand_user(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_expand_user(
+        self, tmp_path: Path, mocker: MockerFixture, monkeypatch: MonkeyPatch
+    ) -> None:
         def expanduser(path: Path) -> Path:
-            if not str(path).startswith("~"):
+            if not path.as_posix().startswith("~"):
                 return path
-            return Path("HOME") / str(path).lstrip("~").lstrip("/")
+            return Path("/HOME") / path.as_posix().lstrip("~").lstrip("/")
 
         monkeypatch.setattr(Path, "expanduser", expanduser)
+        func_spy = mocker.spy(Path, "expanduser")
 
         autoloader1 = AutoLoader(
             ExampleSettings(), "/no/tilde", _monitor_factory=DummyMonitor
         )
         assert autoloader1.path().as_posix() == "/no/tilde"
+        func_spy.assert_called_once()
 
+        func_spy.reset_mock()
         autoloader2 = AutoLoader(
             ExampleSettings(), "~/with/tilde", _monitor_factory=DummyMonitor
         )
-        assert autoloader2.path().as_posix() == "HOME/with/tilde"
+        func_spy.assert_called_once()
+        assert autoloader2.path().as_posix() == "/HOME/with/tilde"

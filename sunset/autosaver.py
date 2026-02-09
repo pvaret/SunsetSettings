@@ -195,19 +195,22 @@ class AutoSaver:
         directory.mkdir(parents=True, mode=self._DIR_MODE, exist_ok=True)
 
         try:
-            with tempfile.NamedTemporaryFile(
-                dir=directory,
-                prefix=self._path.name,
-                mode="xt",
-                encoding=self._ENCODING,
-                delete=False,
-            ) as tmp:
-                self._logger.debug("Saving settings file '%s'...", self._path)
-                self._settings.save(tmp.file, blanklines=True)
-                tmp_path = Path(tmp.name)
-                tmp_path.chmod(self._FILE_MODE)
-                tmp_path.rename(self._path)
-                self._logger.debug("Saved.")
+            self._logger.debug("Saving settings file '%s'...", self._path)
+            if sys.platform != "win32":
+                with tempfile.NamedTemporaryFile(
+                    dir=directory,
+                    prefix=self._path.name,
+                    mode="xt",
+                    encoding=self._ENCODING,
+                    delete=False,
+                ) as tmp:
+                    self._settings.save(tmp.file, blanklines=True)
+                    tmp_path = Path(tmp.name)
+                    tmp_path.chmod(self._FILE_MODE)
+                    tmp_path.rename(self._path)
+            else:
+                self._settings.save(self._path.open("wt"), blanklines=True)
+            self._logger.debug("Saved.")
 
         except OSError as e:
             msg = f"Failed to save settings to {self._path}: {e}"

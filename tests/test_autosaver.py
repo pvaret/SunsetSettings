@@ -74,7 +74,7 @@ class TestAutosaver:
 
         assert not settings_file.exists()
 
-        autosaver.__del__()  # Simulate garbage collection.
+        del autosaver  # Simulate garbage collection.
 
         assert settings_file.exists()
         assert settings_file.read_text() == "[main]\nkey_str = test\n"
@@ -131,19 +131,25 @@ class TestAutosaver:
 
         assert settings_file.exists()
 
-    def test_expand_user(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_expand_user(
+        self, mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         def expanduser(path: pathlib.Path) -> pathlib.Path:
             if not path.as_posix().startswith("~"):
                 return path
-            return pathlib.Path("HOME") / path.as_posix().lstrip("~").lstrip("/")
+            return pathlib.Path("/HOME") / path.as_posix().lstrip("~").lstrip("/")
 
         monkeypatch.setattr(pathlib.Path, "expanduser", expanduser)
+        func_spy = mocker.spy(pathlib.Path, "expanduser")
 
         saver1 = AutoSaver(ExampleSettings(), "/no/tilde", load_on_init=False)
+        func_spy.assert_called_once()
         assert saver1.path().as_posix() == "/no/tilde"
 
+        func_spy.reset_mock()
         saver2 = AutoSaver(ExampleSettings(), "~/with/tilde", load_on_init=False)
-        assert saver2.path().as_posix() == "HOME/with/tilde"
+        func_spy.assert_called_once()
+        assert saver2.path().as_posix() == "/HOME/with/tilde"
 
     def test_no_exception_raised_if_logger_provided(
         self, tmp_path: pathlib.Path, mocker: MockerFixture
