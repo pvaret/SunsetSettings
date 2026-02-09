@@ -1,9 +1,11 @@
 "SunsetSettings: a type-safe, extensible INI-style settings system with inheritance."
 
+import importlib.metadata
+
 __project__ = "SunsetSettings"
-__version__ = "0.7.1-dev"
 __author__ = "P. Varet"
-__copyright__ = "2022-2025, P. Varet"
+__copyright__ = "2022-2026, P. Varet"
+__version__ = importlib.metadata.version(__project__)
 
 import warnings
 

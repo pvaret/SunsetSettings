@@ -7,6 +7,7 @@ Latest
   - Added Python 3.14 to supported versions.
   - Added temporary workaround to let :code:`List` indexing and slicing
     typecheck correctly with ty.
+  - Switched to dynamic versioning from git tags.
 
 SunsetSettings 0.7.0 (2025-06-29)
 ---------------------------------
@@ -43,7 +44,7 @@ SunsetSettings 0.5.6 (2024-06-17)
 ---------------------------------
 
   - Removed :code:`Self` type workaround now that mypy handles it properly.
-  - Fixed notification inhibitation issue that caused update notifications to fail
+  - Fixed notification inhibition issue that caused update notifications to fail
     to fire.
 
 SunsetSettings 0.5.5 (2024-02-18)
