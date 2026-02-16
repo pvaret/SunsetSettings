@@ -111,7 +111,7 @@ def test_load() -> None:
     ]
 
 
-def test_section_cleanup() -> None:
+def test_layer_cleanup() -> None:
     for input, expected in (
         ("", ""),
         (" // / ", ""),
@@ -121,7 +121,7 @@ def test_section_cleanup() -> None:
         ("test/", "test"),
         ("  //   / I'snt This a Test? / // Yes! / // / ", "isntthisatest/yes"),
     ):
-        assert exporter.cleanup_section(input) == expected
+        assert exporter.cleanup_layer(input) == expected
 
 
 def test_path_cleanup() -> None:

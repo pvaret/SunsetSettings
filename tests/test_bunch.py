@@ -423,11 +423,8 @@ class TestBundle:
             key: Key[int] = Key(default=0)
             bunch: ExampleBunch = ExampleBunch()
 
-        try:
-            warnings.filterwarnings("ignore", category=DeprecationWarning)
+        with warnings.catch_warnings(record=True):
             bundle = TestBundle()
-        finally:
-            warnings.resetwarnings()
 
         bundle.key.set(42)
         bundle.bunch.a.set("test")
@@ -436,9 +433,7 @@ class TestBundle:
         assert bundle.bunch.a.get() == "test"
 
     def test_bundle_raises_deprecation_warning(self) -> None:
-        try:
-            warnings.filterwarnings("error", category=DeprecationWarning)
-            with pytest.raises(DeprecationWarning):
-                Bundle()
-        finally:
-            warnings.resetwarnings()
+        with warnings.catch_warnings(record=True) as w:
+            Bundle()
+            assert len(w) == 1
+            assert w[0].category is DeprecationWarning

@@ -9,27 +9,21 @@ API Reference
 
     .. automethod:: autosave
 
-    .. automethod:: newSection
+    .. automethod:: addLayer
 
-    .. automethod:: getOrCreateSection
+    .. automethod:: getOrAddLayer
 
-    .. automethod:: getSection
+    .. automethod:: getLayer
 
-    .. automethod:: sections
+    .. automethod:: layers
 
-    .. automethod:: sectionName
+    .. automethod:: layerName
 
-    .. automethod:: setSectionName
+    .. automethod:: setLayerName
 
     .. automethod:: onUpdateCall
 
     .. automethod:: skipOnSave
-
-    .. automethod:: setParent
-
-    .. automethod:: parent
-
-    .. automethod:: children
 
 .. autoclass:: sunset.Key
 
@@ -53,23 +47,11 @@ API Reference
 
     .. automethod:: skipOnSave
 
-    .. automethod:: setParent
-
-    .. automethod:: parent
-
-    .. automethod:: children
-
 .. autoclass:: sunset.Bunch
 
     .. automethod:: onUpdateCall
 
     .. automethod:: skipOnSave
-
-    .. automethod:: setParent
-
-    .. automethod:: parent
-
-    .. automethod:: children
 
 .. autoclass:: sunset.List
 
@@ -82,12 +64,6 @@ API Reference
     .. automethod:: onUpdateCall
 
     .. automethod:: skipOnSave
-
-    .. automethod:: setParent
-
-    .. automethod:: parent
-
-    .. automethod:: children
 
 .. autoclass:: sunset.AutoSaver
 

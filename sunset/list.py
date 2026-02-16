@@ -277,8 +277,8 @@ class List(MutableSequence[ListItemT], BaseField):
     @SettingsLock.with_read_lock
     def iter(self, order: IterOrder | None = None) -> Iterable[ListItemT]:
         """
-        Returns the elements contained in this List, and optionally in its parents, if
-        any.
+        Returns the elements contained in this List, and optionally in its
+        parent layers, if any.
 
         Args:
             order: One of `List.NO_PARENT`, `List.PARENT_FIRST`,

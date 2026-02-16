@@ -190,7 +190,7 @@ by making your intent explicit:
     * SunsetSettings Lists offer :meth:`~sunset.List.appendOne()` and
       :meth:`~sunset.List.insertOne()` convenience methods to create and add to
       the List an instance of the type held in the List.
-    * SunsetSettings Lists support :ref:`inheritance`.
+    * SunsetSettings Lists support :ref:`layering`.
     * Perhaps most importantly, SunsetSettings knows how to load and save Lists.
 
 
@@ -310,52 +310,53 @@ Overview
         parts of your program that use them. This helps prevent the introduction of
         tight coupling between the individual parts of your program.
 
-- Update a Key's value with :meth:`~sunset.Key.set()`, retrieve a Key's current value
-  with :meth:`~sunset.Key.get()`. Clear a Key's value with :meth:`~sunset.Key.clear()`.
-  When a Key's value is cleared, its reported value will be the value of its parent if it
-  has one (see :ref:`inheritance`), else the default value for this Key.
+- Update a Key's value with :meth:`~sunset.Key.set()`, retrieve a Key's current
+  value with :meth:`~sunset.Key.get()`. Clear a Key's value with
+  :meth:`~sunset.Key.clear()`. When a Key's value is not set,
+  :meth:`~sunset.Key.get()` will return that of the next layer up if there is
+  one (see :ref:`layering`), else the default value for this Key.
 
 - Add callbacks to take action when a Key's value changes with the
   :meth:`~sunset.Key.onValueChangeCall()` method. Add callbacks to take action when a
   Settings, Bunch or Key is updated in any way with their respective
   :meth:`~sunset.Key.onUpdateCall()` methods.
 
-- Save your settings to a file when they are updated or when your application shuts
-  down. See :ref:`loading and saving`.
+- Load your settings on start, and save them back to a file when they are
+  updated or when your application shuts down. See :ref:`loading and saving`.
 
 
-.. _inheritance:
+.. _layering:
 
-Inheritance
-~~~~~~~~~~~
+Layering
+~~~~~~~~
 
-Sections
-........
+Layers
+......
 
 Your application may need to override settings per user, per folder, etc. In
-SunsetSettings, this is done by creating a hierarchy of subsections of your Settings
-class, using the :meth:`~sunset.Settings.newSection()` method. This method creates a new
-instance of your Settings that holds the same set of Bunch, List and Key fields, with
-potentially overridden values. Where not overridden, those Bunches, Lists and Keys
-*inherit* values from the corresponding Bunches, Lists and Keys on the parent section.
+SunsetSettings, this is done by adding layers using the
+:meth:`~sunset.Settings.addLayer()` method. This method creates a new instance
+of your Settings on top of the parent instance which can hold its own values.
+Where not overridden, the Keys in this layer pass through the values from the
+corresponding Keys on the parent layer.
 
-Sections can be given a name, either at creation time or after the fact by calling the
-:meth:`~sunset.Settings.setSectionName()` method. This name will be used the generate
-the section heading when saving your Settings to a file.
+Layers can be given a name, either at creation time or after the fact by calling the
+:meth:`~sunset.Settings.setLayerName()` method. This name will be used the generate
+a section heading for the layer when saving your Settings to a file.
 
-Sections without a name get skipped when saving. The toplevel section is named `main` by
+Layers without a name are not saved. The toplevel layer is named `main` by
 default, and cannot be unnamed.
 
-Section names get normalized to lower case and alphanumeric characters, so for instance
+Layer names get normalized to lower case and alphanumeric characters, so for instance
 `The Roaring 20s!` would become `theroaring20s`. Names are also unique; if a Settings
-instance already holds a section with a given name, and a new section is created on that
+instance already holds a layer with a given name, and a new layer is created on that
 instance using the same name, then a numeric suffix is appended to that name to make it
 unique.
 
-The :meth:`~sunset.Settings.sectionName()` method returns the current, normalized,
-unique name of this instance.
+The :meth:`~sunset.Settings.layerName()` method returns the layer's current,
+normalized, unique name.
 
-The hierarchy of sections can be arbitrarily deep.
+The hierarchy of layers can be arbitrarily deep.
 
 Example:
 
@@ -372,22 +373,22 @@ Example:
     >>> settings.compression.set(True)
     True
 
-    >>> user1_section = settings.newSection("User 1")
-    >>> user1_section.path.set("/home/user1/")
+    >>> user1_layer = settings.addLayer("User 1")
+    >>> user1_layer.path.set("/home/user1/")
     True
-    >>> user1_section.destination.set("/var/backups/user1/")
-    True
-
-    >>> user1_videos_section = user1_section.newSection("Videos")
-    >>> user1_videos_section.path.set("/home/user1/Videos/")
-    True
-    >>> user1_videos_section.compression.set(False)
+    >>> user1_layer.destination.set("/var/backups/user1/")
     True
 
-    >>> mails_section = settings.newSection("Mails")
-    >>> mails_section.path.set("/var/mail/")
+    >>> user1_videos_layer = user1_layer.addLayer("Videos")
+    >>> user1_videos_layer.path.set("/home/user1/Videos/")
     True
-    >>> mails_section.destination.set("/var/backups/mails/")
+    >>> user1_videos_layer.compression.set(False)
+    True
+
+    >>> mails_layer = settings.addLayer("Mails")
+    >>> mails_layer.path.set("/var/mail/")
+    True
+    >>> mails_layer.destination.set("/var/backups/mails/")
     True
 
 Here is what these Settings would look like when saved to a file:
@@ -414,27 +415,16 @@ Here is what these Settings would look like when saved to a file:
 Bunches, Lists and Keys
 .......................
 
-When you create a new section for your Settings, the Bunches, Lists and Keys in that
-section are automatically set up to inherit from the corresponding Bunches, Lists and
-Keys in the parent section.
+When you create a new layer on your Settings, the Keys in that layer and in its
+Bunches are automatically set up to use the corresponding Keys in the parent
+layer as their default values.
 
-.. note::
-
-    Parents and their children do not increase each other's reference count. This
-    prevents hard to debug memory leaks when deleting sections.
-
-A Key that does not have a value set on it, but has a parent, returns its parent's value
-instead of its default.
-
-A Bunch's behavior does not change when it has a parent. Giving it a parent only
-recursively sets up inheritance for the Bunches, Lists and Keys held in that Bunch.
-
-A List's behavior does not change when it has a parent except for the
-:meth:`~sunset.List.iter()` method. This method return an iterable on the List's items
-and optionally its parent's items. An optional parameter indicates if the parent's items
-will be returned, and if so, whether they will be returned before or after this List's
-items. The default value for this parameter for a given List can be set on that List at
-creation time.
+A List's behavior does not change in a layer except for the
+:meth:`~sunset.List.iter()` method. This method return an iterable on the List's
+items and optionally its parent layer's items. An optional parameter indicates
+if the parent's items will be returned, and if so, whether they will be returned
+before or after this List's items. The default value for this parameter for a
+given List can be set on that List at creation time.
 
 Example:
 
@@ -450,22 +440,22 @@ Example:
 
     >>> settings = BackupSettings()
 
-    >>> user1_section = settings.newSection("User 1")
-    >>> user1_section.path.set("/home/user1/")
+    >>> user1_layer = settings.addLayer("User 1")
+    >>> user1_layer.path.set("/home/user1/")
     True
-    >>> user1_section.ignore_patterns.appendOne().set("*.tmp")
+    >>> user1_layer.ignore_patterns.appendOne().set("*.tmp")
     True
 
-    >>> user1_code_section = user1_section.newSection("Code")
-    >>> user1_code_section.path.set("/home/user1/Code/Python/")
+    >>> user1_code_layer = user1_layer.addLayer("Code")
+    >>> user1_code_layer.path.set("/home/user1/Code/Python/")
     True
-    >>> user1_code_section.ignore_patterns.appendOne().set("*.py")
+    >>> user1_code_layer.ignore_patterns.appendOne().set("*.py")
     True
-    >>> user1_code_section.ignore_patterns.appendOne().set("__pycache__")
+    >>> user1_code_layer.ignore_patterns.appendOne().set("__pycache__")
     True
 
     >>> print([
-    ...     pattern.get() for pattern in user1_code_section.ignore_patterns.iter()
+    ...     pattern.get() for pattern in user1_code_layer.ignore_patterns.iter()
     ... ])
     ['*.tmp', '*.py', '__pycache__']
 

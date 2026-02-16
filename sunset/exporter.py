@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 from typing import IO
 
-_SECTION_SEPARATOR = "/"
+_LAYER_SEPARATOR = "/"
 _PATH_SEPARATOR = "."
 
 
@@ -91,8 +91,8 @@ def cleanup_string(string: str, /, sep: str, *, to_lower: bool) -> str:
     return string.strip(sep)
 
 
-def cleanup_section(section: str) -> str:
-    return cleanup_string(section, sep=_SECTION_SEPARATOR, to_lower=True)
+def cleanup_layer(layer: str) -> str:
+    return cleanup_string(layer, sep=_LAYER_SEPARATOR, to_lower=True)
 
 
 def cleanup_path(path: str) -> str:
@@ -107,28 +107,28 @@ def save_to_file(
     main: str = "main",
 ) -> None:
     need_space = False
-    current_section = ""
+    current_layer = ""
 
-    def extract_section(path: str) -> tuple[str, str]:
-        if _SECTION_SEPARATOR not in path:
+    def extract_layer(path: str) -> tuple[str, str]:
+        if _LAYER_SEPARATOR not in path:
             return main, path
 
-        section, path = path.rsplit(_SECTION_SEPARATOR, 1)
-        return section, path
+        layer, path = path.rsplit(_LAYER_SEPARATOR, 1)
+        return layer, path
 
     for full_path, dump in data:
-        section, path = extract_section(full_path.strip())
-        if not section:
+        layer, path = extract_layer(full_path.strip())
+        if not layer:
             continue
 
-        if section != current_section:
-            current_section = section
+        if layer != current_layer:
+            current_layer = layer
 
             if need_space and blanklines:
                 file.write("\n")
             need_space = True
 
-            file.write(f"[{current_section}]\n")
+            file.write(f"[{current_layer}]\n")
 
         if path:
             file.write(f"{path} =")
@@ -140,7 +140,7 @@ def save_to_file(
 def load_from_file(file: IO[str], main: str) -> Iterable[tuple[str, str | None]]:
     main = normalize(main)
 
-    current_section = ""
+    current_layer = ""
 
     for full_line in file:
         line = full_line.strip()
@@ -149,15 +149,15 @@ def load_from_file(file: IO[str], main: str) -> Iterable[tuple[str, str | None]]
             continue
 
         if line[0] == "[" and line[-1] == "]":
-            current_section = cleanup_section(line[1:-1])
-            if not current_section:
+            current_layer = cleanup_layer(line[1:-1])
+            if not current_layer:
                 continue
 
-            if current_section == main:
-                current_section = ""
+            if current_layer == main:
+                current_layer = ""
 
-            if current_section:
-                yield current_section + _SECTION_SEPARATOR, ""
+            if current_layer:
+                yield current_layer + _LAYER_SEPARATOR, ""
 
         elif "=" in line:
             path, dump = line.split("=", 1)
@@ -165,6 +165,6 @@ def load_from_file(file: IO[str], main: str) -> Iterable[tuple[str, str | None]]
             dump = dump.strip()
             if path:
                 payload = unescape(dump) if dump else None
-                if current_section:
-                    path = _SECTION_SEPARATOR.join((current_section, path))
+                if current_layer:
+                    path = _LAYER_SEPARATOR.join((current_layer, path))
                 yield (path, payload)

@@ -121,7 +121,7 @@ exclude_also = [
     "^ *\\.\\.\\.$", # Ignore ellipsis lines.
     "^ *pass$",      # Ignore pass lines.
 ]
-omit = ["tests/demo_*.py"]
+omit = ["tests/demos/*.py"]
 
 [tool.mypy]
 packages              = ["sunset"]

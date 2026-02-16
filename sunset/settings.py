@@ -1,13 +1,34 @@
 import logging
 import sys
 from collections.abc import Callable, Iterable, MutableSet
+from functools import wraps
 from pathlib import Path
-from typing import IO, Any
+from typing import IO, Any, ParamSpec, TypeVar
 
 if sys.version_info < (3, 11):  # pragma: no cover
     from typing_extensions import Self
 else:
     from typing import Self
+
+if sys.version_info < (3, 13):
+    import warnings
+
+    _P = ParamSpec("_P")
+    _T = TypeVar("_T")
+
+    def deprecated(msg: str) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]:
+        def wrap(func: Callable[_P, _T]) -> Callable[_P, _T]:
+            @wraps(func)
+            def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> _T:
+                warnings.warn(msg, DeprecationWarning, stacklevel=2)
+                return func(*args, **kwargs)
+
+            return wrapped
+
+        return wrap
+
+else:
+    from warnings import deprecated
 
 from sunset.autosaver import AutoSaver
 from sunset.bunch import Bunch
@@ -23,28 +44,27 @@ _FieldItemT = tuple[str, str | None]
 
 class Settings(Bunch):
     """
-    A collection of keys that can be saved to and loaded from text, and supports
-    subsections.
+    A layerable collection of configuration keys.
 
     Under the hood, a Settings class is a dataclass, and can be used in the same
     manner, i.e. by defining attributes directly on the class itself.
 
-    Settings instances support subsections: calling the :meth:`newSection()`
-    method on an instance creates a subsection of that instance. This subsection
-    holds the same keys, with independant values. If a key of the subsection
-    does not have a value, its value will be looked up on its parent section
-    instead. The hierarchy of sections can be arbitrarily deep.
+    Settings instances support layers: calling the :meth:`addLayer()` method on
+    an instance creates a layer on top of that instance. This layer holds the
+    same keys, with their own values. If a key on a layer does not have a value
+    of its own, it will use its parent layer's value instead. The stack of
+    layers can be arbitrarily deep.
 
-    When saving a Settings instance, its subsections are saved with it under a
-    distinct heading for each, provided they have a name. A section is given a
-    name by passing it to the :meth:`newSection()` method, or by using the
-    :meth:`setSectionName()` method on the new section after creation.
+    When saving a Settings instance, its layers are saved with it under a
+    distinct heading for each, provided they have a name. A layer is given a
+    name by passing it to the :meth:`addLayer()` method, or by using the
+    :meth:`setLayerName()` method on the new layer after creation.
 
-    The name of each section is used to construct the heading it is saved under.
+    The name of each layer is used to construct the heading it is saved under.
     The top-level Settings instance is saved under the `[main]` heading by
     default.
 
-    Anonymous (unnamed) sections do not get saved.
+    Anonymous (unnamed) layers do not get saved.
 
     Example:
 
@@ -57,22 +77,22 @@ class Settings(Bunch):
     >>> animals = AnimalSettings()
     >>> animals.hearts.set(1)
     True
-    >>> mammals = animals.newSection(name="mammals")
+    >>> mammals = animals.addLayer(name="mammals")
     >>> mammals.fur.set(True)
     True
     >>> mammals.legs.set(4)
     True
-    >>> humans = mammals.newSection(name="humans")
+    >>> humans = mammals.addLayer(name="humans")
     >>> humans.legs.set(2)
     True
     >>> humans.fur.set(False)
     True
-    >>> birds = animals.newSection(name="birds")
+    >>> birds = animals.addLayer(name="birds")
     >>> birds.legs.set(2)
     True
     >>> birds.wings.set(2)
     True
-    >>> aliens = animals.newSection()  # No name given!
+    >>> aliens = animals.addLayer()  # No name given!
     >>> aliens.hearts.set(2)
     True
     >>> aliens.legs.set(7)
@@ -128,9 +148,9 @@ class Settings(Bunch):
 
     MAIN: str = _MAIN
 
-    _SECTION_SEPARATOR = "/"
+    _LAYER_SEPARATOR = "/"
 
-    _section_name: str = ""
+    _layer_name: str = ""
     _children_set: MutableSet[Bunch]
     _autosaver: AutoSaver | None = None
     _autosaver_class: type[AutoSaver]
@@ -146,25 +166,25 @@ class Settings(Bunch):
         self._autosaver_class = AutoSaver
 
     @SettingsLock.with_write_lock
-    def newSection(self, name: str = "") -> Self:
+    def addLayer(self, name: str = "") -> Self:
         """
         Creates and returns a new instance of this class. Each key of the new
         instance will inherit from the key of the same name on the parent
         instance.
 
-        When saving Settings with the :meth:`save()` method, each section's name
-        is used to generate the heading under which that section is saved. If
-        the new section is created without a name, it will be skipped when
-        saving. A name can still be given to a section after creation with the
-        :meth:`setSectionName()` method.
+        When saving Settings with the :meth:`save()` method, each layer's name
+        is used to generate the heading under which that layer is saved. If
+        the new layer is created without a name, it will be skipped when
+        saving. A name can still be given to a layer after creation with the
+        :meth:`setLayerName()` method.
 
-        If this Settings instance already has a section with the given name, the
-        new section will be created with a unique name generated by appending a
+        If this Settings instance already has a layer with the given name, the
+        new layer will be created with a unique name generated by appending a
         numbered suffix to that name.
 
         Args:
             name: The name that will be used to generate a heading for this
-                section when saving it to text. The given name will be
+                layer when saving it to text. The given name will be
                 normalized to lowercase alphanumeric characters.
 
         Returns:
@@ -172,7 +192,7 @@ class Settings(Bunch):
         """
 
         new = self._newInstance()
-        new.setSectionName(name)
+        new.setLayerName(name)
 
         # Note that this will trigger an update notification.
 
@@ -180,18 +200,22 @@ class Settings(Bunch):
 
         return new
 
+    @deprecated("Use 'addLayer()' instead.")
+    def newSection(self, name: str = "") -> Self:
+        return self.addLayer(name)
+
     @SettingsLock.with_write_lock
-    def getOrCreateSection(self, name: str) -> Self:
+    def getOrAddLayer(self, name: str) -> Self:
         """
-        Finds and returns the section of these Settings with the given name if
+        Finds and returns the layer of these Settings with the given name if
         it exists, and creates it if it doesn't.
 
         If the given name is empty, this is equivalent to calling
-        :meth:`newSection()` instead.
+        :meth:`addLayer()` instead.
 
         Args:
             name: The name that will be used to generate a heading for this
-                section when saving it to text. The given name will be
+                layer when saving it to text. The given name will be
                 normalized to lowercase alphanumeric characters.
 
         Returns:
@@ -199,19 +223,23 @@ class Settings(Bunch):
         """
 
         return (
-            section
-            if (section := self.getSection(name)) is not None
-            else self.newSection(name=name)
+            layer
+            if (layer := self.getLayer(name)) is not None
+            else self.addLayer(name=name)
         )
 
+    @deprecated("Use 'getOrAddLayer()' instead.")
+    def getOrCreateSection(self, name: str) -> Self:
+        return self.getOrAddLayer(name)
+
     @SettingsLock.with_read_lock
-    def getSection(self, name: str) -> Self | None:
+    def getLayer(self, name: str) -> Self | None:
         """
-        Finds and returns a section of this instance with the given name, if it
+        Finds and returns a layer of this instance with the given name, if it
         exists, else None.
 
         Args:
-            name: The name of the section to return.
+            name: The name of the layer to return.
 
         Returns:
             An instance of the same type as self, or None.
@@ -221,18 +249,22 @@ class Settings(Bunch):
         if not norm:
             return None
 
-        for section in self.sections():
-            if norm == section.sectionName():
-                return section
+        for layer in self.layers():
+            if norm == layer.layerName():
+                return layer
 
         return None
 
+    @deprecated("Use 'getLayer()' instead.")
+    def getSection(self, name: str) -> Self | None:
+        return self.getLayer(name)
+
     @SettingsLock.with_read_lock
-    def sections(self) -> Iterable[Self]:
+    def layers(self) -> Iterable[Self]:
         """
-        Returns an iterable with the subsections of this Settings instance. Note that
-        the subsections are only looked up one level deep, that is to say, no recursing
-        into the section hierarchy occurs.
+        Returns an iterable with the layers of this Settings instance. Note that
+        the layers are only looked up one level deep, that is to say, no recursing
+        into the layer hierarchy occurs.
 
         Returns:
             An iterable of Settings instances of the same type as this one.
@@ -240,15 +272,19 @@ class Settings(Bunch):
 
         return sorted(self.children())
 
+    @deprecated("Use 'layers()' instead.")
+    def sections(self) -> Iterable[Self]:
+        return self.layers()
+
     @SettingsLock.with_write_lock
-    def setSectionName(self, name: str) -> str:
+    def setLayerName(self, name: str) -> str:
         """
-        Sets the unique name under which this Settings instance will be
-        persisted by the :meth:`save()` method. The given name will be
-        normalized to lowercase, without space or punctuation.
+        Sets the unique name under which this Settings layer will be persisted
+        by the :meth:`save()` method. The given name will be normalized to
+        lowercase, without space or punctuation.
 
         This name is guaranteed to be unique. If the given name is already used
-        by a section of the same Settings instance, then a numbered suffix is
+        by a layer of the same Settings instance, then a numbered suffix is
         generated to make this one's name unique.
 
         If the given name is empty, these settings will be skipped when saving.
@@ -269,52 +305,56 @@ class Settings(Bunch):
         >>> class TestSettings(Settings):
         ...     pass
         >>> parent = TestSettings()
-        >>> section1 = parent.newSection()
-        >>> section2 = parent.newSection()
-        >>> section3 = parent.newSection()
-        >>> section1.setSectionName("  T ' e ? S / t")
+        >>> layer1 = parent.addLayer()
+        >>> layer2 = parent.addLayer()
+        >>> layer3 = parent.addLayer()
+        >>> layer1.setLayerName("  T ' e ? S / t")
         'test'
-        >>> section2.setSectionName("TEST")
+        >>> layer2.setLayerName("TEST")
         'test_1'
-        >>> section3.setSectionName("test")
+        >>> layer3.setLayerName("test")
         'test_2'
-        >>> # This should not change this section's name.
-        >>> section3.setSectionName("test")
+        >>> # This should not change this layer's name.
+        >>> layer3.setLayerName("test")
         'test_2'
         """
 
         name = normalize(name)
 
         if (parent := self.parent()) is None:
-            if name != self._section_name:
-                self._section_name = name
+            if name != self._layer_name:
+                self._layer_name = name
                 self._update_notifier.trigger(self)
 
         else:
             # Note that this triggers a notification if the unique name is
             # different from the current name.
 
-            parent._setUniqueNameForSection(name, self)  # noqa: SLF001
+            parent._setUniqueNameForLayer(name, self)  # noqa: SLF001
 
-        return self.sectionName()
+        return self.layerName()
 
-    def _setUniqueNameForSection(self, name: str, section: Self) -> None:
+    @deprecated("Use 'setLayerName()' instead.")
+    def setSectionName(self, name: str) -> str:
+        return self.setLayerName(name)
+
+    def _setUniqueNameForLayer(self, name: str, layer: Self) -> None:
         candidate = name = normalize(name)
 
         if candidate:
-            other_names = {s.sectionName() for s in self.children() if s is not section}
+            other_names = {s.layerName() for s in self.children() if s is not layer}
 
             i = 0
             while candidate in other_names:
                 i += 1
                 candidate = f"{name}_{i}"
 
-        if candidate != section._section_name:  # noqa: SLF001
-            section._section_name = candidate  # noqa: SLF001
-            section._update_notifier.trigger(section)  # noqa: SLF001
+        if candidate != layer._layer_name:  # noqa: SLF001
+            layer._layer_name = candidate  # noqa: SLF001
+            layer._update_notifier.trigger(layer)  # noqa: SLF001
 
     @SettingsLock.with_read_lock
-    def sectionName(self) -> str:
+    def layerName(self) -> str:
         """
         Returns the current name of this Settings instance. This name will be
         used to generate the heading under which this Settings instance will be
@@ -323,10 +363,14 @@ class Settings(Bunch):
         Returns:
             The name of this Settings instance.
         """
-        if name := self._section_name:
+        if name := self._layer_name:
             return name
 
         return name if self.parent() is not None else self.MAIN
+
+    @deprecated("Use 'layerName()' instead.")
+    def sectionName(self) -> str:
+        return self.layerName()
 
     @SettingsLock.with_write_lock
     def setParent(self, parent: Self | None) -> None:
@@ -350,12 +394,12 @@ class Settings(Bunch):
         if parent is (previous_parent := self.parent()):
             return
 
-        # Ensure that this section's name is unique in its parent.
+        # Ensure that this layer's name is unique in its parent.
 
         if parent is not None:
             # May trigger an update notification if the name is changed.
 
-            parent._setUniqueNameForSection(self._section_name, self)  # noqa: SLF001
+            parent._setUniqueNameForLayer(self._layer_name, self)  # noqa: SLF001
             self._update_notifier.add(parent._update_notifier.trigger)  # noqa: SLF001
 
         super().setParent(parent)
@@ -392,7 +436,7 @@ class Settings(Bunch):
         super().onUpdateCall(callback)
 
     def skipOnSave(self) -> bool:
-        return self.sectionName() == ""
+        return self.layerName() == ""
 
     @SettingsLock.with_read_lock
     def dumpFields(self) -> Iterable[tuple[str, str | None]]:
@@ -402,7 +446,7 @@ class Settings(Bunch):
 
         ret: list[tuple[str, str | None]] = []
         if not self.skipOnSave():
-            # Ensure the section is dumped even if empty. Dumping an empty section is
+            # Ensure the layer is dumped even if empty. Dumping an empty layer is
             # valid.
 
             if not self.isSet():
@@ -410,10 +454,10 @@ class Settings(Bunch):
             else:
                 ret.extend((path, item) for path, item in super().dumpFields())
 
-            for section in self.sections():
+            for layer in self.layers():
                 ret.extend(
-                    (section.sectionName() + self._SECTION_SEPARATOR + path, item)
-                    for path, item in section.dumpFields()
+                    (layer.layerName() + self._LAYER_SEPARATOR + path, item)
+                    for path, item in layer.dumpFields()
                 )
 
         return ret
@@ -424,15 +468,13 @@ class Settings(Bunch):
         Internal.
         """
 
-        previous_subsections = {
-            section.sectionName(): section for section in self.sections()
-        }
+        previous_layers = {layer.layerName(): layer for layer in self.layers()}
 
         fields = list(fields)
 
-        sep = self._SECTION_SEPARATOR
+        sep = self._LAYER_SEPARATOR
         bunch_fields = [(path, value) for path, value in fields if sep not in path]
-        by_section = collate_by_prefix(
+        by_layer = collate_by_prefix(
             [(path, value) for path, value in fields if sep in path],
             split_on(sep),
         )
@@ -440,35 +482,32 @@ class Settings(Bunch):
         with self._update_notifier.inhibit():
             any_change = super().restoreFields(bunch_fields)
 
-            for subsection_name, subsection in previous_subsections.items():
-                if subsection_name not in by_section:
-                    subsection.setParent(None)
-                    subsection.clear()
+            for layer_name, layer in previous_layers.items():
+                if layer_name not in by_layer:
+                    layer.setParent(None)
+                    layer.clear()
                     any_change = True
                     continue
 
-                any_change = (
-                    subsection.restoreFields(by_section.pop(subsection_name))
-                    or any_change
-                )
+                any_change = layer.restoreFields(by_layer.pop(layer_name)) or any_change
 
-            for subsection_name, subsection_fields in by_section.items():
-                if not subsection_name:
+            for layer_name, layer_fields in by_layer.items():
+                if not layer_name:
                     continue
-                subsection = self.getOrCreateSection(subsection_name)
-                any_change = subsection.restoreFields(subsection_fields) or any_change
+                layer = self.getOrAddLayer(layer_name)
+                any_change = layer.restoreFields(layer_fields) or any_change
 
         return any_change
 
     def save(self, file: IO[str], *, blanklines: bool = False) -> None:
         """
-        Writes the contents of this Settings instance and its subsections in
+        Writes the contents of this Settings instance and its layers in
         text form to the given file object.
 
         Args:
             file: A text file object where to save this Settings instance.
 
-            blanklines: Whether to add a blank line before section headings.
+            blanklines: Whether to add a blank line before layer headings.
         """
 
         if self.skipOnSave():
@@ -478,7 +517,7 @@ class Settings(Bunch):
             return
 
         save_to_file(
-            file, self.dumpFields(), blanklines=blanklines, main=self.sectionName()
+            file, self.dumpFields(), blanklines=blanklines, main=self.layerName()
         )
 
     def load(self, file: IO[str]) -> None:
@@ -491,7 +530,7 @@ class Settings(Bunch):
         faulty line is skipped silently.
 
         If the text file object contains multiple headings, those headings will
-        be used to create subsections with the corresponding names.
+        be used to create layers with the corresponding names.
 
         Note that loading new settings resets the current settings.
 
@@ -499,7 +538,7 @@ class Settings(Bunch):
             file: A text file open in reading mode.
         """
 
-        self.restoreFields(load_from_file(file, self.sectionName()))
+        self.restoreFields(load_from_file(file, self.layerName()))
 
     def autosave(
         self,
@@ -560,6 +599,6 @@ class Settings(Bunch):
         return self._autosaver
 
     def __lt__(self, other: Self) -> bool:
-        # Giving sections an order lets us easily sort them when dumping.
+        # Giving layers an order lets us easily sort them when dumping.
 
-        return self.sectionName() < other.sectionName()
+        return self.layerName() < other.layerName()

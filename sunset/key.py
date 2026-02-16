@@ -29,12 +29,13 @@ class Key(BaseField, Generic[_T]):
     A single setting key containing a typed value.
 
     Keys support inheritance. If a Key does not have a value explicitly set, and
-    it has a parent, then its value will be that of its parent. Else its value
-    if unset is the default value it was instantiated with.
+    it has a parent layer, then the value it will return is that of its parent
+    layer. Else its value if unset is the default value it was instantiated
+    with.
 
     Keys can call a callback when their reported value changes, whether it's
-    their own value that changed, or that inherited from a parent. Set this
-    callback with the :meth:`onValueChangeCall()` method.
+    their own value that changed, or that inherited from a parent layer. Set
+    this callback with the :meth:`onValueChangeCall()` method.
 
     You can control the values that can be set on this Key by passing a
     `validator` argument when instantiating it.

@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Latest
+------
+
+- Renamed sections to layers; it reflects their function better.
+
 SunsetSettings 0.7.1 (2026-02-09)
 ---------------------------------
 

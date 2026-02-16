@@ -170,8 +170,8 @@ class BaseField:
         Returns whether this entity should be disregarded when saving these
         settings. For entities with an attribute name, it's equivalent to
         checking if the attribute is private (its name starts with an
-        underscore). For entities with a section name, it's equivalent to
-        checking if the section name is empty.
+        underscore). For entities with a layer name, it's equivalent to
+        checking if the layer name is empty.
 
         Can be overridden in subclasses.
 

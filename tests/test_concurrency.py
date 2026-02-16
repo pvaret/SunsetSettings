@@ -146,17 +146,17 @@ class TestSettingsConcurrency:
             pass
 
         settings = TestSettings()
-        sections = [settings.newSection(str(i)) for i in range(16)]
+        layers = [settings.addLayer(str(i)) for i in range(16)]
 
-        def rename_section(thread_id: int, sections: list[TestSettings]) -> None:
-            section = sections[thread_id % len(sections)]
-            section.setSectionName("test")
-            section.setSectionName("section")
+        def rename_layer(thread_id: int, layers: list[TestSettings]) -> None:
+            layer = layers[thread_id % len(layers)]
+            layer.setLayerName("test")
+            layer.setLayerName("layer")
 
         for _ in range(_ATTEMPTS):
-            run_threaded(rename_section, sections=sections)
+            run_threaded(rename_layer, layers=layers)
 
-            assert len(list(settings.sections())) == len(sections)
-            assert len(
-                set(section.sectionName() for section in settings.sections())
-            ) == len(sections)
+            assert len(list(settings.layers())) == len(layers)
+            assert len(set(layer.layerName() for layer in settings.layers())) == len(
+                layers
+            )

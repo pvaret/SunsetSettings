@@ -11,7 +11,7 @@ for an interactive application in a *type-safe* manner, and load and save them
 in a simple INI-like format.
 
 The settings can safely store arbitrary types, and can be structured in an
-arbitrarily deep hierarchy of subsections, which allows you to implement
+arbitrarily deep hierarchy of layers, which allows you to implement
 overrides per project, per folder, per user, etc.
 
 It is mainly intended for software where the user can change settings on the
@@ -174,12 +174,12 @@ reference](https://sunsetsettings.rtfd.io/en/stable/api.html#sunset.Serializer).
 ```
 
 
-### Inheritance
+### Layering
 
-SunsetSettings lets the user have a general set of settings that can be
-partially overriden in subsections used in specific cases (much like your VSCode
-settings can be overriden by workspace, for instance). The hierarchy of
-subsections can be arbitrarily deep.
+SunsetSettings lets you use a general set of settings that can be layered
+to specialize them case by case (much like your VSCode settings can be
+specialized by workspace, by folder, etc). The hierarchy of layers can be
+arbitrarily deep.
 
 ```python
 >>> from sunset import Key, Settings
@@ -188,7 +188,7 @@ subsections can be arbitrarily deep.
 ...     limbs: Key[int] = Key(default=4)
 ...
 >>> animals = Animals()
->>> octopuses = animals.newSection(name="octopuses")
+>>> octopuses = animals.addLayer(name="octopuses")
 >>> octopuses.limbs.get()
 4
 >>> octopuses.limbs.set(8)
