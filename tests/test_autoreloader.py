@@ -4,8 +4,8 @@ from typing import cast
 from pytest import MonkeyPatch
 from pytest_mock import MockerFixture
 
-from sunset import AutoLoader, Key, Settings
-from sunset.autoloader import MonitorForChange, MonitorProtocol
+from sunset import AutoReloader, Key, Settings
+from sunset.autoreloader import MonitorForChange, MonitorProtocol
 from sunset.timer import TimerProtocol
 
 from .test_timer import MockTimer
@@ -28,7 +28,7 @@ class TestMonitor:
         self, mocker: MockerFixture, tmp_path: Path
     ) -> None:
         callback = mocker.stub()
-        path = mocker.patch("sunset.autoloader.Path", mocker.Mock(Path))
+        path = mocker.patch("sunset.autoreloader.Path", mocker.Mock(Path))
         mstats = mocker.Mock()
         mstats.st_mtime = 0
         path.stat.return_value = mstats
@@ -88,7 +88,7 @@ class TestMonitor:
     def test_monitor_supports_live_file_creation(
         self, mocker: MockerFixture, tmp_path: Path
     ) -> None:
-        path = mocker.patch("sunset.autoloader.Path", mocker.Mock(Path))
+        path = mocker.patch("sunset.autoreloader.Path", mocker.Mock(Path))
         path.stat = mocker.stub()
         path.stat.side_effect = OSError("File not found")
 
@@ -168,7 +168,7 @@ class TestAutoLoader:
         settings = ExampleSettings()
         assert settings.key_str.get() == ""
 
-        with AutoLoader(settings, settings_file, _monitor_factory=DummyMonitor):
+        with AutoReloader(settings, settings_file, _monitor_factory=DummyMonitor):
             assert settings.key_str.get() == "test"
 
     def test_autoloader_reloads_settings_on_change(self, tmp_path: Path) -> None:
@@ -176,7 +176,7 @@ class TestAutoLoader:
 
         settings = ExampleSettings()
 
-        with AutoLoader(
+        with AutoReloader(
             settings, settings_file, _monitor_factory=DummyMonitor
         ) as autoloader:
             assert settings.key_str.get() == ""
@@ -198,7 +198,7 @@ class TestAutoLoader:
         settings_file = tmp_path / "test.conf"
         settings_file.write_text("")
 
-        autoloader = AutoLoader(Settings(), settings_file, _monitor_factory=monitor)
+        autoloader = AutoReloader(Settings(), settings_file, _monitor_factory=monitor)
 
         # The file monitor is started on init.
         monitor().start.assert_called_once()
@@ -243,14 +243,14 @@ class TestAutoLoader:
         monkeypatch.setattr(Path, "expanduser", expanduser)
         func_spy = mocker.spy(Path, "expanduser")
 
-        autoloader1 = AutoLoader(
+        autoloader1 = AutoReloader(
             ExampleSettings(), "/no/tilde", _monitor_factory=DummyMonitor
         )
         assert autoloader1.path().as_posix() == "/no/tilde"
         func_spy.assert_called_once()
 
         func_spy.reset_mock()
-        autoloader2 = AutoLoader(
+        autoloader2 = AutoReloader(
             ExampleSettings(), "~/with/tilde", _monitor_factory=DummyMonitor
         )
         func_spy.assert_called_once()

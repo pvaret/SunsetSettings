@@ -1,7 +1,7 @@
 import tempfile
 import time
 
-from sunset import Key, Settings, AutoLoader
+from sunset import Key, Settings, AutoReloader
 
 
 class DemoSettings(Settings):
@@ -18,7 +18,7 @@ if __name__ == "__main__":
     settings.a.onValueChangeCall(report_value_changed)
 
     with tempfile.NamedTemporaryFile(delete=False, mode="w+", encoding="utf-8") as file:
-        with AutoLoader(settings, file.name) as loader:
+        with AutoReloader(settings, file.name) as loader:
             for i in range(1, 11):
                 time.sleep(0.5)
 

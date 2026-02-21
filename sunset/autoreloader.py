@@ -22,7 +22,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 class LoadableProtocol(Protocol):
     """
-    This protocol lets AutoLoader know how to use a Settings instance without
+    This protocol lets AutoReloader know how to use a Settings instance without
     having to import the actual Settings class.
     """
 
@@ -142,7 +142,7 @@ def doLoad(
     return True
 
 
-class AutoLoader:
+class AutoReloader:
     """
     A helper that loads settings from the given file and reloads them when the file
     changes.
@@ -154,7 +154,7 @@ class AutoLoader:
     file has not been modified for a few seconds, in order to avoid attempting to load a
     file that is still being written to.
 
-    AutoLoader can also be used as a context manager. Using it as a context manager is
+    AutoReloader can also be used as a context manager. Using it as a context manager is
     the recommended usage.
 
     Args:
@@ -170,11 +170,11 @@ class AutoLoader:
 
     Example:
 
-    >>> from sunset import Settings, AutoLoader
+    >>> from sunset import Settings, AutoReloader
     >>> class ExampleSettings(Settings):
     ...     ...
     >>> settings = ExampleSettings()
-    >>> with AutoLoader(settings, "~/.config/my_app.conf"):  # doctest: +SKIP
+    >>> with AutoReloader(settings, "~/.config/my_app.conf"):  # doctest: +SKIP
     ...     main_program_loop(settings)
 
     """
@@ -212,9 +212,9 @@ class AutoLoader:
         Unsaved settings, if any, will be lost.
 
         OS errors occurring during the load, if any, will be logged to the logger
-        provided to this AutoLoader's constructor.
+        provided to this AutoReloader's constructor.
 
-        If this AutoLoader was constructed with the parameter `raise_on_error` set to
+        If this AutoReloader was constructed with the parameter `raise_on_error` set to
         True, these OS errors will then be re-raised.
 
         Note that a missing file is not considered an error.

@@ -10,7 +10,7 @@ __version__ = importlib.metadata.version(__project__)
 import warnings
 
 from sunset import exporter, serializers, sets, stringutils
-from sunset.autoloader import AutoLoader
+from sunset.autoreloader import AutoReloader
 from sunset.autosaver import AutoSaver
 from sunset.bunch import Bunch
 from sunset.enum_serializer import SerializableEnum, SerializableFlag
@@ -38,7 +38,7 @@ class Bundle(Bunch):
 
 
 __all__ = [
-    "AutoLoader",
+    "AutoReloader",
     "AutoSaver",
     "Bunch",
     "Bundle",

@@ -470,15 +470,15 @@ Save settings to an open, writable text-mode file object with
 :meth:`~sunset.Settings.save()`.
 
 Alternatively, use either the :class:`~sunset.AutoSaver` or the
-:class:`~sunset.AutoLoader` context manager to automatically load and save your
+:class:`~sunset.AutoReloader` context manager to automatically load and save your
 settings.
 
 Which one you should use depends on how your users are expected to update settings: if
 that's by editing the settings file, to be loaded into your application, then use
-:class:`~sunset.AutoLoader`; if that's by making changes in the application's user
+:class:`~sunset.AutoReloader`; if that's by making changes in the application's user
 interface, to be saved into the settings file, then use :class:`~sunset.AutoSaver`.
 
-Note that :class:`~sunset.AutoLoader` automatically reloads your application's settings
+Note that :class:`~sunset.AutoReloader` automatically reloads your application's settings
 when the settings file is modified, and :class:`~sunset.AutoSaver` automatically saves
 them when they are updated from inside your application.
 

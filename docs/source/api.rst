@@ -73,7 +73,7 @@ API Reference
 
     .. automethod:: saveIfNeeded
 
-.. autoclass:: sunset.AutoLoader
+.. autoclass:: sunset.AutoReloader
 
     .. automethod:: doLoad
 

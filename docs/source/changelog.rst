@@ -4,8 +4,9 @@ Changelog
 Latest
 ------
 
-- Renamed :code:`List.iter()` to :code:`List.items()`.
 - Renamed sections to layers; it reflects their function better.
+- Renamed :code:`List.iter()` to :code:`List.items()`.
+- Renamed :code:`AutoLoader` to :code:`AutoReloader` to better reflect what it does.
 
 SunsetSettings 0.7.1 (2026-02-09)
 ---------------------------------

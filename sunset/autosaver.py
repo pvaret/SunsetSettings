@@ -6,7 +6,7 @@ from pathlib import Path
 from types import TracebackType
 from typing import IO, Any, Protocol
 
-from .autoloader import LoadableProtocol, doLoad
+from .autoreloader import LoadableProtocol, doLoad
 from .timer import PersistentTimer, TimerProtocol
 
 if sys.version_info < (3, 11):  # pragma: no cover
@@ -145,7 +145,7 @@ class AutoSaver:
         Unsaved settings, if any, will be lost.
 
         OS errors occurring while loading, if any, will be logged to the logger provided
-        to this AutoLoader's constructor.
+        to this AutoReloader's constructor.
 
         If this AutoSaver was constructed with the parameter `raise_on_error` set to
         True, these OS errors will then be re-raised.
@@ -180,7 +180,7 @@ class AutoSaver:
         automatically creates it.
 
         OS errors occurring while saving, if any, will be logged to the logger provided
-        to this AutoLoader's constructor.
+        to this AutoReloader's constructor.
 
         If this AutoSaver was constructed with the parameter `raise_on_error` set to
         True, these OS errors will then be re-raised.
