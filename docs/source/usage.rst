@@ -488,11 +488,3 @@ to be easy for humans to make sense of.
 It is however somewhat limited at this time. In particular, it does not support comments.
 
 Saving settings does not preserve formatting.
-
-.. note::
-
-    Because the :meth:`~sunset.Settings.load()` and :meth:`~sunset.Settings.save()`
-    methods take an already open text file object as their argument, those methods don't
-    get a say in which encoding the target file will use. Be sure to open the file using
-    an encoding capable of holding any character that can be used in a setting by the
-    users of your application. If in doubt, use `UTF-8`.

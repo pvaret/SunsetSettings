@@ -26,7 +26,7 @@ class LoadableProtocol(Protocol):
     having to import the actual Settings class.
     """
 
-    def load(self, file: IO[str]) -> None: ...
+    def load(self, file: IO[str] | str | Path) -> None: ...
 
 
 class MonitorProtocol(Protocol):

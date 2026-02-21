@@ -499,13 +499,13 @@ class Settings(Bunch):
 
         return any_change
 
-    def save(self, file: IO[str], *, blanklines: bool = False) -> None:
+    def save(self, file: IO[str] | str | Path, *, blanklines: bool = False) -> None:
         """
-        Writes the contents of this Settings instance and its layers in
-        text form to the given file object.
+        Writes the contents of this Settings instance and its layers in text
+        form to the given file.
 
         Args:
-            file: A text file object where to save this Settings instance.
+            file: The file where to save these Settings.
 
             blanklines: Whether to add a blank line before layer headings.
         """
@@ -516,27 +516,39 @@ class Settings(Bunch):
 
             return
 
+        if isinstance(file, str):
+            file = Path(file)
+
+        if isinstance(file, Path):
+            file = file.open("w", encoding="UTF-8")
+
         save_to_file(
             file, self.dumpFields(), blanklines=blanklines, main=self.layerName()
         )
 
-    def load(self, file: IO[str]) -> None:
+    def load(self, file: IO[str] | str | Path) -> None:
         """
-        Loads settings from the given text file object.
+        Loads settings from the given file.
 
         If the given file contains lines that don't make sense -- for instance,
         if the line is garbage, or refers to a key that does not exist in this
         Settings class, or it exists but with an incompatible type -- then the
         faulty line is skipped silently.
 
-        If the text file object contains multiple headings, those headings will
-        be used to create layers with the corresponding names.
+        If the file contains multiple headings, those headings will be used to
+        create layers with the corresponding names.
 
         Note that loading new settings resets the current settings.
 
         Args:
-            file: A text file open in reading mode.
+            file: The file to load.
         """
+
+        if isinstance(file, str):
+            file = Path(file)
+
+        if isinstance(file, Path):
+            file = file.open(encoding="UTF-8")
 
         self.restoreFields(load_from_file(file, self.layerName()))
 
