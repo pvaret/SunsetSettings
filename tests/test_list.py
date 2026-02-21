@@ -1,3 +1,4 @@
+import warnings
 from collections.abc import Iterable
 
 from pytest_mock import MockerFixture
@@ -27,7 +28,7 @@ class TestList:
 
         assert len(list_key) == 0
 
-    def test_inheritance(self) -> None:
+    def test_layering(self) -> None:
         parent_list: List[Key[int]] = List(Key(default=0))
         child_list: List[Key[int]] = List(Key(default=0))
 
@@ -66,7 +67,7 @@ class TestList:
         assert child_list not in list2.children()
         assert child_list.parent() is None
 
-    def test_iter_inheritance(self) -> None:
+    def test_items_layering(self) -> None:
         def flatten(keys: Iterable[Key[str]]) -> list[str]:
             return [key.get() for key in keys]
 
@@ -88,26 +89,37 @@ class TestList:
         child_iter_parent_first.appendOne().set("child")
         child_iter_parent_last.appendOne().set("child")
 
-        assert flatten(child_default.iter()) == ["child"]
+        assert flatten(child_default.items()) == ["child"]
 
         child_default.setParent(parent)
         child_iter_no_parent.setParent(parent)
         child_iter_parent_first.setParent(parent)
         child_iter_parent_last.setParent(parent)
 
-        assert flatten(child_default.iter()) == ["child"]
-        assert flatten(child_iter_no_parent.iter()) == ["child"]
-        assert flatten(child_iter_parent_first.iter()) == ["parent", "child"]
-        assert flatten(child_iter_parent_last.iter()) == ["child", "parent"]
-        assert flatten(child_default.iter(order=List.NO_PARENT)) == ["child"]
-        assert flatten(child_default.iter(order=List.PARENT_FIRST)) == [
+        assert flatten(child_default.items()) == ["child"]
+        assert flatten(child_iter_no_parent.items()) == ["child"]
+        assert flatten(child_iter_parent_first.items()) == ["parent", "child"]
+        assert flatten(child_iter_parent_last.items()) == ["child", "parent"]
+        assert flatten(child_default.items(order=List.NO_PARENT)) == ["child"]
+        assert flatten(child_default.items(order=List.PARENT_FIRST)) == [
             "parent",
             "child",
         ]
-        assert flatten(child_default.iter(order=List.PARENT_LAST)) == [
+        assert flatten(child_default.items(order=List.PARENT_LAST)) == [
             "child",
             "parent",
         ]
+
+    def test_deprecated_iter(self) -> None:
+        l = List(Key(default=0))
+        l.appendOne().set(1)
+        ll = List(template=Key(default=0))
+        ll.appendOne().set(2)
+        ll.setParent(l)
+        with warnings.catch_warnings(record=True) as w:
+            assert [k.get() for k in ll.iter(List.PARENT_FIRST)] == [1, 2]
+            assert len(w) == 1
+            assert w[0].category is DeprecationWarning
 
     def test_dump_fields(self) -> None:
         key_list = List(Key(""))

@@ -420,7 +420,7 @@ Bunches are automatically set up to use the corresponding Keys in the parent
 layer as their default values.
 
 A List's behavior does not change in a layer except for the
-:meth:`~sunset.List.iter()` method. This method return an iterable on the List's
+:meth:`~sunset.List.items()` method. This method return an iterable on the List's
 items and optionally its parent layer's items. An optional parameter indicates
 if the parent's items will be returned, and if so, whether they will be returned
 before or after this List's items. The default value for this parameter for a
@@ -455,7 +455,7 @@ Example:
     True
 
     >>> print([
-    ...     pattern.get() for pattern in user1_code_layer.ignore_patterns.iter()
+    ...     pattern.get() for pattern in user1_code_layer.ignore_patterns.items()
     ... ])
     ['*.tmp', '*.py', '__pycache__']
 

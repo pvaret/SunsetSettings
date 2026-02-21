@@ -380,13 +380,16 @@ class TestSettings:
         with warnings.catch_warnings(record=True) as w:
             layer = settings.newSection()
             assert len(w) == 1
-            assert settings.children() == [layer]
-            layer.setSectionName("test")
+            assert settings.sections() == [layer]
             assert len(w) == 2
-            assert layer.sectionName() == "test"
+            layer.setSectionName("test")
             assert len(w) == 3
-            assert settings.getOrCreateSection("test") is layer
+            assert layer.sectionName() == "test"
             assert len(w) == 4
+            assert settings.getOrCreateSection("test") is layer
+            assert len(w) == 5
+            assert settings.getSection("test") is layer
+            assert len(w) == 6
             assert all(warning.category is DeprecationWarning for warning in w)
 
     def test_load(self, mocker: MockerFixture) -> None:

@@ -220,17 +220,17 @@ class TestBunch:
         assert parent_bunch.inner_bunch.b.get() == 101
 
         parent_bunch.list.appendOne().c.set("test parent")
-        assert [item.c.get() for item in parent_bunch.list.iter()] == ["test parent"]
-        assert [item.c.get() for item in child_bunch.list.iter()] == ["test parent"]
+        assert [item.c.get() for item in parent_bunch.list.items()] == ["test parent"]
+        assert [item.c.get() for item in child_bunch.list.items()] == ["test parent"]
         child_bunch.list.appendOne().c.set("test child")
-        assert [item.c.get() for item in parent_bunch.list.iter()] == ["test parent"]
-        assert [item.c.get() for item in child_bunch.list.iter()] == [
+        assert [item.c.get() for item in parent_bunch.list.items()] == ["test parent"]
+        assert [item.c.get() for item in child_bunch.list.items()] == [
             "test child",
             "test parent",
         ]
         del parent_bunch.list[0]
-        assert [item.c.get() for item in parent_bunch.list.iter()] == []
-        assert [item.c.get() for item in child_bunch.list.iter()] == ["test child"]
+        assert [item.c.get() for item in parent_bunch.list.items()] == []
+        assert [item.c.get() for item in child_bunch.list.items()] == ["test child"]
 
     def test_dump_fields(self) -> None:
         bunch = ExampleBunch()

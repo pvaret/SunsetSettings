@@ -55,7 +55,7 @@ API Reference
 
 .. autoclass:: sunset.List
 
-    .. automethod:: iter
+    .. automethod:: items
 
     .. automethod:: appendOne
 

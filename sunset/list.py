@@ -2,13 +2,34 @@ import sys
 import weakref
 from collections.abc import Callable, Iterable, Iterator, MutableSequence
 from enum import Enum, auto
+from functools import wraps
 from types import GenericAlias
-from typing import Any, SupportsIndex, TypeVar, cast, overload
+from typing import Any, ParamSpec, SupportsIndex, TypeVar, cast, overload
 
 if sys.version_info < (3, 11):  # pragma: no cover
     from typing_extensions import Self
 else:
     from typing import Self
+
+if sys.version_info < (3, 13):
+    import warnings
+
+    _P = ParamSpec("_P")
+    _T = TypeVar("_T")
+
+    def deprecated(msg: str) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]:
+        def wrap(func: Callable[_P, _T]) -> Callable[_P, _T]:
+            @wraps(func)
+            def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> _T:
+                warnings.warn(msg, DeprecationWarning, stacklevel=2)
+                return func(*args, **kwargs)
+
+            return wrapped
+
+        return wrap
+
+else:
+    from warnings import deprecated
 
 from sunset.lock import SettingsLock
 from sunset.notifier import Notifier
@@ -35,7 +56,7 @@ class List(MutableSequence[ListItemT], BaseField):
 
     In addition, it offers support for update notification callbacks, and
     inheritance. The inheritance is used when iterating on the List's contents
-    using the :meth:`iter()` method, which iterates on a List and, optionally,
+    using the :meth:`items()` method, which iterates on a List and, optionally,
     its parents.
 
     Instead of creating a new instance of the contained type and inserting or
@@ -49,7 +70,7 @@ class List(MutableSequence[ListItemT], BaseField):
 
         order: One of `List.NO_PARENT`, `List.PARENT_FIRST` or
             `List.PARENT_LAST`. Sets the default iteration order used in
-            :meth:`iter()` when not otherwise specified. Default:
+            :meth:`items()` when not otherwise specified. Default:
             `List.NO_PARENT`.
 
     Example:
@@ -245,7 +266,7 @@ class List(MutableSequence[ListItemT], BaseField):
         parent, if any.
 
         Having a parent does not affect a List's behavior outside of the
-        :meth:`iter()` method.
+        :meth:`items()` method.
 
         This method is for internal purposes and you will typically not need to
         call it directly.
@@ -275,7 +296,7 @@ class List(MutableSequence[ListItemT], BaseField):
             parent._children_ref.add(self)  # noqa: SLF001
 
     @SettingsLock.with_read_lock
-    def iter(self, order: IterOrder | None = None) -> Iterable[ListItemT]:
+    def items(self, order: IterOrder | None = None) -> Iterable[ListItemT]:
         """
         Returns the elements contained in this List, and optionally in its
         parent layers, if any.
@@ -320,11 +341,11 @@ class List(MutableSequence[ListItemT], BaseField):
         >>> show(child)
         [3, 4]
         >>> child.setParent(parent)
-        >>> show(child.iter())
+        >>> show(child.items())
         [3, 4]
-        >>> show(child.iter(order=List.PARENT_FIRST))
+        >>> show(child.items(order=List.PARENT_FIRST))
         [1, 2, 3, 4]
-        >>> show(child.iter(order=List.PARENT_LAST))
+        >>> show(child.items(order=List.PARENT_LAST))
         [3, 4, 1, 2]
         """
 
@@ -335,18 +356,22 @@ class List(MutableSequence[ListItemT], BaseField):
             order = self._iter_order
 
         if parent is not None and order == IterOrder.PARENT_FIRST:
-            ret.extend(parent.iter(order))
+            ret.extend(parent.items(order))
 
         ret.extend(self._contents)
 
         if parent is not None and order == IterOrder.PARENT_LAST:
-            ret.extend(parent.iter(order))
+            ret.extend(parent.items(order))
 
         return ret
 
     def __iter__(self) -> Iterator[ListItemT]:
-        items = self.iter(IterOrder.NO_PARENT)
+        items = self.items(IterOrder.NO_PARENT)
         yield from items
+
+    @deprecated("Use 'items()' instead.")
+    def iter(self, order: IterOrder | None = None) -> Iterable[ListItemT]:
+        return self.items(order)
 
     @SettingsLock.with_read_lock
     def parent(self) -> Self | None:
@@ -476,7 +501,7 @@ class List(MutableSequence[ListItemT], BaseField):
 
     def __repr__(self) -> str:
         parent = self.parent()
-        items = [repr(item) for item in self.iter(order=IterOrder.NO_PARENT)]
+        items = [repr(item) for item in self.items(order=IterOrder.NO_PARENT)]
         if parent is not None and self._iter_order == IterOrder.PARENT_FIRST:
             items.insert(0, "<parent>")
         if parent is not None and self._iter_order == IterOrder.PARENT_LAST:
