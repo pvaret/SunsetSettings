@@ -81,9 +81,6 @@ check-all = [
 # This makes this environment use the "docs" optional dependencies above.
 features = ["docs"]
 
-# This environment does not need the code built and installed.
-detached = true
-
 [tool.hatch.envs.docs.scripts]
 html = "make -C ./docs html"
 

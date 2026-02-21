@@ -6,18 +6,11 @@
 
 # -- Path setup --------------------------------------------------------------
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
+# Proper installation with Hath should install the package in the current environment.
 
-import os
-import sys
+import importlib.metadata
 
-_this_dir = os.path.dirname(__file__)
-sys.path.insert(0, os.path.abspath(os.path.join(_this_dir, "../..")))
-
-import sunset  # noqa -- module import not at top of file.
-
+import sunset
 
 # -- Project information -----------------------------------------------------
 
@@ -27,7 +20,7 @@ author = sunset.__author__
 
 # The full version, including alpha/beta/rc tags
 
-release = sunset.__version__
+release = importlib.metadata.version(project)
 
 
 # -- General configuration ---------------------------------------------------
